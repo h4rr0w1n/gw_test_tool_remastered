@@ -27,7 +27,6 @@ import java.util.Map;
 public class SwimDriver {
     private SwimMessagingAdapter activeAdapter;
     private boolean isConnected = false;
-    private boolean traceEnabled = false;
     
     // REST API components (shared regardless of messaging adapter)
     private String authToken;
@@ -113,10 +112,6 @@ public class SwimDriver {
             connect();
         }
         
-        if (traceEnabled) {
-            Logger.logAMQPDeepTrace(null, properties);
-        }
-        
         activeAdapter.publishMessage(topic, payload, properties);
     }
     
@@ -131,9 +126,6 @@ public class SwimDriver {
 
     public void publishToTopic(String topic, byte[] payload, Map<String, Object> properties) throws Exception {
         if (!isConnected) connect();
-        if (traceEnabled) {
-            Logger.logAMQPDeepTrace(null, properties);
-        }
         activeAdapter.publishToTopic(topic, payload, properties);
     }
     
@@ -143,9 +135,6 @@ public class SwimDriver {
 
     public void publishToQueue(String queue, byte[] payload, Map<String, Object> properties) throws Exception {
         if (!isConnected) connect();
-        if (traceEnabled) {
-            Logger.logAMQPDeepTrace(null, properties);
-        }
         activeAdapter.publishToQueue(queue, payload, properties);
     }
     
@@ -269,10 +258,6 @@ public class SwimDriver {
         }
     }
     
-    public void setTraceEnabled(boolean traceEnabled) {
-        this.traceEnabled = traceEnabled;
-    }
-
     /**
      * Đóng kết nối.
      */

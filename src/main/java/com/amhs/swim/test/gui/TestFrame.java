@@ -444,21 +444,6 @@ public class TestFrame extends JFrame {
         JTextField recipientField = styledField(TestConfig.getInstance().getProperty("gateway.test_recipient","VVTSYMYX"), 14);
         configPanel.add(recipientField, gc);
 
-        // ── Trace ──
-        gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 4; gc.weightx = 1;
-        JCheckBox traceCheck = new JCheckBox("Enable Deep AMQP Trace (ICAO Compliance)");
-        traceCheck.setBackground(bgSidebar);
-        traceCheck.setForeground(clrFg);
-        boolean traceEnabled = Boolean.parseBoolean(TestConfig.getInstance().getProperty("gateway.trace_enabled","false"));
-        traceCheck.setSelected(traceEnabled);
-        swimToAmhsTests.getSwimDriver().setTraceEnabled(traceEnabled);
-        traceCheck.addActionListener(e -> {
-            boolean sel = traceCheck.isSelected();
-            swimToAmhsTests.getSwimDriver().setTraceEnabled(sel);
-            TestConfig.getInstance().setProperty("gateway.trace_enabled", String.valueOf(sel));
-        });
-        configPanel.add(traceCheck, gc);
-
         // ── Buttons ──
         gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 2; gc.weightx = 0.5;
         JButton checkConnBtn = settingsBtn("Check Connection");
@@ -479,7 +464,6 @@ public class TestFrame extends JFrame {
             cfg.setProperty("gateway.default_topic", topicField.getText());
             cfg.setProperty("gateway.test_recipient", recipientField.getText());
             cfg.setProperty("amqp_broker_profile", (String) profileCombo.getSelectedItem());
-            cfg.setProperty("gateway.trace_enabled", String.valueOf(traceCheck.isSelected()));
             cfg.saveConfig();
             swimToAmhsTests = new SwimToAmhsTests();
         });

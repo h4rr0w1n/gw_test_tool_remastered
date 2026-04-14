@@ -220,13 +220,6 @@ public class Logger {
     }
 
     /**
-     * Records a deep trace of AMQP 1.0 properties for compliance verification.
-     */
-    public static void logAMQPDeepTrace(String caseId, java.util.Map<String, Object> props) {
-        logPayloadDetail(caseId, 0, props, "[TRACE ONLY]");
-    }
-
-    /**
      * Records traffic log for a test request (as per EUR Doc 047).
      */
     public static void logTraffic(String direction, String content) {
