@@ -1,0 +1,91 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.amhs.swim</groupId>
+    <artifactId>test-tool</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+    <name>AMHS/SWIM Gateway Test Tool</name>
+    
+    <dependencies>
+        <!-- Apache Qpid Proton-J cho AMQP 1.0 (standard AMQP, tuân thủ EUR Doc 047) -->
+        <!-- Đây là fallback mặc định nếu không có Solace -->
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>proton-j</artifactId>
+            <version>0.34.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-jms-client</artifactId>
+            <version>1.1.0</version>
+        </dependency>
+        
+        <!-- Solace JCSMP API (proprietary - optional, dùng cho legacy deployments) -->
+        <!-- Nếu có trong classpath, sẽ được ưu tiên sử dụng thay vì Qpid -->
+        <dependency>
+            <groupId>com.solacesystems</groupId>
+            <artifactId>sol-common</artifactId>
+            <version>10.20.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.solacesystems</groupId>
+            <artifactId>sol-jcsmp</artifactId>
+            <version>10.20.0</version>
+        </dependency>
+        
+        <!-- Apache POI cho xuất báo cáo Excel (Requirement 4) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <version>20230227</version>
+        </dependency>
+    </dependencies>
+    
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <source>11</source>
+                    <target>11</target>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.amhs.swim.test.Main</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
