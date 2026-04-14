@@ -71,9 +71,3 @@ Hệ thống được cấu hình thông qua tệp `config/test.properties`.
 7. **Xuất Báo cáo**: Sử dụng tính năng **Export Report** để lưu trữ kết quả phục vụ báo cáo kỹ thuật.
 
 ---
-
-## ⚖️ Tuyên bố Tuân thủ
-*Công cụ này được thiết kế để sử dụng trong môi trường thử nghiệm (Sandbox/Pre-production) nhằm xác thực logic của Gateway. Kết quả từ công cụ này không thay thế cho các quy trình chứng nhận hệ thống (Certification) chính thức.*
-
----
-© 2026 Đội ngũ Phát triển Khung Kiểm thử AMHS/SWIM Gateway.
