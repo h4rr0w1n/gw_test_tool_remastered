@@ -69,6 +69,7 @@ public class TestCasePanel extends JPanel {
     private JButton btnSaveMsgResult;
     private JButton btnDisplayResult;
     private JButton btnSettings;
+    private JLabel lblTopicDisplay;
 
     private Map<Integer, AtomicInteger> attempts = new HashMap<>();
 
@@ -104,13 +105,13 @@ public class TestCasePanel extends JPanel {
         chkCasePass = new JCheckBox("Pass (Case)"); chkCasePass.setBackground(bgHeader); chkCasePass.setForeground(clrFg);
         chkCaseFail = new JCheckBox("Fail (Case)"); chkCaseFail.setBackground(bgHeader); chkCaseFail.setForeground(clrFg);
         ButtonGroup bgCase = new ButtonGroup(); bgCase.add(chkCasePass); bgCase.add(chkCaseFail);
-        txtCaseNote = new JTextField(10); txtCaseNote.setToolTipText("Note for Case");
+        txtCaseNote = new JTextField(10);
         
         // Message manual states
         chkMsgPass = new JCheckBox("Pass (Msg)"); chkMsgPass.setBackground(bgHeader); chkMsgPass.setForeground(clrFg);
         chkMsgFail = new JCheckBox("Fail (Msg)"); chkMsgFail.setBackground(bgHeader); chkMsgFail.setForeground(clrFg);
         ButtonGroup bgMsg = new ButtonGroup(); bgMsg.add(chkMsgPass); bgMsg.add(chkMsgFail);
-        txtMsgNote = new JTextField(10); txtMsgNote.setToolTipText("Note for Message");
+        txtMsgNote = new JTextField(10);
         
         btnSaveMsgResult = new JButton("Save Msg");
         btnSaveMsgResult.addActionListener(e -> {
@@ -128,6 +129,12 @@ public class TestCasePanel extends JPanel {
         btnExport.addActionListener(e -> doExport());
 
         btnSettings = new JButton("Tool Settings");
+        
+        // SWIM Topic Display - reads from Tool Settings config
+        lblTopicDisplay = new JLabel("TEST.TOPIC");
+        lblTopicDisplay.setFont(new Font("SansSerif", Font.BOLD, 12));
+        lblTopicDisplay.setForeground(clrAccent);
+        lblTopicDisplay.setBorder(new EmptyBorder(0, 8, 0, 8));
 
         topBar.add(btnRecordingTime);
         topBar.add(new JSeparator(SwingConstants.VERTICAL));
@@ -138,6 +145,8 @@ public class TestCasePanel extends JPanel {
         topBar.add(btnDisplayResult); topBar.add(btnExport);
         topBar.add(new JSeparator(SwingConstants.VERTICAL));
         topBar.add(btnSettings);
+        topBar.add(new JSeparator(SwingConstants.VERTICAL));
+        topBar.add(lblTopicDisplay);
 
         // Listeners for manual state changes
         java.awt.event.ActionListener caseStateListener = e -> saveCaseState();
@@ -192,11 +201,9 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(new JLabel("AMQP PRIORITY:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0;
         priorityField = new JTextField(10);
-        priorityField.setToolTipText("Enter integer priority value (0-9 or any integer)");
         configFormPanel.add(priorityField, gbc);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadPriority = new JButton("Upload");
-        btnUploadPriority.setToolTipText("Upload priority from file");
         btnUploadPriority.addActionListener(e -> doUploadField("AMQP PRIORITY"));
         configFormPanel.add(btnUploadPriority, gbc);
         row++;
@@ -216,7 +223,6 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(contentTypeCombo, gbc);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadContentType = new JButton("Upload");
-        btnUploadContentType.setToolTipText("Upload content type from file");
         btnUploadContentType.addActionListener(e -> doUploadField("CONTENT TYPE"));
         configFormPanel.add(btnUploadContentType, gbc);
         row++;
@@ -235,7 +241,6 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(brokerProfileCombo, gbc);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadBroker = new JButton("Upload");
-        btnUploadBroker.setToolTipText("Upload broker profile from file");
         btnUploadBroker.addActionListener(e -> doUploadField("AMQP BROKER PROFILE"));
         configFormPanel.add(btnUploadBroker, gbc);
         row++;
@@ -249,7 +254,6 @@ public class TestCasePanel extends JPanel {
         configFields.put("amhs_recipients", amhsRecipientsField);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadRecipients = new JButton("Upload");
-        btnUploadRecipients.setToolTipText("Upload recipients from file");
         btnUploadRecipients.addActionListener(e -> doUploadField("AMHS RECIPIENTS"));
         configFormPanel.add(btnUploadRecipients, gbc);
         row++;
@@ -267,12 +271,11 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(bodyTypeCombo, gbc);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadBodyType = new JButton("Upload");
-        btnUploadBodyType.setToolTipText("Upload body type from file");
         btnUploadBodyType.addActionListener(e -> doUploadField("AMQP BODY TYPE"));
         configFormPanel.add(btnUploadBodyType, gbc);
         row++;
         
-        // Payload Row
+        // Payload Row - renamed from PAYLOAD/FILE_PATH to just PAYLOAD
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
         configFormPanel.add(new JLabel("PAYLOAD:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0;
@@ -281,7 +284,6 @@ public class TestCasePanel extends JPanel {
         configFields.put("payload", payloadField);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadPayload = new JButton("Upload");
-        btnUploadPayload.setToolTipText("Upload payload from file");
         btnUploadPayload.addActionListener(e -> doUploadField("PAYLOAD"));
         configFormPanel.add(btnUploadPayload, gbc);
         row++;
@@ -331,7 +333,7 @@ public class TestCasePanel extends JPanel {
         descPanel.add(descScroll, BorderLayout.CENTER);
 
         JSplitPane midSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, configPanel, descPanel);
-        midSplit.setResizeWeight(0.52);
+        midSplit.setResizeWeight(0.65); // Description zone 2x higher when tool is opened (was 0.52)
         midSplit.setBorder(null);
         midPanel.add(midSplit, BorderLayout.CENTER);
 
@@ -368,7 +370,16 @@ public class TestCasePanel extends JPanel {
     }
 
     public void setOnSettings(Runnable r) {
-        btnSettings.addActionListener(e -> r.run());
+        btnSettings.addActionListener(e -> {
+            r.run();
+            // Update topic display after settings dialog closes
+            updateTopicDisplay();
+        });
+    }
+
+    private void updateTopicDisplay() {
+        String topic = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_topic", "TEST.TOPIC");
+        lblTopicDisplay.setText(topic);
     }
 
     public void loadTestCase(BaseTestCase tc) {
@@ -376,6 +387,9 @@ public class TestCasePanel extends JPanel {
         currentMsg = null;
         logArea.setText("");
         descriptionArea.setText(TestbookLoader.getDescription(tc.getTestCaseId()));
+        
+        // Initialize topic display from config
+        updateTopicDisplay();
 
         // Load Case state
         CaseSessionState state = ResultManager.getInstance().getState(tc.getTestCaseId());
@@ -504,7 +518,6 @@ public class TestCasePanel extends JPanel {
             gbc.weightx = 0;
             JButton btnUpload = new JButton("Upload");
             final String fieldLabel = label;
-            btnUpload.setToolTipText("Upload " + label + " from file");
             btnUpload.addActionListener(e -> doUploadField(fieldLabel));
             configFormPanel.add(btnUpload, gbc);
             
