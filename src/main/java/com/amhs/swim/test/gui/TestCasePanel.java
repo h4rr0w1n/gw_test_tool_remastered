@@ -3,6 +3,7 @@ package com.amhs.swim.test.gui;
 import com.amhs.swim.test.testcase.BaseTestCase;
 import com.amhs.swim.test.testcase.BaseTestCase.TestMessage;
 import com.amhs.swim.test.util.*;
+import com.amhs.swim.test.config.CaseConfigManager;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -14,6 +15,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +37,8 @@ public class TestCasePanel extends JPanel {
     private BaseTestCase currentCase;
     private Runnable onCancel;
     private TestMessage currentMsg;
+    private byte[] attachedFileData = null;
+    private String attachedFileName = null;
 
     // UI Components
     private JPanel topBar;
@@ -169,8 +174,15 @@ public class TestCasePanel extends JPanel {
         actionPanel.setBackground(bgPanel);
         btnViewFull = new JButton("View Full Popup");
         btnSend = new JButton("Send");
+        JButton btnAttachFile = new JButton("Attach File");
+        JButton btnRevertDefault = new JButton("Revert To Default");
+        
+        btnAttachFile.addActionListener(e -> doAttachFile());
+        btnRevertDefault.addActionListener(e -> doRevertToDefault());
         btnSend.addActionListener(e -> doSendSingle());
         actionPanel.add(btnViewFull);
+        actionPanel.add(btnAttachFile);
+        actionPanel.add(btnRevertDefault);
         actionPanel.add(btnSend);
 
         configPanel.add(lblConfig, BorderLayout.NORTH);
@@ -238,6 +250,8 @@ public class TestCasePanel extends JPanel {
     public void loadTestCase(BaseTestCase tc) {
         currentCase = tc;
         currentMsg = null;
+        attachedFileData = null;
+        attachedFileName = null;
         logArea.setText("");
         descriptionArea.setText(TestbookLoader.getDescription(tc.getTestCaseId()));
 
@@ -291,6 +305,8 @@ public class TestCasePanel extends JPanel {
 
     public void onMessageSelected(TestMessage msg) {
         currentMsg = msg;
+        attachedFileData = null;
+        attachedFileName = null;
         
         // build property block in structured AMQP metadata format
         StringBuilder sb = new StringBuilder();
@@ -433,8 +449,18 @@ public class TestCasePanel extends JPanel {
             finalPayload = lines[lines.length - 1];
         }
         
-        inputs.put("p" + msgIndex, finalPayload);
-        inputs.put(currentMsg.getCustomKey(), finalPayload);
+        // If a file is attached, use the binary data instead of text payload
+        if (attachedFileData != null && currentMsg.isFile()) {
+            // For binary messages, store the file path reference in the payload field
+            // The actual file reading happens in the test case execution
+            inputs.put("file_path", attachedFileName);
+            inputs.put(currentMsg.getCustomKey(), attachedFileName);
+            Logger.logCase(currentCase.getTestCaseId(), "INFO", 
+                "Sending binary payload from attached file: " + attachedFileName);
+        } else {
+            inputs.put("p" + msgIndex, finalPayload);
+            inputs.put(currentMsg.getCustomKey(), finalPayload);
+        }
 
         new Thread(() -> {
             try {
@@ -479,6 +505,67 @@ public class TestCasePanel extends JPanel {
                 JOptionPane.showMessageDialog(this, "Failed to export: " + e.getMessage());
             }
         }
+    }
+    
+    private void doAttachFile() {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Select File to Attach");
+        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fc.setMultiSelectionEnabled(false);
+        
+        int result = fc.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fc.getSelectedFile();
+            try {
+                attachedFileData = Files.readAllBytes(selectedFile.toPath());
+                attachedFileName = selectedFile.getName();
+                
+                // Update the display to show the attached file info
+                String currentText = amqpConfigArea.getText();
+                StringBuilder sb = new StringBuilder();
+                sb.append(currentText);
+                if (!currentText.trim().endsWith("\n")) {
+                    sb.append("\n");
+                }
+                sb.append("-------------------------------------------\n");
+                sb.append(String.format("%-25s : [ATTACHED] %s (%.2f KB)\n", "attached_file", 
+                    attachedFileName, attachedFileData.length / 1024.0));
+                sb.append("-------------------------------------------\n");
+                
+                amqpConfigArea.setText(sb.toString());
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
+                    "INFO", "File attached: " + attachedFileName + " (" + attachedFileData.length + " bytes)");
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Failed to read file: " + e.getMessage());
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
+                    "ERROR", "Failed to attach file: " + e.getMessage());
+            }
+        }
+    }
+    
+    private void doRevertToDefault() {
+        if (currentCase == null || currentMsg == null) {
+            JOptionPane.showMessageDialog(this, "Select a message to revert.");
+            return;
+        }
+        
+        CaseConfigManager configMgr = CaseConfigManager.getInstance();
+        String caseId = currentCase.getTestCaseId();
+        int msgIndex = currentMsg.getIndex();
+        
+        // Revert to default payload
+        configMgr.revertToDefault(caseId, msgIndex);
+        
+        // Reload the message view with default payload
+        onMessageSelected(currentMsg);
+        
+        // Clear attached file
+        attachedFileData = null;
+        attachedFileName = null;
+        
+        Logger.logCase(caseId, "INFO", "Reverted message " + msgIndex + " to default payload");
+        JOptionPane.showMessageDialog(this, 
+            "Message " + msgIndex + " has been reverted to its default payload.");
     }
 
     private void updateUIFlags() {
