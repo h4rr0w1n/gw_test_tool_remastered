@@ -386,7 +386,6 @@ public class TestCasePanel extends JPanel {
         currentCase = tc;
         currentMsg = null;
         logArea.setText("");
-        descriptionArea.setText(TestbookLoader.getDescription(tc.getTestCaseId()));
         
         // Initialize topic display from config
         updateTopicDisplay();
@@ -413,10 +412,23 @@ public class TestCasePanel extends JPanel {
         // Hook logger
         Logger.setCaseLogListener(tc.getTestCaseId(), message -> SwingUtilities.invokeLater(() -> appendLog(message)));
         appendLogBanner(tc);
-        SwingUtilities.invokeLater(() -> {
-            descriptionArea.setCaretPosition(0);
-            updateUIFlags();
-        });
+        
+        // Auto-select the first message to populate description and dynamic fields
+        List<BaseTestCase.TestMessage> msgs = tc.getMessages();
+        if (msgs != null && !msgs.isEmpty()) {
+            SwingUtilities.invokeLater(() -> {
+                onMessageSelected(msgs.get(0));
+                descriptionArea.setCaretPosition(0);
+                updateUIFlags();
+            });
+        } else {
+            // No messages, just show case description
+            descriptionArea.setText(TestbookLoader.getDescription(tc.getTestCaseId()));
+            SwingUtilities.invokeLater(() -> {
+                descriptionArea.setCaretPosition(0);
+                updateUIFlags();
+            });
+        }
     }
 
     private void clearConfigForm() {
@@ -478,15 +490,16 @@ public class TestCasePanel extends JPanel {
         clearConfigForm();
         
         // Add additional custom fields based on case/message beyond the standard ones
-        String[] labels = {};
+        // Always start with "payload" for parts[0], followed by case-specific fields
+        String[] labels = {"payload"};
         if (caseId.equals("CTSW106")) {
-            labels = new String[]{"amhs_ats_ohi"};
+            labels = new String[]{"payload", "amhs_ats_ohi"};
         } else if (caseId.equals("CTSW107")) {
-            if (mIdx == 3) labels = new String[]{"amhs_subject"};
-            else if (mIdx == 4) labels = new String[]{"subject", "amhs_subject"};
-            else labels = new String[]{"subject"};
+            if (mIdx == 3) labels = new String[]{"payload", "amhs_subject"};
+            else if (mIdx == 4) labels = new String[]{"payload", "subject", "amhs_subject"};
+            else labels = new String[]{"payload", "subject"};
         } else if (caseId.equals("CTSW108") || caseId.equals("CTSW109")) {
-            labels = new String[]{"amhs_originator"};
+            labels = new String[]{"payload", "amhs_originator"};
         }
 
         GridBagConstraints gbc = new GridBagConstraints();
