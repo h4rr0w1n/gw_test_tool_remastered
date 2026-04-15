@@ -333,7 +333,7 @@ public class TestCasePanel extends JPanel {
         descPanel.add(descScroll, BorderLayout.CENTER);
 
         JSplitPane midSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, configPanel, descPanel);
-        midSplit.setResizeWeight(0.65); // Description zone 2x higher when tool is opened (was 0.52)
+        midSplit.setResizeWeight(0.5); // Description zone half the height
         midSplit.setBorder(null);
         midPanel.add(midSplit, BorderLayout.CENTER);
 
@@ -421,9 +421,9 @@ public class TestCasePanel extends JPanel {
 
     private void clearConfigForm() {
         configFields.clear();
-        // Remove all components except the standard AMQP rows and dynamic label
-        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3), payload (3), dynamic label (1) = 19
-        while (configFormPanel.getComponentCount() > 19) {
+        // Remove all components except the standard AMQP rows
+        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3), payload (3) = 18
+        while (configFormPanel.getComponentCount() > 18) {
             configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         }
     }
@@ -478,15 +478,15 @@ public class TestCasePanel extends JPanel {
         clearConfigForm();
         
         // Add additional custom fields based on case/message beyond the standard ones
-        String[] labels = {"payload / file_path"};
+        String[] labels = {};
         if (caseId.equals("CTSW106")) {
-            labels = new String[]{"amhs_ats_ohi", "payload / file_path"};
+            labels = new String[]{"amhs_ats_ohi"};
         } else if (caseId.equals("CTSW107")) {
-            if (mIdx == 3) labels = new String[]{"amhs_subject", "payload / file_path"};
-            else if (mIdx == 4) labels = new String[]{"subject", "amhs_subject", "payload / file_path"};
-            else labels = new String[]{"subject", "payload / file_path"};
+            if (mIdx == 3) labels = new String[]{"amhs_subject"};
+            else if (mIdx == 4) labels = new String[]{"subject", "amhs_subject"};
+            else labels = new String[]{"subject"};
         } else if (caseId.equals("CTSW108") || caseId.equals("CTSW109")) {
-            labels = new String[]{"amhs_originator", "payload / file_path"};
+            labels = new String[]{"amhs_originator"};
         }
 
         GridBagConstraints gbc = new GridBagConstraints();
@@ -497,7 +497,7 @@ public class TestCasePanel extends JPanel {
         int row = 7; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType, payload, placeholder)
         
         // Remove placeholder label
-        configFormPanel.remove(configFormPanel.getComponentCount() - 2);
+        configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         
         for (int i = 0; i < parts.length; i++) {
             String label = (i < labels.length) ? labels[i] : "extra_param_" + i;
