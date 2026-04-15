@@ -51,8 +51,8 @@ public class TestFrame extends JFrame {
         setupTheme();
         initComponents();
 
-        setSize(1280, 780);
-        setMinimumSize(new Dimension(900, 600));
+        setSize(1400, 850);
+        setMinimumSize(new Dimension(1000, 650));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -129,9 +129,9 @@ public class TestFrame extends JFrame {
         // Horizontal split: left (sidebar) | right (panel)
         // ──────────────────────────────────────────────
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftOuter, casePanel);
-        mainSplit.setDividerLocation(300);
+        mainSplit.setDividerLocation(250);
         mainSplit.setDividerSize(4);
-        mainSplit.setResizeWeight(0.25);
+        mainSplit.setResizeWeight(0.20);
         mainSplit.setBackground(bgLight);
 
         add(casePanel.getTopBar(), BorderLayout.NORTH);

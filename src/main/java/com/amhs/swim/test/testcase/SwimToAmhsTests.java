@@ -154,7 +154,11 @@ public class SwimToAmhsTests {
             switch (idx) {
                 case 1: {
                     SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-                    p.setRecipients(r); p.setAmqpPriority((short) 4);
+                    p.setRecipients(r);
+                    // Get priority from inputs or default to 4
+                    String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+                    short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(priority);
                     p.setContentType("text/plain; charset=utf-8");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
                     
@@ -167,13 +171,17 @@ public class SwimToAmhsTests {
                     
                     dual(inputs, payload, p);
                     Logger.logTransmission(testCaseId, 1, attempt, topic(inputs),
-                        "SENT", "text/plain | priority=4 | len=" + payload.length);
+                        "SENT", "text/plain | priority=" + priority + " | len=" + payload.length);
                     Logger.logPayloadDetail(testCaseId, 1, p.toMap(), new String(payload));
                     return true;
                 }
                 case 2: {
                     SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-                    p.setRecipients(r); p.setAmqpPriority((short) 4);
+                    p.setRecipients(r);
+                    // Get priority from inputs or default to 4
+                    String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+                    short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(priority);
                     p.setContentType("application/octet-stream");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
                     
@@ -197,7 +205,7 @@ public class SwimToAmhsTests {
                     
                     dual(inputs, payload, p);
                     Logger.logTransmission(testCaseId, 2, attempt, topic(inputs),
-                        "SENT", "application/octet-stream | priority=4 | len=" + payload.length);
+                        "SENT", "application/octet-stream | priority=" + priority + " | len=" + payload.length);
                     Logger.logPayloadDetail(testCaseId, 2, p.toMap(), "[binary] " + payload.length + " bytes from " + path);
                     return true;
                 }
@@ -267,6 +275,9 @@ public class SwimToAmhsTests {
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             String desc;
             
+            // Get priority from inputs or use default based on test case
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            
             // For indices 7-12, lead binary file bytes if available
             if (idx >= 7 && idx <= 12) {
                 String key = "binPayload_" + idx;
@@ -284,63 +295,87 @@ public class SwimToAmhsTests {
                 // ---- TEXT messages ----
                 case 1:
                     p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    p.setRecipients(r); p.setAmqpPriority((short) 10);
-                    desc = "TEXT priority=10 (INVALID)";
+                    p.setRecipients(r);
+                    short pri1 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 10;
+                    p.setAmqpPriority(pri1);
+                    desc = "TEXT priority=" + pri1 + " (INVALID)";
                     break;
                 case 2:
                     p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4); p.setMessageId("");
+                    p.setRecipients(r);
+                    short pri2 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri2); p.setMessageId("");
                     desc = "TEXT empty message-id";
                     break;
                 case 3:
                     p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4); p.setCreationTime(0L);
+                    p.setRecipients(r);
+                    short pri3 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri3); p.setCreationTime(0L);
                     desc = "TEXT creation-time=0";
                     break;
                 case 4:
                     p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4); payload = new byte[0];
+                    p.setRecipients(r);
+                    short pri4 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri4); payload = new byte[0];
                     desc = "TEXT empty amqp-value";
                     break;
                 case 5:
                     p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    p.setRecipients(""); p.setAmqpPriority((short) 4);
+                    p.setRecipients("");
+                    short pri5 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri5);
                     desc = "TEXT empty amhs_recipients";
                     break;
                 case 6:
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4);
+                    p.setRecipients(r);
+                    short pri6 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri6);
                     desc = "TEXT empty content-type";
                     break;
                 // ---- BINARY messages ----
                 case 7:
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients(r); p.setAmqpPriority((short) 10);
-                    desc = "BINARY priority=10 (INVALID)";
+                    p.setRecipients(r);
+                    short pri7 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 10;
+                    p.setAmqpPriority(pri7);
+                    desc = "BINARY priority=" + pri7 + " (INVALID)";
                     break;
                 case 8:
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4); p.setMessageId("");
+                    p.setRecipients(r);
+                    short pri8 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri8); p.setMessageId("");
                     desc = "BINARY empty message-id";
                     break;
                 case 9:
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4); p.setCreationTime(0L);
+                    p.setRecipients(r);
+                    short pri9 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri9); p.setCreationTime(0L);
                     desc = "BINARY creation-time=0";
                     break;
                 case 10:
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4); payload = new byte[0];
+                    p.setRecipients(r);
+                    short pri10 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri10); payload = new byte[0];
                     desc = "BINARY empty data element";
                     break;
                 case 11:
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients("LONGADDRESSXXXXX"); p.setAmqpPriority((short) 4);
+                    p.setRecipients("LONGADDRESSXXXXX");
+                    short pri11 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri11);
                     desc = "BINARY amhs_recipients >8 chars";
                     break;
                 case 12:
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients(r); p.setAmqpPriority((short) 4);
+                    p.setRecipients(r);
+                    short pri12 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                    p.setAmqpPriority(pri12);
                     desc = "BINARY empty content-type";
                     break;
                 default: return false;
