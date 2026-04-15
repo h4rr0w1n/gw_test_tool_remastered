@@ -46,9 +46,9 @@ public class TestCasePanel extends JPanel {
     private Map<String, JTextField> configFields = new HashMap<>();
     private JTextField priorityField;
     private JComboBox<String> contentTypeCombo;
-    private JComboBox<String> brokerProfileCombo;
+    private JComboBox<String> brokerProfileField;
     private JTextField amhsRecipientsField;
-    private JComboBox<String> bodyTypeCombo;
+    private JTextField bodyTypeField;
     private JTextArea descriptionArea;
     private JButton btnSend;
     private JButton btnRunCase;
@@ -227,22 +227,29 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(btnUploadContentType, gbc);
         row++;
         
-        // AMQP Broker Profile Row
+        // AMQP Broker Profile Row - Dropdown with predefined profiles
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
         configFormPanel.add(new JLabel("AMQP BROKER PROFILE:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0;
-        brokerProfileCombo = new JComboBox<>(new String[]{
-            "default",
-            "solace",
-            "qpid",
-            "custom"
+        String[] brokerProfiles = {"STANDARD", "AZURE_SERVICE_BUS", "IBM_MQ", "RABBITMQ", "SOLACE"};
+        brokerProfileField = new JComboBox<>(brokerProfiles);
+        brokerProfileField.setEditable(false);
+        // Pre-fill from TestConfig
+        try {
+            String defaultProfile = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("amqp.broker.profile", "STANDARD");
+            brokerProfileField.setSelectedItem(defaultProfile);
+        } catch (Exception ex) {
+            brokerProfileField.setSelectedIndex(0);
+        }
+        // Auto-save on selection change
+        brokerProfileField.addActionListener(e -> {
+            try {
+                com.amhs.swim.test.config.TestConfig.getInstance().setProperty("amqp.broker.profile", (String) brokerProfileField.getSelectedItem());
+            } catch (Exception ex) {
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", "ERROR", "Failed to save broker profile: " + ex.getMessage());
+            }
         });
-        brokerProfileCombo.setEditable(true);
-        configFormPanel.add(brokerProfileCombo, gbc);
-        gbc.gridx = 2; gbc.weightx = 0;
-        JButton btnUploadBroker = new JButton("Upload");
-        btnUploadBroker.addActionListener(e -> doUploadField("AMQP BROKER PROFILE"));
-        configFormPanel.add(btnUploadBroker, gbc);
+        configFormPanel.add(brokerProfileField, gbc);
         row++;
         
         // AMHS Recipients Row
@@ -262,31 +269,15 @@ public class TestCasePanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
         configFormPanel.add(new JLabel("AMQP BODY TYPE:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0;
-        bodyTypeCombo = new JComboBox<>(new String[]{
-            "AMQP_VALUE",
-            "DATA",
-            "SEQUENCE"
-        });
-        bodyTypeCombo.setEditable(true);
-        configFormPanel.add(bodyTypeCombo, gbc);
+        bodyTypeField = new JTextField(10);
+        bodyTypeField.setText("AMQP_VALUE");
+        configFormPanel.add(bodyTypeField, gbc);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadBodyType = new JButton("Upload");
         btnUploadBodyType.addActionListener(e -> doUploadField("AMQP BODY TYPE"));
         configFormPanel.add(btnUploadBodyType, gbc);
         row++;
         
-        // Payload Row - renamed from PAYLOAD/FILE_PATH to just PAYLOAD
-        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
-        configFormPanel.add(new JLabel("PAYLOAD:"), gbc);
-        gbc.gridx = 1; gbc.weightx = 1.0;
-        JTextField payloadField = new JTextField("");
-        configFormPanel.add(payloadField, gbc);
-        configFields.put("payload", payloadField);
-        gbc.gridx = 2; gbc.weightx = 0;
-        JButton btnUploadPayload = new JButton("Upload");
-        btnUploadPayload.addActionListener(e -> doUploadField("PAYLOAD"));
-        configFormPanel.add(btnUploadPayload, gbc);
-        row++;
         
         JScrollPane configScroll = new JScrollPane(configFormPanel);
         configScroll.setBorder(new MatteBorder(1, 1, 1, 1, clrSeparator));
@@ -427,8 +418,9 @@ public class TestCasePanel extends JPanel {
     private void clearConfigForm() {
         configFields.clear();
         // Remove all components except the standard AMQP rows
-        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3), payload (3) = 18
-        while (configFormPanel.getComponentCount() > 18) {
+        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3) = 15
+        // (payload field removed from standard rows)
+        while (configFormPanel.getComponentCount() > 15) {
             configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         }
     }
@@ -462,13 +454,15 @@ public class TestCasePanel extends JPanel {
         contentTypeCombo.setSelectedItem(ctype);
         
         // Set body type based on content
-        bodyTypeCombo.setSelectedItem(btype);
+        bodyTypeField.setText(btype);
         
-        // Set AMHS recipients from default data if present
-        String ddata = msg.getDefaultData();
-        String[] parts = ddata.split("\\|");
+        // Determine case/message identifiers and consult CaseConfigManager for standardized defaults
         String caseId = currentCase.getTestCaseId();
         int mIdx = msg.getIndex();
+        CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
+        String ddata = cfgMgr.getPayload(caseId, mIdx);
+        if (ddata == null || ddata.isEmpty()) ddata = msg.getDefaultData();
+        String[] parts = (ddata == null) ? new String[0] : ddata.split("\\|");
         
         // Extract amhs_recipients from default data if available
         for (String part : parts) {
@@ -483,47 +477,56 @@ public class TestCasePanel extends JPanel {
         clearConfigForm();
         
         // Add additional custom fields based on case/message beyond the standard ones
-        // Always start with "payload" for parts[0], followed by case-specific fields
-        String[] labels = {"payload"};
+        // Do not add a dedicated "payload" UI field; use message default payload when sending
+        String[] labels = new String[]{};
         if (caseId.equals("CTSW106")) {
-            labels = new String[]{"payload", "amhs_ats_ohi"};
+            labels = new String[]{"amhs_ats_ohi"};
         } else if (caseId.equals("CTSW107")) {
-            if (mIdx == 3) labels = new String[]{"payload", "amhs_subject"};
-            else if (mIdx == 4) labels = new String[]{"payload", "subject", "amhs_subject"};
-            else labels = new String[]{"payload", "subject"};
+            if (mIdx == 3) labels = new String[]{"amhs_subject"};
+            else if (mIdx == 4) labels = new String[]{"subject", "amhs_subject"};
+            else labels = new String[]{"subject"};
         } else if (caseId.equals("CTSW108") || caseId.equals("CTSW109")) {
-            labels = new String[]{"payload", "amhs_originator"};
+            labels = new String[]{"amhs_originator"};
         }
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
-        gbc.gridx = 0;
-        int row = 7; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType, payload)
-        
+        int row = 6; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType)
+
         for (int i = 0; i < parts.length; i++) {
-            String label = (i < labels.length) ? labels[i] : "extra_param_" + i;
+            String label;
+            if (i < labels.length) {
+                label = labels[i];
+            } else if (i == 0) {
+                // replace generic first extra param with a proper payload field
+                label = "payload";
+            } else {
+                label = "extra_param_" + i;
+            }
             String value = parts[i].trim();
-            
+
             gbc.gridy = row;
+            // ensure we always place the label at column 0 to avoid overlap
+            gbc.gridx = 0;
             gbc.weightx = 0;
             configFormPanel.add(new JLabel(label.toUpperCase() + ":"), gbc);
-            
+
             gbc.gridx = 1;
             gbc.weightx = 1.0;
             JTextField tf = new JTextField(value);
             tf.setEditable(true);
             configFormPanel.add(tf, gbc);
             configFields.put(label, tf);
-            
+
             gbc.gridx = 2;
             gbc.weightx = 0;
             JButton btnUpload = new JButton("Upload");
             final String fieldLabel = label;
             btnUpload.addActionListener(e -> doUploadField(fieldLabel));
             configFormPanel.add(btnUpload, gbc);
-            
+
             row++;
         }
         
@@ -561,10 +564,38 @@ public class TestCasePanel extends JPanel {
             File selectedFile = fc.getSelectedFile();
             try {
                 String content = Files.readString(selectedFile.toPath());
-                JTextField tf = configFields.get(fieldName);
-                if (tf != null) {
-                    tf.setText(content);
+                // Map known standard fields (labels) to their components
+                String lookup = fieldName == null ? "" : fieldName.trim().toUpperCase();
+                JTextField tf = null;
+                
+                if (lookup.startsWith("AMQP PRIORITY")) {
+                    tf = priorityField;
+                } else if (lookup.startsWith("CONTENT TYPE")) {
+                    // content-type is a combo box
+                    contentTypeCombo.setSelectedItem(content.trim());
+                } else if (lookup.startsWith("AMQP BROKER")) {
+                    // Broker Profile is now a dropdown - can't be set from file
+                    JOptionPane.showMessageDialog(this, 
+                        "AMQP Broker Profile is now a dropdown selector.\nPlease select from the available options.",
+                        "Info", JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                } else if (lookup.startsWith("AMHS RECIPIENTS")) {
+                    // Parse addresses: support both file paths and comma-separated lists
+                    String addresses = parseAddressesList(content);
+                    tf = amhsRecipientsField;
+                    if (tf != null) tf.setText(addresses);
+                    Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
+                        "INFO", "Loaded " + fieldName + " from file: " + selectedFile.getName());
+                    Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
+                        "INFO", "Parsed addresses: " + addresses);
+                    return;
+                } else if (lookup.startsWith("AMQP BODY TYPE")) {
+                    tf = bodyTypeField;
+                } else {
+                    // fallback to dynamic fields map (keys use canonical names)
+                    tf = configFields.get(fieldName);
                 }
+                if (tf != null) tf.setText(content);
                 Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
                     "INFO", "Loaded " + fieldName + " from file: " + selectedFile.getName());
             } catch (IOException e) {
@@ -573,6 +604,44 @@ public class TestCasePanel extends JPanel {
                     "ERROR", "Failed to load " + fieldName + ": " + e.getMessage());
             }
         }
+    }
+
+    /**
+     * Parse addresses from file content or comma-separated list.
+     * Supports both formats: one address per line OR comma-separated on single line.
+     * Returns comma-separated list of validated addresses.
+     */
+    private String parseAddressesList(String content) {
+        if (content == null || content.trim().isEmpty()) {
+            return "";
+        }
+        
+        java.util.Set<String> addresses = new java.util.LinkedHashSet<>();
+        
+        // Try to detect format: if contains comma, assume comma-separated
+        // Otherwise, assume one address per line
+        if (content.contains(",")) {
+            // Comma-separated format
+            String[] parts = content.split(",");
+            for (String addr : parts) {
+                String trimmed = addr.trim();
+                if (!trimmed.isEmpty()) {
+                    addresses.add(trimmed);
+                }
+            }
+        } else {
+            // Line-separated format
+            String[] lines = content.split("\\n|\\r");
+            for (String line : lines) {
+                String trimmed = line.trim();
+                if (!trimmed.isEmpty()) {
+                    addresses.add(trimmed);
+                }
+            }
+        }
+        
+        // Return as comma-separated list
+        return String.join(", ", addresses);
     }
 
     private void saveCaseState() {
@@ -619,27 +688,44 @@ public class TestCasePanel extends JPanel {
         // Get values from standard AMQP form fields
         String priority = priorityField.getText().trim();
         String contentType = (String) contentTypeCombo.getSelectedItem();
-        String brokerProfile = (String) brokerProfileCombo.getSelectedItem();
+        String brokerProfile = (String) brokerProfileField.getSelectedItem();
         String amhsRecipients = amhsRecipientsField.getText();
-        String bodyType = (String) bodyTypeCombo.getSelectedItem();
+        String bodyType = bodyTypeField.getText();
         
         // Add standard AMQP properties to inputs
         inputs.put("amqp_priority", priority);
         inputs.put("content_type", contentType);
         inputs.put("broker_profile", brokerProfile);
-        inputs.put("amhs_recipients", amhsRecipients);
+        inputs.put("recipient", amhsRecipients);  // Match SwimToAmhsTests.recip(in) key
         inputs.put("body_type", bodyType);
         
-        // Build payload from dynamic/custom fields
+        // Build payload: start with the message default payload (if any), then append dynamic/custom fields
         StringBuilder payloadBuilder = new StringBuilder();
-        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
-            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
-            payloadBuilder.append(entry.getValue().getText());
+        CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
+        String configuredDefault = cfgMgr.getPayload(currentCase.getTestCaseId(), msgIndex);
+        String defaultData = (configuredDefault != null && !configuredDefault.isEmpty()) ? configuredDefault : currentMsg.getDefaultData();
+        if (defaultData != null && !defaultData.isEmpty()) {
+            String[] dparts = defaultData.split("\\|");
+            if (dparts.length > 0) payloadBuilder.append(dparts[0].trim());
         }
+
+        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+            String txt = entry.getValue().getText();
+            if (txt == null || txt.isEmpty()) continue;
+            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
+            payloadBuilder.append(txt);
+        }
+
         String finalPayload = payloadBuilder.toString();
-        
         inputs.put("p" + msgIndex, finalPayload);
         inputs.put(currentMsg.getCustomKey(), finalPayload);
+
+        // Log the prepared message and properties so logs match the config screen
+        String logMsg = "Prepared message " + msgIndex + " properties: amqp_priority=" + priority
+            + ", content_type=" + contentType + ", broker_profile=" + brokerProfile
+            + ", amhs_recipients=" + amhsRecipients + ", body_type=" + bodyType
+            + " | PAYLOAD: " + finalPayload;
+        Logger.logCase(currentCase.getTestCaseId(), "INFO", logMsg);
 
         new Thread(() -> {
             try {
@@ -804,16 +890,49 @@ public class TestCasePanel extends JPanel {
             return;
         }
         
-        // Build full payload display from form fields
+        // Build full payload display from form fields and defaults
+        String priority = priorityField.getText().trim();
+        String contentType = (String) contentTypeCombo.getSelectedItem();
+        String brokerProfile = ((String) brokerProfileField.getSelectedItem()).trim();
+        String amhsRecipients = amhsRecipientsField.getText().trim();
+        String bodyType = bodyTypeField.getText().trim();
+
+        CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
+        String configuredDefault = cfgMgr.getPayload(currentCase.getTestCaseId(), currentMsg.getIndex());
+        String defaultData = (configuredDefault != null && !configuredDefault.isEmpty()) ? configuredDefault : currentMsg.getDefaultData();
+
         StringBuilder sb = new StringBuilder();
         sb.append("=== FULL PAYLOAD VIEW ===\n\n");
-        sb.append("AMQP PRIORITY: ").append(priorityField.getText()).append("\n");
-        sb.append("CONTENT TYPE: ").append(contentTypeCombo.getSelectedItem()).append("\n");
-        sb.append("\n--- FIELD VALUES ---\n");
-        
+        sb.append("CASE: ").append(currentCase.getTestCaseId()).append("    MSG_INDEX: ").append(currentMsg.getIndex()).append("\n\n");
+        sb.append("AMQP PROPERTIES:\n");
+        sb.append("  AMQP PRIORITY: ").append(priority).append("\n");
+        sb.append("  CONTENT TYPE: ").append(contentType).append("\n");
+        sb.append("  AMQP BROKER PROFILE: ").append(brokerProfile).append("\n");
+        sb.append("  AMHS RECIPIENTS: ").append(amhsRecipients).append("\n");
+        sb.append("  AMQP BODY TYPE: ").append(bodyType).append("\n\n");
+
+        sb.append("DEFAULT DATA (raw):\n");
+        sb.append(defaultData == null ? "(none)" : defaultData).append("\n\n");
+
+        sb.append("--- FIELD VALUES ---\n");
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
-            sb.append(entry.getKey().toUpperCase()).append(": ").append(entry.getValue().getText()).append("\n");
+            sb.append("  ").append(entry.getKey().toUpperCase()).append(": ").append(entry.getValue().getText()).append("\n");
         }
+
+        // Show assembled payload that will be sent
+        StringBuilder payloadBuilder = new StringBuilder();
+        if (defaultData != null && !defaultData.isEmpty()) {
+            String[] dparts = defaultData.split("\\|");
+            if (dparts.length > 0) payloadBuilder.append(dparts[0].trim());
+        }
+        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+            String txt = entry.getValue().getText();
+            if (txt == null || txt.isEmpty()) continue;
+            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
+            payloadBuilder.append(txt);
+        }
+        sb.append("\n--- COMPOSED PAYLOAD ---\n");
+        sb.append(payloadBuilder.toString()).append("\n");
         
         JTextArea textArea = new JTextArea(sb.toString());
         textArea.setEditable(false);

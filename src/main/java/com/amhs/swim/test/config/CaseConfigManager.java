@@ -3,12 +3,19 @@ package com.amhs.swim.test.config;
 import org.json.JSONObject;
 import com.amhs.swim.test.util.Logger;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Manages per-case payload configurations.
@@ -17,7 +24,9 @@ import java.util.Map;
  */
 public class CaseConfigManager {
     
-    private static final String CONFIG_FILE = "config/case_payloads.json";
+    private static final String CONFIG_FILE = "config/case_payloads.json"; // user customizations
+    private static final String DEFAULTS_FILE_XML = "config/default_case_payloads.xml"; // standardized defaults
+    private static final String DEFAULTS_FILE_TXT = "config/default_case_payloads.txt"; // fallback plaintext defaults
     private static CaseConfigManager instance;
     private JSONObject caseConfigs;
     private Map<String, Map<Integer, String>> defaultPayloads;
@@ -26,6 +35,7 @@ public class CaseConfigManager {
         caseConfigs = new JSONObject();
         defaultPayloads = new HashMap<>();
         loadConfig();
+        loadStandardDefaults();
     }
     
     public static synchronized CaseConfigManager getInstance() {
@@ -52,6 +62,73 @@ public class CaseConfigManager {
         } else {
             Logger.logCase("CONFIG", "INFO", "No case payload config found, using defaults");
             caseConfigs = new JSONObject();
+        }
+    }
+
+    /**
+     * Load standardized default payloads from a text or XML file.
+     * Supported formats:
+     *  - config/default_case_payloads.xml (preferred)
+     *    <defaults>
+     *      <case id="CTSW106">
+     *        <msg idx="1"><![CDATA[Payload text...]]></msg>
+     *      </case>
+     *    </defaults>
+     *  - config/default_case_payloads.txt (fallback) with lines:
+     *    CTSW106|1|Payload text (payload may contain '|' characters)
+     */
+    private void loadStandardDefaults() {
+        try {
+            Path xmlPath = Paths.get(DEFAULTS_FILE_XML);
+            Path txtPath = Paths.get(DEFAULTS_FILE_TXT);
+            if (Files.exists(xmlPath)) {
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                DocumentBuilder db = dbf.newDocumentBuilder();
+                Document doc = db.parse(xmlPath.toFile());
+                doc.getDocumentElement().normalize();
+                NodeList caseNodes = doc.getElementsByTagName("case");
+                for (int i = 0; i < caseNodes.getLength(); i++) {
+                    Element caseElem = (Element) caseNodes.item(i);
+                    String caseId = caseElem.getAttribute("id");
+                    NodeList msgNodes = caseElem.getElementsByTagName("msg");
+                    for (int j = 0; j < msgNodes.getLength(); j++) {
+                        Element msgElem = (Element) msgNodes.item(j);
+                        String idxStr = msgElem.getAttribute("idx");
+                        try {
+                            int idx = Integer.parseInt(idxStr);
+                            String payload = msgElem.getTextContent();
+                            defaultPayloads.computeIfAbsent(caseId, k -> new HashMap<>()).put(idx, payload);
+                        } catch (NumberFormatException nfe) {
+                            // skip invalid index
+                        }
+                    }
+                }
+                Logger.logCase("CONFIG", "INFO", "Loaded standard defaults from: " + DEFAULTS_FILE_XML);
+            } else if (Files.exists(txtPath)) {
+                try (Stream<String> lines = Files.lines(txtPath)) {
+                    lines.forEach(line -> {
+                        String l = line.trim();
+                        if (l.isEmpty() || l.startsWith("#")) return;
+                        int p1 = l.indexOf('|');
+                        if (p1 < 0) return;
+                        int p2 = l.indexOf('|', p1 + 1);
+                        if (p2 < 0) return;
+                        String caseId = l.substring(0, p1).trim();
+                        try {
+                            int idx = Integer.parseInt(l.substring(p1 + 1, p2).trim());
+                            String payload = l.substring(p2 + 1);
+                            defaultPayloads.computeIfAbsent(caseId, k -> new HashMap<>()).put(idx, payload);
+                        } catch (NumberFormatException nfe) {
+                            // skip
+                        }
+                    });
+                }
+                Logger.logCase("CONFIG", "INFO", "Loaded standard defaults from: " + DEFAULTS_FILE_TXT);
+            } else {
+                Logger.logCase("CONFIG", "INFO", "No standard default payload file found");
+            }
+        } catch (Exception e) {
+            Logger.logCase("CONFIG", "WARN", "Failed to load standard defaults: " + e.getMessage());
         }
     }
     

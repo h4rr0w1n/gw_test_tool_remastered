@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ICAO EUR Doc 047 Appendix A — AMHS/SWIM Gateway Testing Plan v3.0
+  Default Message Payloads for Test Cases CTSW101–CTSW116
+  
+  Compliant with ICAO standard requirements.
+  Each message payload is extracted from the testbook scenario descriptions.
+  
+  IMPORTANT: These defaults are CANONICAL and MUST NOT be duplicated or hardcoded
+  elsewhere in the codebase. All test cases must load payloads via CaseConfigManager.
+-->
+<defaults>
+
+  <!-- CTSW101: Convert AMQP unaware message to AMHS (Text & Binary) -->
+  <!-- Basic text/binary payload validation per EUR Doc 047 §4.5.2.2, §4.5.3.2 -->
+  <case id="CTSW101">
+    <!-- Msg 1: Text message with AMQP priority default (4) → DD/Normal in AMHS -->
+    <msg idx="1"><![CDATA[Test message priority-4 content text]]></msg>
+    <!-- Msg 2: Binary message (PDF file path) - loaded from resources -->
+    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+  </case>
+
+  <!-- CTSW102: Reject AMQP messages missing required information (Erroneous AMQP messages E1) -->
+  <!-- Validation of mandatory field checking per EUR Doc 047 §4.5.1.1–§4.5.1.5 -->
+  <case id="CTSW102">
+    <!-- Text Messages (1–6): Various rejection scenarios -->
+    <msg idx="1"><![CDATA[CTSW102 Erroneous Message 1]]></msg>
+    <msg idx="2"><![CDATA[CTSW102 Erroneous Message 2]]></msg>
+    <msg idx="3"><![CDATA[CTSW102 Erroneous Message 3]]></msg>
+    <msg idx="4"><![CDATA[]]></msg> <!-- Empty payload for Msg 4 -->
+    <msg idx="5"><![CDATA[CTSW102 Erroneous Message 5]]></msg>
+    <msg idx="6"><![CDATA[CTSW102 Erroneous Message 6]]></msg>
+    <!-- Binary Messages (7–12): File-based payloads -->
+    <msg idx="7"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="8"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="9"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="10"><![CDATA[]]></msg> <!-- Empty binary payload for Msg 10 -->
+    <msg idx="11"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="12"><![CDATA[src/main/resources/sample.pdf]]></msg>
+  </case>
+
+  <!-- CTSW103: ATSMHS Service Level conversion (Basic/Extended/Content-based/Recipient-based) -->
+  <!-- Service level mapping per EUR Doc 047 §3.3.3, §4.5.3.7–§4.5.3.9, Table 9 -->
+  <case id="CTSW103">
+    <!-- Msg 1: Basic/Text -->
+    <msg idx="1"><![CDATA[Service Level Basic Text Message]]></msg>
+    <!-- Msg 2: Basic/Binary (expected to be rejected) -->
+    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- Msg 3: Extended/Text -->
+    <msg idx="3"><![CDATA[Service Level Extended Text Message]]></msg>
+    <!-- Msg 4: Content-based/Binary → Extended mapping -->
+    <msg idx="4"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- Msg 5: Content-based/Text → Basic mapping -->
+    <msg idx="5"><![CDATA[Service Level Content-Based Text]]></msg>
+    <!-- Msg 6: Recipient-based/All extended capable → Extended -->
+    <msg idx="6"><![CDATA[Service Level Recipient-Based All Extended]]></msg>
+    <!-- Msg 7: Recipient-based/Mixed recipients → Basic fallback -->
+    <msg idx="7"><![CDATA[Service Level Recipient-Based Mixed]]></msg>
+  </case>
+
+  <!-- CTSW104: AMQP to AMHS Priority Mapping -->
+  <!-- Priority levels 0–9 mapping per EUR Doc 047 §4.5.2.2, Table 9 -->
+  <case id="CTSW104">
+    <!-- Msgs 1–10: AMQP priorities 0–9 -->
+    <msg idx="1"><![CDATA[Priority 0 Message]]></msg>
+    <msg idx="2"><![CDATA[Priority 1 Message]]></msg>
+    <msg idx="3"><![CDATA[Priority 2 Message]]></msg>
+    <msg idx="4"><![CDATA[Priority 3 Message]]></msg>
+    <msg idx="5"><![CDATA[Priority 4 Message]]></msg>
+    <msg idx="6"><![CDATA[Priority 5 Message]]></msg>
+    <msg idx="7"><![CDATA[Priority 6 Message]]></msg>
+    <msg idx="8"><![CDATA[Priority 7 Message]]></msg>
+    <msg idx="9"><![CDATA[Priority 8 Message]]></msg>
+    <msg idx="10"><![CDATA[Priority 9 Message]]></msg>
+    <!-- Msgs 11–15: Priority=4 + amhs_ats_pri override (SS,DD,FF,GG,KK) -->
+    <msg idx="11"><![CDATA[Priority 4 + ATS_SS Message]]></msg>
+    <msg idx="12"><![CDATA[Priority 4 + ATS_DD Message]]></msg>
+    <msg idx="13"><![CDATA[Priority 4 + ATS_FF Message]]></msg>
+    <msg idx="14"><![CDATA[Priority 4 + ATS_GG Message]]></msg>
+    <msg idx="15"><![CDATA[Priority 4 + ATS_KK Message]]></msg>
+    <!-- Msgs 16–19: Priority=1 + amhs_ats_pri override (SS,DD,FF,GG) -->
+    <msg idx="16"><![CDATA[Priority 1 + ATS_SS Message]]></msg>
+    <msg idx="17"><![CDATA[Priority 1 + ATS_DD Message]]></msg>
+    <msg idx="18"><![CDATA[Priority 1 + ATS_FF Message]]></msg>
+    <msg idx="19"><![CDATA[Priority 1 + ATS_GG Message]]></msg>
+    <!-- Msg 20: Priority=9 + amhs_ats_pri=KK (must take precedence) -->
+    <msg idx="20"><![CDATA[Priority 9 + ATS_KK Message]]></msg>
+  </case>
+
+  <!-- CTSW105: AMHS-aware AMQP messages containing filing time -->
+  <!-- Filing time mapping per EUR Doc 047 §4.5.2.10, §4.5.2.10.1.b -->
+  <case id="CTSW105">
+    <!-- Msg 1: Empty amhs_ats_ft → use creation-time in DDhhmm format -->
+    <msg idx="1"><![CDATA[Filing Time Default from Creation-Time]]></msg>
+    <!-- Msg 2: Explicit amhs_ats_ft='250102' -->
+    <msg idx="2"><![CDATA[Filing Time Explicit 250102]]></msg>
+  </case>
+
+  <!-- CTSW106: Optional Heading Information (OHI) with length trimming -->
+  <!-- OHI length limits per EUR Doc 047 §4.5.2.11 -->
+  <!-- Priority 4 (High): 53 chars; Priority 6 (Low): 48 chars -->
+  <case id="CTSW106">
+    <!-- Msg 1: priority=4, OHI < 53 chars -->
+    <msg idx="1"><![CDATA[OHI-SHORT | OHI Content]]></msg>
+    <!-- Msg 2: priority=4, OHI = 53 chars exactly -->
+    <msg idx="2"><![CDATA[AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA | OHI Content]]></msg>
+    <!-- Msg 3: priority=4, OHI > 53 chars (will be trimmed) -->
+    <msg idx="3"><![CDATA[AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA | OHI Content]]></msg>
+    <!-- Msg 4: priority=6, OHI < 48 chars -->
+    <msg idx="4"><![CDATA[OHI-HI-SHORT | OHI Content]]></msg>
+    <!-- Msg 5: priority=6, OHI = 48 chars exactly -->
+    <msg idx="5"><![CDATA[BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB | OHI Content]]></msg>
+    <!-- Msg 6: priority=6, OHI > 48 chars (will be trimmed) -->
+    <msg idx="6"><![CDATA[BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB | OHI Content]]></msg>
+  </case>
+
+  <!-- CTSW107: Subject field mapping with length enforcement -->
+  <!-- Subject trimming to 128 chars per EUR Doc 047 §4.5.2.3 -->
+  <case id="CTSW107">
+    <!-- Msg 1: AMQP subject > 128 chars (will be trimmed to 128) -->
+    <msg idx="1"><![CDATA[SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS | Msg1 Payload]]></msg>
+    <!-- Msg 2: AMQP subject (normal, < 128) -->
+    <msg idx="2"><![CDATA[Normal Subject | Msg2 Payload]]></msg>
+    <!-- Msg 3: empty AMQP subject + amhs_subject app prop -->
+    <msg idx="3"><![CDATA[AMHS App Prop Subject | Msg3 Payload]]></msg>
+    <!-- Msg 4: both AMQP subject and amhs_subject (amhs_subject wins) -->
+    <msg idx="4"><![CDATA[AMQP Subject | AMHS App Prop Subject | Msg4 Payload]]></msg>
+  </case>
+
+  <!-- CTSW108: Known originator address conversion -->
+  <!-- Originator mapping per EUR Doc 047 §4.5.2.12a, §4.5.3.2, §4.5.3.5–§4.5.3.6 -->
+  <case id="CTSW108">
+    <!-- Msg 1: 8-letter known originator (converted to MF-address) -->
+    <msg idx="1"><![CDATA[VVTSYMYX | Known Originator Payload]]></msg>
+  </case>
+
+  <!-- CTSW109: Unknown originator indicator (fallback to default) -->
+  <!-- Default originator fallback per EUR Doc 047 §4.5.2.12 -->
+  <case id="CTSW109">
+    <!-- Msg 1: Unknown originator (gateway uses configured default) -->
+    <msg idx="1"><![CDATA[UNKNOWN1 | Unknown Originator Payload]]></msg>
+  </case>
+
+  <!-- CTSW110: Content-type validation and rejection -->
+  <!-- Content-type mapping per EUR Doc 047 §4.5.1.6 -->
+  <case id="CTSW110">
+    <!-- Msg 1: octet-stream + empty data + empty amqp-value → REJECT -->
+    <msg idx="1"><![CDATA[N/A]]></msg>
+    <!-- Msg 2: text/utf-8 + data present + amqp-value empty → REJECT -->
+    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- Msg 3: octet-stream + data present + amqp-value empty → ACCEPT -->
+    <msg idx="3"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- Msg 4: text/utf-8 + amqp-value present + data empty → ACCEPT -->
+    <msg idx="4"><![CDATA[Content-Type Text Payload]]></msg>
+    <!-- Msg 5 (opt): text/utf-16 → REJECT -->
+    <msg idx="5"><![CDATA[UTF-16 Payload]]></msg>
+    <!-- Msg 6 (opt): text/utf-8 + both amqp-value and data present → REJECT -->
+    <msg idx="6"><![CDATA[Both Payload Fields]]></msg>
+  </case>
+
+  <!-- CTSW111: Maximum message size enforcement -->
+  <!-- Size limit per EUR Doc 047 §4.5.1.7 -->
+  <case id="CTSW111">
+    <!-- Msg 1: text within size limit -->
+    <msg idx="1"><![CDATA[1 KB Text Payload]]></msg>
+    <!-- Msg 2: binary file within size limit -->
+    <msg idx="2"><![CDATA[src/main/resources/small_payload.bin]]></msg>
+    <!-- Msg 3: text exceeding size limit (generated in code) -->
+    <msg idx="3"><![CDATA[OVER max]]></msg>
+    <!-- Msg 4: binary file exceeding size limit -->
+    <msg idx="4"><![CDATA[src/main/resources/large_payload.bin]]></msg>
+  </case>
+
+  <!-- CTSW112: Maximum recipient count enforcement -->
+  <!-- Recipient limit per EUR Doc 047 §4.5.1.8 -->
+  <!-- CRITICAL: Messages use external address files (not inline payloads) -->
+  <case id="CTSW112">
+    <!-- Msg 1: Load 512 addresses from file → ACCEPT -->
+    <msg idx="1"><![CDATA[src/main/resources/address_512.txt]]></msg>
+    <!-- Msg 2: Load 513 addresses from file → REJECT -->
+    <msg idx="2"><![CDATA[src/main/resources/address_513.txt]]></msg>
+  </case>
+
+  <!-- CTSW113: Receipt and Non-Receipt Notifications (RN/NRN) -->
+  <!-- Notification request handling per EUR Doc 047 §4.5.3.4, §4.4.7.3 -->
+  <case id="CTSW113">
+    <!-- Msg 1: NRN expected (delete message in AMHS Tool to trigger) -->
+    <msg idx="1"><![CDATA[Notification Request NRN Expected]]></msg>
+    <!-- Msg 2: RN expected (accept message in AMHS Tool to trigger) -->
+    <msg idx="2"><![CDATA[Notification Request RN Expected]]></msg>
+  </case>
+
+  <!-- CTSW114: Non-Delivery Report (NDR) handling -->
+  <!-- NDR processing per EUR Doc 047 §4.4.1.3 -->
+  <case id="CTSW114">
+    <!-- Msg 1: Trigger NDR by deleting message in AMHS Tool -->
+    <msg idx="1"><![CDATA[Trigger Non-Delivery Report]]></msg>
+  </case>
+
+  <!-- CTSW115: Body-part type and content encoding mapping -->
+  <!-- Body-part mapping per EUR Doc 047 §4.5.2.4–§4.5.2.5, §4.5.2.14a, Table 10 -->
+  <case id="CTSW115">
+    <!-- Msg 1: IA5 text body part -->
+    <msg idx="1"><![CDATA[Lorem ipsum]]></msg>
+    <!-- Msg 2: IA5 text body part (specific variant) -->
+    <msg idx="2"><![CDATA[Lorem ipsum i5bpt]]></msg>
+    <!-- Msg 3: General text body part (ISO-646) -->
+    <msg idx="3"><![CDATA[Lorem ipsum 646]]></msg>
+    <!-- Msg 4: General text body part (ISO-8859-1) -->
+    <msg idx="4"><![CDATA[Lorem ipsum 8859]]></msg>
+  </case>
+
+  <!-- CTSW116: File Transfer Body Part (FTBP) with GZIP compression -->
+  <!-- FTBP mapping per EUR Doc 047 §4.5.2.6–§4.5.2.8, §4.5.2.13–§4.5.2.14b -->
+  <case id="CTSW116">
+    <!-- Msg 1: Binary file with FTBP attributes (no compression) -->
+    <msg idx="1"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- Msg 2: Same binary file with GZIP compression (IUT must decompress) -->
+    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+  </case>
+
+</defaults>

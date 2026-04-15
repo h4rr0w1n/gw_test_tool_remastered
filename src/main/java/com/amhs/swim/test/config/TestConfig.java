@@ -62,12 +62,13 @@ public class TestConfig {
         props.setProperty("swim.broker.user", "default");
         props.setProperty("swim.broker.password", "default");
         props.setProperty("swim.broker.vpn", "default");
+        props.setProperty("amqp.broker.profile", "STANDARD");
         props.setProperty("swim.container.id", "amhs-swim-gateway-test");
         props.setProperty("directory.host", "ldap://localhost:389");
         props.setProperty("gateway.max_recipients", "512");
         props.setProperty("gateway.max_size", "1000000");
         props.setProperty("gateway.default_topic", "TEST.TOPIC");
-        props.setProperty("gateway.test_recipient", "VVTSYMYX");
+        // Note: gateway.test_recipient is now user-configurable via GUI - no default set
         
         // AMQP 1.0 Security (Placeholder for later TLS/SASL configuration)
         props.setProperty("swim.amqp.sasl.mechanism", "PLAIN");
