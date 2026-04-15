@@ -353,7 +353,7 @@ public class TestCasePanel extends JPanel {
         descPanel.add(descScroll, BorderLayout.CENTER);
 
         JSplitPane midSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, configPanel, descPanel);
-        midSplit.setResizeWeight(0.6);
+        midSplit.setResizeWeight(0.55);
         midSplit.setBorder(null);
         midPanel.add(midSplit, BorderLayout.CENTER);
 
@@ -375,7 +375,7 @@ public class TestCasePanel extends JPanel {
         logPanel.add(logScroll, BorderLayout.CENTER);
 
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, midPanel, logPanel);
-        mainSplit.setResizeWeight(0.5);
+        mainSplit.setResizeWeight(0.45);
         mainSplit.setBorder(null);
 
         add(mainSplit, BorderLayout.CENTER);
