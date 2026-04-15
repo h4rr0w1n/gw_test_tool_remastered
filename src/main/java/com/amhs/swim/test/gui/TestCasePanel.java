@@ -288,13 +288,6 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(btnUploadPayload, gbc);
         row++;
         
-        // Dynamic fields will be added here based on case/message (additional custom fields)
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 3; gbc.weightx = 1.0;
-        JLabel dynamicFieldsLabel = new JLabel("Additional custom fields will appear below based on selected message...");
-        dynamicFieldsLabel.setForeground(clrFgDim);
-        configFormPanel.add(dynamicFieldsLabel, gbc);
-        row++;
-        
         JScrollPane configScroll = new JScrollPane(configFormPanel);
         configScroll.setBorder(new MatteBorder(1, 1, 1, 1, clrSeparator));
         
@@ -507,10 +500,7 @@ public class TestCasePanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.gridx = 0;
-        int row = 7; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType, payload, placeholder)
-        
-        // Remove placeholder label
-        configFormPanel.remove(configFormPanel.getComponentCount() - 1);
+        int row = 7; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType, payload)
         
         for (int i = 0; i < parts.length; i++) {
             String label = (i < labels.length) ? labels[i] : "extra_param_" + i;
