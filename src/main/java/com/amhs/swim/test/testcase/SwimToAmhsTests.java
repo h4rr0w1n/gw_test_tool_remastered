@@ -443,28 +443,33 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
+            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r);
             byte[] payload;
             String desc;
             switch (idx) {
-                case 1: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","basic"); desc="Basic/Text"; payload=(inputs!=null?inputs.getOrDefault("p1","CTSW103 Basic"):"CTSW103 Basic").getBytes(); break;
+                case 1: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","basic"); p.setAmqpPriority(priority); desc="Basic/Text"; payload=(inputs!=null?inputs.getOrDefault("p1","CTSW103 Basic"):"CTSW103 Basic").getBytes(); break;
                 case 2: {
-                    p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); p.setExtraProp("amhs_service_level","basic"); desc="Basic/Binary→REJECT"; 
+                    p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); p.setExtraProp("amhs_service_level","basic"); p.setAmqpPriority(priority); desc="Basic/Binary→REJECT"; 
                     String path = (inputs != null ? inputs.getOrDefault("binFile_2", "src/main/resources/sample.pdf") : "src/main/resources/sample.pdf");
                     payload = (Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "Dummy".getBytes());
                     break;
                 }
-                case 3: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","extended"); desc="Extended/Text"; payload=(inputs!=null?inputs.getOrDefault("p3","CTSW103 Extended"):"CTSW103 Extended").getBytes(); break;
+                case 3: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","extended"); p.setAmqpPriority(priority); desc="Extended/Text"; payload=(inputs!=null?inputs.getOrDefault("p3","CTSW103 Extended"):"CTSW103 Extended").getBytes(); break;
                 case 4: {
-                    p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); p.setExtraProp("amhs_service_level","content-based"); desc="ContentBased/Binary→Ext"; 
+                    p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); p.setExtraProp("amhs_service_level","content-based"); p.setAmqpPriority(priority); desc="ContentBased/Binary→Ext"; 
                     String path = (inputs != null ? inputs.getOrDefault("binFile_4", "src/main/resources/sample.pdf") : "src/main/resources/sample.pdf");
                     payload = (Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "Dummy".getBytes());
                     break;
                 }
-                case 5: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","content-based"); desc="ContentBased/Text→Basic"; payload=(inputs!=null?inputs.getOrDefault("p5","CTSW103 CText"):"CTSW103 CText").getBytes(); break;
-                case 6: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","recipient-based"); desc="RecipBased/AllExt"; payload=(inputs!=null?inputs.getOrDefault("p6","CTSW103 RBAllExt"):"CTSW103 RBAllExt").getBytes(); break;
-                case 7: p.setRecipients(r + ",VVTSNONEXT"); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","recipient-based"); desc="RecipBased/Mixed→Basic"; payload=(inputs!=null?inputs.getOrDefault("p7","CTSW103 RBMixed"):"CTSW103 RBMixed").getBytes(); break;
+                case 5: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","content-based"); p.setAmqpPriority(priority); desc="ContentBased/Text→Basic"; payload=(inputs!=null?inputs.getOrDefault("p5","CTSW103 CText"):"CTSW103 CText").getBytes(); break;
+                case 6: p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","recipient-based"); p.setAmqpPriority(priority); desc="RecipBased/AllExt"; payload=(inputs!=null?inputs.getOrDefault("p6","CTSW103 RBAllExt"):"CTSW103 RBAllExt").getBytes(); break;
+                case 7: p.setRecipients(r + ",VVTSNONEXT"); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); p.setExtraProp("amhs_service_level","recipient-based"); p.setAmqpPriority(priority); desc="RecipBased/Mixed→Basic"; payload=(inputs!=null?inputs.getOrDefault("p7","CTSW103 RBMixed"):"CTSW103 RBMixed").getBytes(); break;
                 default: return false;
             }
             dual(inputs, payload, p);
@@ -528,30 +533,38 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             String payload;
             String desc;
+            
+            // Get priority from inputs or use default based on test case
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
 
             if (idx >= 1 && idx <= 10) {
                 int pri = idx - 1;
                 String dft = "P" + pri;
                 payload = inputs != null ? inputs.getOrDefault("p" + idx, dft) : dft;
-                p.setAmqpPriority((short) pri); desc = "priority=" + pri;
+                short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) pri;
+                p.setAmqpPriority(priority); desc = "priority=" + pri;
             } else if (idx >= 11 && idx <= 15) {
                 String[] ats = {"SS","DD","FF","GG","KK"};
                 String at = ats[idx-11];
                 String dft = "Pri4+ATS_" + at;
                 payload = inputs != null ? inputs.getOrDefault("p" + idx, dft) : dft;
-                p.setAmqpPriority((short) 4); p.setAtsPri(at);
+                short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+                p.setAmqpPriority(priority); p.setAtsPri(at);
                 desc = "priority=4 + amhs_ats_pri=" + at;
             } else if (idx >= 16 && idx <= 19) {
                 String[] ats = {"SS","DD","FF","GG"};
                 String at = ats[idx-16];
                 String dft = "Pri1+ATS_" + at;
                 payload = inputs != null ? inputs.getOrDefault("p" + idx, dft) : dft;
-                p.setAmqpPriority((short) 1); p.setAtsPri(at);
+                short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 1;
+                p.setAmqpPriority(priority); p.setAtsPri(at);
                 desc = "priority=1 + amhs_ats_pri=" + at;
             } else if (idx == 20) {
                 String dft = "Pri9+ATS_KK";
                 payload = inputs != null ? inputs.getOrDefault("p20", dft) : dft;
-                p.setAmqpPriority((short) 9); p.setAtsPri("KK");
+                short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 9;
+                p.setAmqpPriority(priority); p.setAtsPri("KK");
                 desc = "priority=9 + amhs_ats_pri=KK";
             } else return false;
 
@@ -598,6 +611,11 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
+            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             byte[] payload; String desc;
@@ -609,6 +627,7 @@ public class SwimToAmhsTests {
                 payload = (inputs != null ? inputs.getOrDefault("p2","CTSW105 Explicit FT") : "CTSW105 Explicit FT").getBytes();
                 desc = "amhs_ats_ft=250102";
             } else return false;
+            p.setAmqpPriority(priority);
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Metadata check for Filing Time");
@@ -664,6 +683,11 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
+            // Get priority from inputs or default based on message (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (idx <= 3) ? (short) 4 : (short) 6;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             int[] pris = {4, 4, 4, 6, 6, 6};
             String[] ohiDefaults = {"OHI-SHORT", "A".repeat(53), "A".repeat(60), "OHI-HI-SHORT", "B".repeat(48), "B".repeat(60)};
             String[] keys = {"ohi1","ohi2","ohi3","ohi4","ohi5","ohi6"};
@@ -675,12 +699,14 @@ public class SwimToAmhsTests {
             String body = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "OHI Content";
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-            p.setRecipients(r); p.setAmqpPriority((short) pris[i]);
+            p.setRecipients(r); 
+            // Use priority from UI if provided, otherwise use case-specific default
+            p.setAmqpPriority((priorityStr != null && !priorityStr.isEmpty()) ? priority : (short) pris[i]);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setExtraProp("amhs_ats_ohi", ohi);
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
-                "priority=" + pris[i] + " | amhs_ats_ohi len=" + ohi.length());
+                "priority=" + ((priorityStr != null && !priorityStr.isEmpty()) ? priority : pris[i]) + " | amhs_ats_ohi len=" + ohi.length());
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), body);
             return true;
         }
@@ -732,8 +758,14 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
+            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+            p.setAmqpPriority(priority);
             String raw = inputs != null ? inputs.getOrDefault("p" + idx, "") : "";
             String[] parts = raw.split("\\|");
             String body = "Msg" + idx;
@@ -798,6 +830,11 @@ public class SwimToAmhsTests {
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             if (idx != 1) return false;
             String r = recip(inputs);
+            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             String raw = inputs != null ? inputs.getOrDefault("p1", "VVTSYMYX | Known Orig Body") : "VVTSYMYX | Known Orig Body";
             String[] parts = raw.split("\\|");
             String orig = parts[0].trim().isEmpty() ? "VVTSYMYX" : parts[0].trim();
@@ -806,6 +843,7 @@ public class SwimToAmhsTests {
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setOriginator(orig);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+            p.setAmqpPriority(priority);
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT", "amhs_originator=" + orig);
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
@@ -849,6 +887,11 @@ public class SwimToAmhsTests {
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             if (idx != 1) return false;
             String r = recip(inputs);
+            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             String raw = inputs != null ? inputs.getOrDefault("p1", "UNKNOWN1 | Unknown Orig Body") : "UNKNOWN1 | Unknown Orig Body";
             String[] parts = raw.split("\\|");
             String orig = parts[0].trim().isEmpty() ? "UNKNOWN1" : parts[0].trim();
@@ -857,6 +900,7 @@ public class SwimToAmhsTests {
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setOriginator(orig);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+            p.setAmqpPriority(priority);
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
                 "amhs_originator=" + orig + " (UNKNOWN → default originator fallback expected)");
@@ -909,8 +953,14 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
+            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short defaultPriority = (short) 4;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
+            
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r);
+            p.setAmqpPriority(priority);
             byte[] payload; String desc;
             switch (idx) {
                 case 1: p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); payload=new byte[0]; desc="octet-stream|data EMPTY → REJECT"; break;
@@ -1161,13 +1211,18 @@ public class SwimToAmhsTests {
             String r = recip(inputs);
             String payload = inputs!=null?inputs.getOrDefault("p" + idx, (idx == 1 ? "NotifRequest NRN" : "NotifRequest RN")) : (idx == 1 ? "NotifRequest NRN" : "NotifRequest RN");
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-            p.setRecipients(r); p.setAmqpPriority((short) 6);
+            
+            // Get priority from inputs or default to 6
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 6;
+            
+            p.setRecipients(r); p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setExtraProp("amhs_notification_request", "rn,nrn");
             dual(inputs, payload.getBytes(), p);
             String expected = idx == 1 ? "NRN" : "RN";
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
-                "priority=6 (→SS) | notification_request=rn,nrn | expect " + expected + " from AMHS Tool");
+                "priority=" + priority + " (→SS) | notification_request=rn,nrn | expect " + expected + " from AMHS Tool");
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Notification request check");
             return true;
         }

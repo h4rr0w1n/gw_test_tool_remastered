@@ -37,8 +37,6 @@ public class TestCasePanel extends JPanel {
     private BaseTestCase currentCase;
     private Runnable onCancel;
     private TestMessage currentMsg;
-    private byte[] attachedFileData = null;
-    private String attachedFileName = null;
 
     // UI Components
     private JPanel topBar;
@@ -51,7 +49,6 @@ public class TestCasePanel extends JPanel {
     private JComboBox<String> brokerProfileCombo;
     private JTextField amhsRecipientsField;
     private JComboBox<String> bodyTypeCombo;
-    private JLabel attachmentLabel;
     private JTextArea descriptionArea;
     private JButton btnSend;
     private JButton btnRunCase;
@@ -296,25 +293,6 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(dynamicFieldsLabel, gbc);
         row++;
         
-        // Attachment Section
-        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 3;
-        JPanel attachmentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        attachmentPanel.setBackground(bgRowEven);
-        attachmentPanel.setBorder(new CompoundBorder(
-            new MatteBorder(1, 0, 0, 0, clrSeparator),
-            new EmptyBorder(10, 5, 10, 5)
-        ));
-        JLabel lblAttachments = new JLabel("ATTACHMENTS:");
-        lblAttachments.setFont(lblAttachments.getFont().deriveFont(Font.BOLD));
-        attachmentPanel.add(lblAttachments);
-        JButton btnAttachFile = new JButton("Upload File");
-        btnAttachFile.addActionListener(e -> doAttachFile());
-        attachmentPanel.add(btnAttachFile);
-        attachmentLabel = new JLabel("No file attached");
-        attachmentLabel.setForeground(clrFgDim);
-        attachmentPanel.add(attachmentLabel);
-        configFormPanel.add(attachmentPanel, gbc);
-        
         JScrollPane configScroll = new JScrollPane(configFormPanel);
         configScroll.setBorder(new MatteBorder(1, 1, 1, 1, clrSeparator));
         
@@ -353,7 +331,7 @@ public class TestCasePanel extends JPanel {
         descPanel.add(descScroll, BorderLayout.CENTER);
 
         JSplitPane midSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, configPanel, descPanel);
-        midSplit.setResizeWeight(0.55);
+        midSplit.setResizeWeight(0.52);
         midSplit.setBorder(null);
         midPanel.add(midSplit, BorderLayout.CENTER);
 
@@ -396,9 +374,6 @@ public class TestCasePanel extends JPanel {
     public void loadTestCase(BaseTestCase tc) {
         currentCase = tc;
         currentMsg = null;
-        attachedFileData = null;
-        attachedFileName = null;
-        attachmentLabel.setText("No file attached");
         logArea.setText("");
         descriptionArea.setText(TestbookLoader.getDescription(tc.getTestCaseId()));
 
@@ -432,18 +407,15 @@ public class TestCasePanel extends JPanel {
 
     private void clearConfigForm() {
         configFields.clear();
-        // Remove all components except the standard AMQP rows and attachment panel
-        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3), payload (3), dynamic label (1), attachment panel (1) = 20
-        while (configFormPanel.getComponentCount() > 20) {
+        // Remove all components except the standard AMQP rows and dynamic label
+        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3), payload (3), dynamic label (1) = 19
+        while (configFormPanel.getComponentCount() > 19) {
             configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         }
     }
 
     public void onMessageSelected(TestMessage msg) {
         currentMsg = msg;
-        attachedFileData = null;
-        attachedFileName = null;
-        attachmentLabel.setText("No file attached");
         
         // Contextually parse the requirement text to approximate AMQP properties
         String txt = msg.getMinText().toLowerCase();
@@ -650,16 +622,8 @@ public class TestCasePanel extends JPanel {
         }
         String finalPayload = payloadBuilder.toString();
         
-        // If a file is attached, use the binary data instead of text payload
-        if (attachedFileData != null && currentMsg.isFile()) {
-            inputs.put("file_path", attachedFileName);
-            inputs.put(currentMsg.getCustomKey(), attachedFileName);
-            Logger.logCase(currentCase.getTestCaseId(), "INFO", 
-                "Sending binary payload from attached file: " + attachedFileName);
-        } else {
-            inputs.put("p" + msgIndex, finalPayload);
-            inputs.put(currentMsg.getCustomKey(), finalPayload);
-        }
+        inputs.put("p" + msgIndex, finalPayload);
+        inputs.put(currentMsg.getCustomKey(), finalPayload);
 
         new Thread(() -> {
             try {
@@ -705,30 +669,6 @@ public class TestCasePanel extends JPanel {
         }
     }
     
-    private void doAttachFile() {
-        JFileChooser fc = new JFileChooser();
-        fc.setDialogTitle("Select File to Attach");
-        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        fc.setMultiSelectionEnabled(false);
-        
-        int result = fc.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
-            File selectedFile = fc.getSelectedFile();
-            try {
-                attachedFileData = Files.readAllBytes(selectedFile.toPath());
-                attachedFileName = selectedFile.getName();
-                
-                attachmentLabel.setText(attachedFileName + " (" + String.format("%.2f", attachedFileData.length / 1024.0) + " KB)");
-                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
-                    "INFO", "File attached: " + attachedFileName + " (" + attachedFileData.length + " bytes)");
-            } catch (IOException e) {
-                JOptionPane.showMessageDialog(this, "Failed to read file: " + e.getMessage());
-                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
-                    "ERROR", "Failed to attach file: " + e.getMessage());
-            }
-        }
-    }
-    
     private void doRevertToDefault() {
         if (currentCase == null || currentMsg == null) {
             JOptionPane.showMessageDialog(this, "Select a message to revert.");
@@ -744,10 +684,6 @@ public class TestCasePanel extends JPanel {
         
         // Reload the message view with default payload
         onMessageSelected(currentMsg);
-        
-        // Clear attached file
-        attachedFileData = null;
-        attachedFileName = null;
         
         Logger.logCase(caseId, "INFO", "Reverted message " + msgIndex + " to default payload");
         JOptionPane.showMessageDialog(this, 
@@ -800,7 +736,6 @@ public class TestCasePanel extends JPanel {
         descriptionArea.setText("");
         logArea.setText("");
         clearConfigForm();
-        attachmentLabel.setText("No file attached");
     }
 
     private void appendLog(String message) {
@@ -862,12 +797,6 @@ public class TestCasePanel extends JPanel {
         
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
             sb.append(entry.getKey().toUpperCase()).append(": ").append(entry.getValue().getText()).append("\n");
-        }
-        
-        if (attachedFileData != null) {
-            sb.append("\n--- ATTACHED FILE ---\n");
-            sb.append("Filename: ").append(attachedFileName).append("\n");
-            sb.append("Size: ").append(attachedFileData.length).append(" bytes\n");
         }
         
         JTextArea textArea = new JTextArea(sb.toString());
