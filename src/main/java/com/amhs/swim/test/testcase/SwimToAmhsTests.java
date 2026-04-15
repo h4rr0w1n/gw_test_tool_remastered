@@ -3,6 +3,7 @@ package com.amhs.swim.test.testcase;
 import com.amhs.swim.test.driver.SwimDriver;
 import com.amhs.swim.test.util.Logger;
 import com.amhs.swim.test.config.TestConfig;
+import com.amhs.swim.test.config.CaseConfigManager;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -129,27 +130,41 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
+            
+            // Register defaults if not already registered
+            configMgr.registerDefault("CTSW101", 1, "CTSW101 Text Payload");
+            configMgr.registerDefault("CTSW101", 2, "src/main/resources/sample.pdf");
+            
             return List.of(
                 new TestMessage(1,
                     "Text message | priority=4 | content-type: text/plain;charset=utf-8 | body: amqp-value",
-                    "CTSW101 Text Payload", true, false, "p1"),
+                    configMgr.getPayload("CTSW101", 1), true, false, "p1"),
                 new TestMessage(2,
                     "Binary message | priority=4 | content-type: application/octet-stream | body: data",
-                    "src/main/resources/sample.pdf", true, false, "binFile", true)
+                    configMgr.getPayload("CTSW101", 2), true, false, "binFile", true)
             );
         }
 
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
+            
             switch (idx) {
                 case 1: {
                     SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
                     p.setRecipients(r); p.setAmqpPriority((short) 4);
                     p.setContentType("text/plain; charset=utf-8");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-                    byte[] payload = (inputs != null ? inputs.getOrDefault("p1", "CTSW101 Text Payload")
-                                                     : "CTSW101 Text Payload").getBytes();
+                    
+                    // Get payload from config or input
+                    String payloadText = configMgr.getPayload("CTSW101", 1);
+                    if (inputs != null && inputs.containsKey("p1")) {
+                        payloadText = inputs.get("p1");
+                    }
+                    byte[] payload = payloadText.getBytes();
+                    
                     dual(inputs, payload, p);
                     Logger.logTransmission(testCaseId, 1, attempt, topic(inputs),
                         "SENT", "text/plain | priority=4 | len=" + payload.length);
@@ -162,8 +177,15 @@ public class SwimToAmhsTests {
                     p.setContentType("application/octet-stream");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
                     
-                    String path = (inputs != null ? inputs.getOrDefault("binFile", "src/main/resources/sample.pdf")
-                                                  : "src/main/resources/sample.pdf");
+                    // Get file path from config or input
+                    String path = configMgr.getPayload("CTSW101", 2);
+                    if (inputs != null && inputs.containsKey("binFile")) {
+                        path = inputs.get("binFile");
+                    }
+                    if (inputs != null && inputs.containsKey("file_path")) {
+                        path = inputs.get("file_path");
+                    }
+                    
                     byte[] payload;
                     if (Files.exists(Paths.get(path))) {
                         payload = Files.readAllBytes(Paths.get(path));
