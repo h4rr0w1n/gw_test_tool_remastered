@@ -46,8 +46,11 @@ public class TestCasePanel extends JPanel {
     // Config Panel (Left)
     private JPanel configFormPanel;
     private Map<String, JTextField> configFields = new HashMap<>();
-    private JComboBox<String> priorityCombo;
+    private JTextField priorityField;
     private JComboBox<String> contentTypeCombo;
+    private JComboBox<String> brokerProfileCombo;
+    private JTextField amhsRecipientsField;
+    private JComboBox<String> bodyTypeCombo;
     private JLabel attachmentLabel;
     private JTextArea descriptionArea;
     private JButton btnSend;
@@ -191,12 +194,13 @@ public class TestCasePanel extends JPanel {
         gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
         configFormPanel.add(new JLabel("AMQP PRIORITY:"), gbc);
         gbc.gridx = 1; gbc.weightx = 1.0;
-        priorityCombo = new JComboBox<>(new String[]{"0", "1", "2", "3", "4", "5", "6", "7"});
-        priorityCombo.setEditable(true);
-        configFormPanel.add(priorityCombo, gbc);
+        priorityField = new JTextField(10);
+        priorityField.setToolTipText("Enter integer priority value (0-9 or any integer)");
+        configFormPanel.add(priorityField, gbc);
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadPriority = new JButton("Upload");
         btnUploadPriority.setToolTipText("Upload priority from file");
+        btnUploadPriority.addActionListener(e -> doUploadField("AMQP PRIORITY"));
         configFormPanel.add(btnUploadPriority, gbc);
         row++;
         
@@ -216,12 +220,78 @@ public class TestCasePanel extends JPanel {
         gbc.gridx = 2; gbc.weightx = 0;
         JButton btnUploadContentType = new JButton("Upload");
         btnUploadContentType.setToolTipText("Upload content type from file");
+        btnUploadContentType.addActionListener(e -> doUploadField("CONTENT TYPE"));
         configFormPanel.add(btnUploadContentType, gbc);
         row++;
         
-        // Dynamic fields will be added here based on case/message
+        // AMQP Broker Profile Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("AMQP BROKER PROFILE:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        brokerProfileCombo = new JComboBox<>(new String[]{
+            "default",
+            "solace",
+            "qpid",
+            "custom"
+        });
+        brokerProfileCombo.setEditable(true);
+        configFormPanel.add(brokerProfileCombo, gbc);
+        gbc.gridx = 2; gbc.weightx = 0;
+        JButton btnUploadBroker = new JButton("Upload");
+        btnUploadBroker.setToolTipText("Upload broker profile from file");
+        btnUploadBroker.addActionListener(e -> doUploadField("AMQP BROKER PROFILE"));
+        configFormPanel.add(btnUploadBroker, gbc);
+        row++;
+        
+        // AMHS Recipients Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("AMHS RECIPIENTS:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        amhsRecipientsField = new JTextField("");
+        configFormPanel.add(amhsRecipientsField, gbc);
+        configFields.put("amhs_recipients", amhsRecipientsField);
+        gbc.gridx = 2; gbc.weightx = 0;
+        JButton btnUploadRecipients = new JButton("Upload");
+        btnUploadRecipients.setToolTipText("Upload recipients from file");
+        btnUploadRecipients.addActionListener(e -> doUploadField("AMHS RECIPIENTS"));
+        configFormPanel.add(btnUploadRecipients, gbc);
+        row++;
+        
+        // AMQP Body Type Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("AMQP BODY TYPE:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        bodyTypeCombo = new JComboBox<>(new String[]{
+            "AMQP_VALUE",
+            "DATA",
+            "SEQUENCE"
+        });
+        bodyTypeCombo.setEditable(true);
+        configFormPanel.add(bodyTypeCombo, gbc);
+        gbc.gridx = 2; gbc.weightx = 0;
+        JButton btnUploadBodyType = new JButton("Upload");
+        btnUploadBodyType.setToolTipText("Upload body type from file");
+        btnUploadBodyType.addActionListener(e -> doUploadField("AMQP BODY TYPE"));
+        configFormPanel.add(btnUploadBodyType, gbc);
+        row++;
+        
+        // Payload Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("PAYLOAD:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        JTextField payloadField = new JTextField("");
+        configFormPanel.add(payloadField, gbc);
+        configFields.put("payload", payloadField);
+        gbc.gridx = 2; gbc.weightx = 0;
+        JButton btnUploadPayload = new JButton("Upload");
+        btnUploadPayload.setToolTipText("Upload payload from file");
+        btnUploadPayload.addActionListener(e -> doUploadField("PAYLOAD"));
+        configFormPanel.add(btnUploadPayload, gbc);
+        row++;
+        
+        // Dynamic fields will be added here based on case/message (additional custom fields)
         gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 3; gbc.weightx = 1.0;
-        JLabel dynamicFieldsLabel = new JLabel("Additional fields will appear based on selected message...");
+        JLabel dynamicFieldsLabel = new JLabel("Additional custom fields will appear below based on selected message...");
         dynamicFieldsLabel.setForeground(clrFgDim);
         configFormPanel.add(dynamicFieldsLabel, gbc);
         row++;
@@ -348,7 +418,7 @@ public class TestCasePanel extends JPanel {
 
         // Clear config form
         clearConfigForm();
-        priorityCombo.setSelectedItem("4");
+        priorityField.setText("4");
         contentTypeCombo.setSelectedItem("text/plain; charset=\"utf-8\"");
 
         // Hook logger
@@ -362,9 +432,9 @@ public class TestCasePanel extends JPanel {
 
     private void clearConfigForm() {
         configFields.clear();
-        // Remove all components except the first rows (priority, content-type) and attachment panel
-        // Keep: priority row (3 comps), content-type row (3 comps), dynamic label (1 comp), attachment panel (1 comp) = 8
-        while (configFormPanel.getComponentCount() > 8) {
+        // Remove all components except the standard AMQP rows and attachment panel
+        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3), payload (3), dynamic label (1), attachment panel (1) = 20
+        while (configFormPanel.getComponentCount() > 20) {
             configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         }
     }
@@ -388,7 +458,7 @@ public class TestCasePanel extends JPanel {
                 prio = txt.substring(idx, end);
             }
         }
-        priorityCombo.setSelectedItem(prio);
+        priorityField.setText(prio);
         
         // Set content type from parsed text or default
         String ctype = "text/plain; charset=\"utf-8\"";
@@ -400,15 +470,28 @@ public class TestCasePanel extends JPanel {
         if (txt.contains("charset=\"utf-16\"")) ctype = "text/plain; charset=\"utf-16\"";
         contentTypeCombo.setSelectedItem(ctype);
         
-        // Clear and rebuild dynamic fields
-        clearConfigForm();
+        // Set body type based on content
+        bodyTypeCombo.setSelectedItem(btype);
         
-        // Add dynamic fields based on case/message
+        // Set AMHS recipients from default data if present
         String ddata = msg.getDefaultData();
         String[] parts = ddata.split("\\|");
         String caseId = currentCase.getTestCaseId();
         int mIdx = msg.getIndex();
         
+        // Extract amhs_recipients from default data if available
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (trimmed.toLowerCase().contains("@") || trimmed.matches("^[A-Z]{2}[0-9A-Z]{6}$")) {
+                amhsRecipientsField.setText(trimmed);
+                break;
+            }
+        }
+        
+        // Clear and rebuild dynamic fields (keep standard AMQP fields)
+        clearConfigForm();
+        
+        // Add additional custom fields based on case/message beyond the standard ones
         String[] labels = {"payload / file_path"};
         if (caseId.equals("CTSW106")) {
             labels = new String[]{"amhs_ats_ohi", "payload / file_path"};
@@ -425,7 +508,7 @@ public class TestCasePanel extends JPanel {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.gridx = 0;
-        int row = 3; // Start after priority, content-type, and placeholder label
+        int row = 7; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType, payload, placeholder)
         
         // Remove placeholder label
         configFormPanel.remove(configFormPanel.getComponentCount() - 2);
@@ -523,21 +606,43 @@ public class TestCasePanel extends JPanel {
     }
 
     private void doSendSingle() {
-        if (currentCase == null || currentMsg == null) {
-            JOptionPane.showMessageDialog(this, "Select a message to send.");
+        if (currentCase == null) {
+            JOptionPane.showMessageDialog(this, "Select a case to send.");
             return;
         }
+        
+        // If no specific message is selected, use the first/default message from the case
+        if (currentMsg == null) {
+            List<BaseTestCase.TestMessage> msgs = currentCase.getMessages();
+            if (msgs == null || msgs.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "No messages available in this case.");
+                return;
+            }
+            currentMsg = msgs.get(0);
+            onMessageSelected(currentMsg);
+        }
+        
         int msgIndex = currentMsg.getIndex();
         AtomicInteger cnt = attempts.computeIfAbsent(msgIndex, k -> new AtomicInteger(0));
         int attempt = cnt.incrementAndGet();
         
         Map<String, String> inputs = new HashMap<>();
         
-        // Get values from form fields
-        String priority = (String) priorityCombo.getSelectedItem();
+        // Get values from standard AMQP form fields
+        String priority = priorityField.getText().trim();
         String contentType = (String) contentTypeCombo.getSelectedItem();
+        String brokerProfile = (String) brokerProfileCombo.getSelectedItem();
+        String amhsRecipients = amhsRecipientsField.getText();
+        String bodyType = (String) bodyTypeCombo.getSelectedItem();
         
-        // Build payload from dynamic fields
+        // Add standard AMQP properties to inputs
+        inputs.put("amqp_priority", priority);
+        inputs.put("content_type", contentType);
+        inputs.put("broker_profile", brokerProfile);
+        inputs.put("amhs_recipients", amhsRecipients);
+        inputs.put("body_type", bodyType);
+        
+        // Build payload from dynamic/custom fields
         StringBuilder payloadBuilder = new StringBuilder();
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
             if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
@@ -751,7 +856,7 @@ public class TestCasePanel extends JPanel {
         // Build full payload display from form fields
         StringBuilder sb = new StringBuilder();
         sb.append("=== FULL PAYLOAD VIEW ===\n\n");
-        sb.append("AMQP PRIORITY: ").append(priorityCombo.getSelectedItem()).append("\n");
+        sb.append("AMQP PRIORITY: ").append(priorityField.getText()).append("\n");
         sb.append("CONTENT TYPE: ").append(contentTypeCombo.getSelectedItem()).append("\n");
         sb.append("\n--- FIELD VALUES ---\n");
         
