@@ -44,7 +44,11 @@ public class TestCasePanel extends JPanel {
     private JPanel topBar;
     
     // Config Panel (Left)
-    private JTextArea amqpConfigArea;
+    private JPanel configFormPanel;
+    private Map<String, JTextField> configFields = new HashMap<>();
+    private JComboBox<String> priorityCombo;
+    private JComboBox<String> contentTypeCombo;
+    private JLabel attachmentLabel;
     private JTextArea descriptionArea;
     private JButton btnSend;
     private JButton btnRunCase;
@@ -160,28 +164,100 @@ public class TestCasePanel extends JPanel {
         JPanel midPanel = new JPanel(new BorderLayout());
         midPanel.setBackground(bgPanel);
 
-        // Config section
+        // Config section - Modern Form UI
         JPanel configPanel = new JPanel(new BorderLayout());
         configPanel.setBackground(bgPanel);
-        JLabel lblConfig = new JLabel("  Config (load as a complete AMQP message from the saved txt file)");
+        JLabel lblConfig = new JLabel("  Message Payload Configuration");
         lblConfig.setForeground(clrAccent);
         lblConfig.setBorder(new EmptyBorder(5,0,5,0));
-        amqpConfigArea = new JTextArea();
-        amqpConfigArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        JScrollPane configScroll = new JScrollPane(amqpConfigArea);
+        
+        // Create form panel with GridBagLayout
+        configFormPanel = new JPanel();
+        configFormPanel.setBackground(bgPanel);
+        configFormPanel.setLayout(new GridBagLayout());
+        configFormPanel.setBorder(new CompoundBorder(
+            new MatteBorder(1, 0, 0, 0, clrSeparator),
+            new EmptyBorder(10, 10, 10, 10)
+        ));
+        
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        
+        int row = 0;
+        
+        // AMQP Priority Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("AMQP PRIORITY:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        priorityCombo = new JComboBox<>(new String[]{"0", "1", "2", "3", "4", "5", "6", "7"});
+        priorityCombo.setEditable(true);
+        configFormPanel.add(priorityCombo, gbc);
+        gbc.gridx = 2; gbc.weightx = 0;
+        JButton btnUploadPriority = new JButton("Upload");
+        btnUploadPriority.setToolTipText("Upload priority from file");
+        configFormPanel.add(btnUploadPriority, gbc);
+        row++;
+        
+        // Content Type Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("CONTENT TYPE:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        contentTypeCombo = new JComboBox<>(new String[]{
+            "text/plain; charset=\"utf-8\"",
+            "text/plain; charset=\"utf-16\"",
+            "application/octet-stream",
+            "application/xml",
+            "application/json"
+        });
+        contentTypeCombo.setEditable(true);
+        configFormPanel.add(contentTypeCombo, gbc);
+        gbc.gridx = 2; gbc.weightx = 0;
+        JButton btnUploadContentType = new JButton("Upload");
+        btnUploadContentType.setToolTipText("Upload content type from file");
+        configFormPanel.add(btnUploadContentType, gbc);
+        row++;
+        
+        // Dynamic fields will be added here based on case/message
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 3; gbc.weightx = 1.0;
+        JLabel dynamicFieldsLabel = new JLabel("Additional fields will appear based on selected message...");
+        dynamicFieldsLabel.setForeground(clrFgDim);
+        configFormPanel.add(dynamicFieldsLabel, gbc);
+        row++;
+        
+        // Attachment Section
+        gbc.gridx = 0; gbc.gridy = row; gbc.gridwidth = 3;
+        JPanel attachmentPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        attachmentPanel.setBackground(bgRowEven);
+        attachmentPanel.setBorder(new CompoundBorder(
+            new MatteBorder(1, 0, 0, 0, clrSeparator),
+            new EmptyBorder(10, 5, 10, 5)
+        ));
+        JLabel lblAttachments = new JLabel("ATTACHMENTS:");
+        lblAttachments.setFont(lblAttachments.getFont().deriveFont(Font.BOLD));
+        attachmentPanel.add(lblAttachments);
+        JButton btnAttachFile = new JButton("Upload File");
+        btnAttachFile.addActionListener(e -> doAttachFile());
+        attachmentPanel.add(btnAttachFile);
+        attachmentLabel = new JLabel("No file attached");
+        attachmentLabel.setForeground(clrFgDim);
+        attachmentPanel.add(attachmentLabel);
+        configFormPanel.add(attachmentPanel, gbc);
+        
+        JScrollPane configScroll = new JScrollPane(configFormPanel);
+        configScroll.setBorder(new MatteBorder(1, 1, 1, 1, clrSeparator));
         
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         actionPanel.setBackground(bgPanel);
-        btnViewFull = new JButton("View Full Popup");
+        btnViewFull = new JButton("View Full Payload");
         btnSend = new JButton("Send");
-        JButton btnAttachFile = new JButton("Attach File");
         JButton btnRevertDefault = new JButton("Revert To Default");
         
-        btnAttachFile.addActionListener(e -> doAttachFile());
         btnRevertDefault.addActionListener(e -> doRevertToDefault());
         btnSend.addActionListener(e -> doSendSingle());
+        btnViewFull.addActionListener(e -> doViewFullPayload());
         actionPanel.add(btnViewFull);
-        actionPanel.add(btnAttachFile);
         actionPanel.add(btnRevertDefault);
         actionPanel.add(btnSend);
 
@@ -252,6 +328,7 @@ public class TestCasePanel extends JPanel {
         currentMsg = null;
         attachedFileData = null;
         attachedFileName = null;
+        attachmentLabel.setText("No file attached");
         logArea.setText("");
         descriptionArea.setText(TestbookLoader.getDescription(tc.getTestCaseId()));
 
@@ -269,30 +346,10 @@ public class TestCasePanel extends JPanel {
         // Reset message state view
         chkMsgPass.setSelected(false); chkMsgFail.setSelected(false); txtMsgNote.setText("");
 
-        // Show the default AMQP baseline message (0 alterations) as the starting reference
-        // for every test case, so testers can use it as a cross-check before altering fields.
-        String recipient = com.amhs.swim.test.config.TestConfig.getInstance()
-                              .getProperty("gateway.test_recipient", "VVTSYMYX");
-        String broker    = com.amhs.swim.test.config.TestConfig.getInstance()
-                              .getProperty("amqp_broker_profile", "STANDARD");
-        String topic     = com.amhs.swim.test.config.TestConfig.getInstance()
-                              .getProperty("gateway.default_topic", "TEST.TOPIC");
-        StringBuilder def = new StringBuilder();
-        def.append("[DEFAULT AMQP MESSAGE — 0 alterations — cross-check baseline]\n");
-        def.append("Uses all conformant default values. Select a message node to configure.\n");
-        def.append("-------------------------------------------\n");
-        def.append(String.format("%-25s : %s\n", "amqp_priority",        "4"));
-        def.append(String.format("%-25s : %s\n", "content_type",         "text/plain; charset=\"utf-8\""));
-        def.append(String.format("%-25s : %s\n", "amqp_broker_profile",  broker));
-        def.append(String.format("%-25s : %s\n", "amhs_recipients",      recipient));
-        def.append(String.format("%-25s : %s\n", "amqp_body_type",       "AMQP_VALUE"));
-        def.append(String.format("%-25s : %s\n", "amhs_service_level",   "basic"));
-        def.append(String.format("%-25s : %s\n", "amhs_ats_ft",          "(derived from creation-time)"));
-        def.append(String.format("%-25s : %s\n", "target_topic",         topic));
-        def.append(String.format("%-25s : %s\n", "payload / file_path",  "[EDIT] Default payload text"));
-        def.append("-------------------------------------------\n");
-        amqpConfigArea.setText(def.toString());
-        amqpConfigArea.setCaretPosition(0);
+        // Clear config form
+        clearConfigForm();
+        priorityCombo.setSelectedItem("4");
+        contentTypeCombo.setSelectedItem("text/plain; charset=\"utf-8\"");
 
         // Hook logger
         Logger.setCaseLogListener(tc.getTestCaseId(), message -> SwingUtilities.invokeLater(() -> appendLog(message)));
@@ -303,19 +360,25 @@ public class TestCasePanel extends JPanel {
         });
     }
 
+    private void clearConfigForm() {
+        configFields.clear();
+        // Remove all components except the first rows (priority, content-type) and attachment panel
+        // Keep: priority row (3 comps), content-type row (3 comps), dynamic label (1 comp), attachment panel (1 comp) = 8
+        while (configFormPanel.getComponentCount() > 8) {
+            configFormPanel.remove(configFormPanel.getComponentCount() - 1);
+        }
+    }
+
     public void onMessageSelected(TestMessage msg) {
         currentMsg = msg;
         attachedFileData = null;
         attachedFileName = null;
-        
-        // build property block in structured AMQP metadata format
-        StringBuilder sb = new StringBuilder();
-        sb.append("[DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA\n");
-        sb.append("-------------------------------------------\n");
+        attachmentLabel.setText("No file attached");
         
         // Contextually parse the requirement text to approximate AMQP properties
         String txt = msg.getMinText().toLowerCase();
         
+        // Set priority from parsed text or default
         String prio = "4";
         if (txt.contains("priority=")) {
             int idx = txt.indexOf("priority=") + 9;
@@ -325,8 +388,9 @@ public class TestCasePanel extends JPanel {
                 prio = txt.substring(idx, end);
             }
         }
-        sb.append(String.format("%-25s : %s\n", "amqp_priority", prio));
+        priorityCombo.setSelectedItem(prio);
         
+        // Set content type from parsed text or default
         String ctype = "text/plain; charset=\"utf-8\"";
         String btype = "AMQP_VALUE";
         if (txt.contains("binary") || txt.contains("application/octet-stream")) {
@@ -334,30 +398,12 @@ public class TestCasePanel extends JPanel {
             btype = "DATA";
         }
         if (txt.contains("charset=\"utf-16\"")) ctype = "text/plain; charset=\"utf-16\"";
+        contentTypeCombo.setSelectedItem(ctype);
         
-        sb.append(String.format("%-25s : %s\n", "content_type", ctype));
-        sb.append(String.format("%-25s : %s\n", "amqp_broker_profile", "STANDARD"));
-        sb.append(String.format("%-25s : %s\n", "amhs_recipients", "VVTSYMYX"));
-        sb.append(String.format("%-25s : %s\n", "amqp_body_type", btype));
-
-        if (txt.contains("amhs_service_level=")) {
-            String sl = "basic";
-            if (txt.contains("extended")) sl = "extended";
-            else if (txt.contains("content-based")) sl = "content-based";
-            else if (txt.contains("recipient-based")) sl = "recipient-based";
-            sb.append(String.format("%-25s : %s\n", "amhs_service_level", sl));
-        }
-        if (txt.contains("amhs_ats_pri=")) {
-             int idx = txt.indexOf("amhs_ats_pri=");
-             if (idx + 13 + 2 <= txt.length()) {
-                  sb.append(String.format("%-25s : %s\n", "amhs_ats_pri", txt.substring(idx+13, idx+15).toUpperCase()));
-             }
-        }
-        if (txt.contains("amhs_ats_ft=")) {
-             sb.append(String.format("%-25s : %s\n", "amhs_ats_ft", txt.contains("empty") ? "empty" : "250102"));
-        }
+        // Clear and rebuild dynamic fields
+        clearConfigForm();
         
-        // Editable fields corresponding to the payload protocol of the test case
+        // Add dynamic fields based on case/message
         String ddata = msg.getDefaultData();
         String[] parts = ddata.split("\\|");
         String caseId = currentCase.getTestCaseId();
@@ -374,14 +420,44 @@ public class TestCasePanel extends JPanel {
             labels = new String[]{"amhs_originator", "payload / file_path"};
         }
 
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.gridx = 0;
+        int row = 3; // Start after priority, content-type, and placeholder label
+        
+        // Remove placeholder label
+        configFormPanel.remove(configFormPanel.getComponentCount() - 2);
+        
         for (int i = 0; i < parts.length; i++) {
             String label = (i < labels.length) ? labels[i] : "extra_param_" + i;
-            sb.append(String.format("%-25s : [EDIT] %s\n", label, parts[i].trim()));
+            String value = parts[i].trim();
+            
+            gbc.gridy = row;
+            gbc.weightx = 0;
+            configFormPanel.add(new JLabel(label.toUpperCase() + ":"), gbc);
+            
+            gbc.gridx = 1;
+            gbc.weightx = 1.0;
+            JTextField tf = new JTextField(value);
+            tf.setEditable(true);
+            configFormPanel.add(tf, gbc);
+            configFields.put(label, tf);
+            
+            gbc.gridx = 2;
+            gbc.weightx = 0;
+            JButton btnUpload = new JButton("Upload");
+            final String fieldLabel = label;
+            btnUpload.setToolTipText("Upload " + label + " from file");
+            btnUpload.addActionListener(e -> doUploadField(fieldLabel));
+            configFormPanel.add(btnUpload, gbc);
+            
+            row++;
         }
-        sb.append("-------------------------------------------\n");
         
-        amqpConfigArea.setText(sb.toString());
-        amqpConfigArea.setCaretPosition(0);
+        configFormPanel.revalidate();
+        configFormPanel.repaint();
 
         // Sync Description box with message-specific text first, then case text
         String desc = "[MESSAGE REQUIREMENT (ICAO Testbook)]\n" + msg.getMinText() + "\n\n" + 
@@ -401,6 +477,31 @@ public class TestCasePanel extends JPanel {
         }
         txtMsgNote.setText(state.getMsgNote(msg.getIndex()));
         updateUIFlags();
+    }
+    
+    private void doUploadField(String fieldName) {
+        JFileChooser fc = new JFileChooser();
+        fc.setDialogTitle("Select File for " + fieldName);
+        fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fc.setMultiSelectionEnabled(false);
+        
+        int result = fc.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fc.getSelectedFile();
+            try {
+                String content = Files.readString(selectedFile.toPath());
+                JTextField tf = configFields.get(fieldName);
+                if (tf != null) {
+                    tf.setText(content);
+                }
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
+                    "INFO", "Loaded " + fieldName + " from file: " + selectedFile.getName());
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this, "Failed to read file: " + e.getMessage());
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
+                    "ERROR", "Failed to load " + fieldName + ": " + e.getMessage());
+            }
+        }
     }
 
     private void saveCaseState() {
@@ -431,28 +532,21 @@ public class TestCasePanel extends JPanel {
         int attempt = cnt.incrementAndGet();
         
         Map<String, String> inputs = new HashMap<>();
-        String[] lines = amqpConfigArea.getText().split("\n");
         
-        // Parse [EDIT] fields and re-combine them with pipe separator
-        StringBuilder pipeBuilder = new StringBuilder();
-        for (String line : lines) {
-            int editIdx = line.indexOf("[EDIT]");
-            if (editIdx != -1) {
-                if (pipeBuilder.length() > 0) pipeBuilder.append(" | ");
-                pipeBuilder.append(line.substring(editIdx + 6).trim());
-            }
-        }
+        // Get values from form fields
+        String priority = (String) priorityCombo.getSelectedItem();
+        String contentType = (String) contentTypeCombo.getSelectedItem();
         
-        String finalPayload = pipeBuilder.toString();
-        // Fallback for custom or unbroken old layouts
-        if (finalPayload.isEmpty() && lines.length > 0) {
-            finalPayload = lines[lines.length - 1];
+        // Build payload from dynamic fields
+        StringBuilder payloadBuilder = new StringBuilder();
+        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
+            payloadBuilder.append(entry.getValue().getText());
         }
+        String finalPayload = payloadBuilder.toString();
         
         // If a file is attached, use the binary data instead of text payload
         if (attachedFileData != null && currentMsg.isFile()) {
-            // For binary messages, store the file path reference in the payload field
-            // The actual file reading happens in the test case execution
             inputs.put("file_path", attachedFileName);
             inputs.put(currentMsg.getCustomKey(), attachedFileName);
             Logger.logCase(currentCase.getTestCaseId(), "INFO", 
@@ -473,7 +567,6 @@ public class TestCasePanel extends JPanel {
                     sent ? "SUCCESS" : "ERROR"
                 ));
                 
-                // Unlock the message result state (Pos 0)
                 CaseSessionState state = ResultManager.getInstance().getState(currentCase.getTestCaseId());
                 state.msgLockedMap.put(msgIndex, false);
                 state.setMsgPass(msgIndex, null);
@@ -520,19 +613,7 @@ public class TestCasePanel extends JPanel {
                 attachedFileData = Files.readAllBytes(selectedFile.toPath());
                 attachedFileName = selectedFile.getName();
                 
-                // Update the display to show the attached file info
-                String currentText = amqpConfigArea.getText();
-                StringBuilder sb = new StringBuilder();
-                sb.append(currentText);
-                if (!currentText.trim().endsWith("\n")) {
-                    sb.append("\n");
-                }
-                sb.append("-------------------------------------------\n");
-                sb.append(String.format("%-25s : [ATTACHED] %s (%.2f KB)\n", "attached_file", 
-                    attachedFileName, attachedFileData.length / 1024.0));
-                sb.append("-------------------------------------------\n");
-                
-                amqpConfigArea.setText(sb.toString());
+                attachmentLabel.setText(attachedFileName + " (" + String.format("%.2f", attachedFileData.length / 1024.0) + " KB)");
                 Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
                     "INFO", "File attached: " + attachedFileName + " (" + attachedFileData.length + " bytes)");
             } catch (IOException e) {
@@ -611,9 +692,10 @@ public class TestCasePanel extends JPanel {
     }
 
     public void showPlaceholder() {
-        amqpConfigArea.setText("");
         descriptionArea.setText("");
         logArea.setText("");
+        clearConfigForm();
+        attachmentLabel.setText("No file attached");
     }
 
     private void appendLog(String message) {
@@ -658,5 +740,37 @@ public class TestCasePanel extends JPanel {
             clrBtnText = Color.WHITE;
             clrBtnBg = new Color(0x0F, 0x17, 0x2A);
         }
+    }
+
+    private void doViewFullPayload() {
+        if (currentMsg == null) {
+            JOptionPane.showMessageDialog(this, "No message selected.");
+            return;
+        }
+        
+        // Build full payload display from form fields
+        StringBuilder sb = new StringBuilder();
+        sb.append("=== FULL PAYLOAD VIEW ===\n\n");
+        sb.append("AMQP PRIORITY: ").append(priorityCombo.getSelectedItem()).append("\n");
+        sb.append("CONTENT TYPE: ").append(contentTypeCombo.getSelectedItem()).append("\n");
+        sb.append("\n--- FIELD VALUES ---\n");
+        
+        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+            sb.append(entry.getKey().toUpperCase()).append(": ").append(entry.getValue().getText()).append("\n");
+        }
+        
+        if (attachedFileData != null) {
+            sb.append("\n--- ATTACHED FILE ---\n");
+            sb.append("Filename: ").append(attachedFileName).append("\n");
+            sb.append("Size: ").append(attachedFileData.length).append(" bytes\n");
+        }
+        
+        JTextArea textArea = new JTextArea(sb.toString());
+        textArea.setEditable(false);
+        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(600, 400));
+        
+        JOptionPane.showMessageDialog(this, scrollPane, "Full Payload View", JOptionPane.INFORMATION_MESSAGE);
     }
 }

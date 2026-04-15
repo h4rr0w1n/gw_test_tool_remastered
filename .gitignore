@@ -1,14 +1,34 @@
 ```
-# Maven build artifacts
+# Build artifacts
 target/
+*.class
 
 # Dependencies
 .m2/
-lib/
+.gradle/
 
-# Logs and test reports
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs and temp files
 *.log
-target/surefire-reports/
-target/maven-status/
-target/maven-archiver/
+*.tmp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Coverage reports
+coverage/
+htmlcov/
+*.coverage
+
+# Package manager caches
+node_modules/
+__pycache__/
+*.egg-info/
 ```
