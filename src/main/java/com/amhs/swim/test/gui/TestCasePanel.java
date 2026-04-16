@@ -43,7 +43,7 @@ public class TestCasePanel extends JPanel {
     
     // Config Panel (Left)
     private JPanel configFormPanel;
-    private Map<String, JTextField> configFields = new HashMap<>();
+    private Map<String, JTextField> configFields = new java.util.LinkedHashMap<>();
     private JTextField priorityField;
     private JComboBox<String> contentTypeCombo;
     private JComboBox<String> brokerProfileField;
@@ -71,7 +71,7 @@ public class TestCasePanel extends JPanel {
     private JButton btnSettings;
     private JLabel lblTopicDisplay;
 
-    private Map<Integer, AtomicInteger> attempts = new HashMap<>();
+
 
     public TestCasePanel() {
         setupTheme();
@@ -117,8 +117,10 @@ public class TestCasePanel extends JPanel {
         btnSaveMsgResult.addActionListener(e -> {
             saveMsgState();
             if (currentCase != null && currentMsg != null) {
-                ResultManager.getInstance().getState(currentCase.getTestCaseId())
-                    .msgLockedMap.put(currentMsg.getIndex(), true);
+                TestResult tr = ResultManager.getInstance().getLatestMessageResult(currentCase.getTestCaseId(), currentMsg.getIndex());
+                if (tr != null) {
+                    tr.setLocked(true);
+                }
                 updateUIFlags();
             }
         });
@@ -236,7 +238,7 @@ public class TestCasePanel extends JPanel {
         brokerProfileField.setEditable(false);
         // Pre-fill from TestConfig
         try {
-            String defaultProfile = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("amqp.broker.profile", "STANDARD");
+            String defaultProfile = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("amqp_broker_profile", "STANDARD");
             brokerProfileField.setSelectedItem(defaultProfile);
         } catch (Exception ex) {
             brokerProfileField.setSelectedIndex(0);
@@ -244,7 +246,7 @@ public class TestCasePanel extends JPanel {
         // Auto-save on selection change
         brokerProfileField.addActionListener(e -> {
             try {
-                com.amhs.swim.test.config.TestConfig.getInstance().setProperty("amqp.broker.profile", (String) brokerProfileField.getSelectedItem());
+                com.amhs.swim.test.config.TestConfig.getInstance().setProperty("amqp_broker_profile", (String) brokerProfileField.getSelectedItem());
             } catch (Exception ex) {
                 Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", "ERROR", "Failed to save broker profile: " + ex.getMessage());
             }
@@ -417,33 +419,34 @@ public class TestCasePanel extends JPanel {
 
     private void clearConfigForm() {
         configFields.clear();
-        // Remove all components except the standard AMQP rows
-        // Keep: priority (3), content-type (3), broker (3), recipients (3), bodyType (3) = 15
-        // (payload field removed from standard rows)
-        while (configFormPanel.getComponentCount() > 15) {
+        // Standard baseline component count:
+        // row0 priority:     JLabel + JTextField + JButton      = 3
+        // row1 content-type: JLabel + JComboBox  + JButton      = 3
+        // row2 broker:       JLabel + JComboBox  (no Upload!)   = 2  ← only 2!
+        // row3 recipients:   JLabel + JTextField + JButton      = 3
+        // row4 body-type:    JLabel + JTextField + JButton      = 3
+        //                                              TOTAL   = 14
+        final int BASELINE = 14;
+        while (configFormPanel.getComponentCount() > BASELINE) {
             configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         }
     }
 
     public void onMessageSelected(TestMessage msg) {
         currentMsg = msg;
-        
-        // Contextually parse the requirement text to approximate AMQP properties
+
+        // Parse priority hint from message requirement text
         String txt = msg.getMinText().toLowerCase();
-        
-        // Set priority from parsed text or default
         String prio = "4";
         if (txt.contains("priority=")) {
             int idx = txt.indexOf("priority=") + 9;
             int end = idx;
-            while(end < txt.length() && Character.isDigit(txt.charAt(end))) end++;
-            if (end > idx) {
-                prio = txt.substring(idx, end);
-            }
+            while (end < txt.length() && Character.isDigit(txt.charAt(end))) end++;
+            if (end > idx) prio = txt.substring(idx, end);
         }
         priorityField.setText(prio);
-        
-        // Set content type from parsed text or default
+
+        // Infer content-type / body-type from message requirement text
         String ctype = "text/plain; charset=\"utf-8\"";
         String btype = "AMQP_VALUE";
         if (txt.contains("binary") || txt.contains("application/octet-stream")) {
@@ -452,105 +455,327 @@ public class TestCasePanel extends JPanel {
         }
         if (txt.contains("charset=\"utf-16\"")) ctype = "text/plain; charset=\"utf-16\"";
         contentTypeCombo.setSelectedItem(ctype);
-        
-        // Set body type based on content
         bodyTypeField.setText(btype);
-        
-        // Determine case/message identifiers and consult CaseConfigManager for standardized defaults
+
         String caseId = currentCase.getTestCaseId();
         int mIdx = msg.getIndex();
         CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
-        String ddata = cfgMgr.getPayload(caseId, mIdx);
-        if (ddata == null || ddata.isEmpty()) ddata = msg.getDefaultData();
-        String[] parts = (ddata == null) ? new String[0] : ddata.split("\\|");
-        
-        // Extract amhs_recipients from default data if available
-        for (String part : parts) {
-            String trimmed = part.trim();
-            if (trimmed.toLowerCase().contains("@") || trimmed.matches("^[A-Z]{2}[0-9A-Z]{6}$")) {
-                amhsRecipientsField.setText(trimmed);
-                break;
-            }
+
+        // Build explicit field specs for this case/message.
+        // Each entry: { inputKey, displayLabel, defaultValue }
+        // These are the EXTRA fields beyond the 5 standard AMQP rows.
+        // executeSingle methods read from these exact inputKey names.
+        java.util.List<String[]> fieldSpecs = buildExtraFieldSpecs(caseId, mIdx, cfgMgr);
+
+        // Populate the standard AMHS RECIPIENTS field from config if applicable
+        String configDefault = cfgMgr.getPayload(caseId, mIdx);
+        if (configDefault == null) configDefault = msg.getDefaultData();
+        if (configDefault == null) configDefault = "";
+        // Only auto-fill recipients field if not a multi-address case (CTSW112)
+        if (!caseId.equals("CTSW112")) {
+            amhsRecipientsField.setText(""); // cleared; user fills via Tool Settings / prior session
         }
-        
-        // Clear and rebuild dynamic fields (keep standard AMQP fields)
+
+        // Clear and rebuild dynamic extra fields
         clearConfigForm();
-        
-        // Add additional custom fields based on case/message beyond the standard ones
-        // Do not add a dedicated "payload" UI field; use message default payload when sending
-        String[] labels = new String[]{};
-        if (caseId.equals("CTSW106")) {
-            labels = new String[]{"amhs_ats_ohi"};
-        } else if (caseId.equals("CTSW107")) {
-            if (mIdx == 3) labels = new String[]{"amhs_subject"};
-            else if (mIdx == 4) labels = new String[]{"subject", "amhs_subject"};
-            else labels = new String[]{"subject"};
-        } else if (caseId.equals("CTSW108") || caseId.equals("CTSW109")) {
-            labels = new String[]{"amhs_originator"};
-        }
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
-        int row = 6; // Start after all standard AMQP rows (priority, content-type, broker, recipients, bodyType)
+        int row = 5; // rows 0-4 are the 5 standard fields
 
-        for (int i = 0; i < parts.length; i++) {
-            String label;
-            if (i < labels.length) {
-                label = labels[i];
-            } else if (i == 0) {
-                // replace generic first extra param with a proper payload field
-                label = "payload";
-            } else {
-                label = "extra_param_" + i;
-            }
-            String value = parts[i].trim();
+        for (String[] spec : fieldSpecs) {
+            String key   = spec[0];
+            String label = spec[1];
+            String defVal = spec[2];
 
             gbc.gridy = row;
-            // ensure we always place the label at column 0 to avoid overlap
-            gbc.gridx = 0;
-            gbc.weightx = 0;
-            configFormPanel.add(new JLabel(label.toUpperCase() + ":"), gbc);
+            gbc.gridx = 0; gbc.weightx = 0;
+            configFormPanel.add(new JLabel(label + ":"), gbc);
 
-            gbc.gridx = 1;
-            gbc.weightx = 1.0;
-            JTextField tf = new JTextField(value);
+            gbc.gridx = 1; gbc.weightx = 1.0;
+            // Determine if this field holds a file path (not inline text content).
+            // File-path fields show only the basename in the text box but expose
+            // the full path via tooltip and inputs map, preventing panel overflow.
+            boolean isFilePath = key.toUpperCase().contains("FILE")
+                              || key.toUpperCase().contains("BIN")
+                              || key.toUpperCase().contains("ADDRESS")
+                              || key.toUpperCase().contains("PATH");
+
+            // For file-path fields: the stored/sent value is always the full path.
+            // Display value: basename only (avoids horizontal overflow in the narrow field).
+            String displayVal = defVal;
+            if (isFilePath && defVal != null && (defVal.contains("/") || defVal.contains("\\"))) {
+                int lastSep = Math.max(defVal.lastIndexOf('/'), defVal.lastIndexOf('\\'));
+                displayVal = defVal.substring(lastSep + 1);
+            }
+
+            JTextField tf = new JTextField(displayVal);
             tf.setEditable(true);
+            // Store the FULL path as the tooltip so doSendSingle can read it back
+            // via configFields.get(key).getText() — when user uploads a new file,
+            // doUploadField will set the full path as the field text.
+            if (isFilePath && !defVal.equals(displayVal)) {
+                tf.setToolTipText("Full path: " + defVal);
+                // Tag the field so doSendSingle uses the full path, not the truncated basename.
+                // We keep defVal as the real value via a client property.
+                tf.putClientProperty("fullPath", defVal);
+            }
             configFormPanel.add(tf, gbc);
-            configFields.put(label, tf);
+            configFields.put(key, tf);
 
-            gbc.gridx = 2;
-            gbc.weightx = 0;
+            gbc.gridx = 2; gbc.weightx = 0;
             JButton btnUpload = new JButton("Upload");
-            final String fieldLabel = label;
-            btnUpload.addActionListener(e -> doUploadField(fieldLabel));
+            final String fKey = key;
+            btnUpload.addActionListener(e -> doUploadField(fKey));
             configFormPanel.add(btnUpload, gbc);
 
             row++;
         }
-        
+
         configFormPanel.revalidate();
         configFormPanel.repaint();
 
-        // Sync Description box with message-specific text first, then case text
-        String desc = "[MESSAGE REQUIREMENT (ICAO Testbook)]\n" + msg.getMinText() + "\n\n" + 
-                      "[SCENARIO DESCRIPTION]\n" + TestbookLoader.getDescription(currentCase.getTestCaseId());
+        // Description area
+        String desc = "[MESSAGE REQUIREMENT (ICAO Testbook)]\n" + msg.getMinText() + "\n\n"
+                    + "[SCENARIO DESCRIPTION]\n" + TestbookLoader.getDescription(currentCase.getTestCaseId());
         descriptionArea.setText(desc);
         SwingUtilities.invokeLater(() -> descriptionArea.setCaretPosition(0));
 
-        // Update message state toggle
-        CaseSessionState state = ResultManager.getInstance().getState(currentCase.getTestCaseId());
-        Boolean pass = state.getMsgPass(msg.getIndex());
-        if (pass != null) {
-            if (pass) chkMsgPass.setSelected(true);
-            else chkMsgFail.setSelected(true);
+        // Restore message pass/fail state from last result
+        TestResult tr = ResultManager.getInstance().getLatestMessageResult(currentCase.getTestCaseId(), msg.getIndex());
+        if (tr != null) {
+            Boolean pass = tr.getMsgPass();
+            if (pass != null) {
+                if (pass) chkMsgPass.setSelected(true);
+                else chkMsgFail.setSelected(true);
+            } else {
+                chkMsgPass.setSelected(false);
+                chkMsgFail.setSelected(false);
+            }
+            txtMsgNote.setText(tr.getMsgNote());
         } else {
             chkMsgPass.setSelected(false);
             chkMsgFail.setSelected(false);
+            txtMsgNote.setText("");
         }
-        txtMsgNote.setText(state.getMsgNote(msg.getIndex()));
         updateUIFlags();
+    }
+
+    /**
+     * Returns the list of extra config fields for a given case/message.
+     * Each entry is String[3]: { inputKey, displayLabel, defaultValue }.
+     *
+     * Keys must match exactly what the executeSingle method reads from inputs.
+     * Defaults are loaded from CaseConfigManager (XML) where applicable.
+     */
+    private java.util.List<String[]> buildExtraFieldSpecs(String caseId, int mIdx, CaseConfigManager cfgMgr) {
+        java.util.List<String[]> specs = new java.util.ArrayList<>();
+        String raw = cfgMgr.getPayload(caseId, mIdx);
+        if (raw == null) raw = "";
+
+        switch (caseId) {
+            // ── CTSW102 ──────────────────────────────────────────────────────────
+            // msgs 1-6: text payload key "payload"
+            // msgs 7-12: binary file key "binPayload_N"
+            // msg 11 extra: recip_11 (>8-char recipient per EUR Doc 047 §4.5.1.4)
+            case "CTSW102": {
+                if (mIdx >= 7 && mIdx <= 12) {
+                    // Parse pipe: filePath|recip_11 (only msg 11 has second segment)
+                    String[] parts = raw.split("\\|", 2);
+                    String defPath = parts[0].trim();
+                    specs.add(new String[]{"binPayload_" + mIdx, "BINARY FILE (msg " + mIdx + ")", defPath});
+                    if (mIdx == 11) {
+                        String defRecip = parts.length > 1 ? parts[1].trim() : "LONGADDRESSXXXXX";
+                        specs.add(new String[]{"recip_11", "RECIP_11 (>8 chars → REJECT)", defRecip});
+                    }
+                } else {
+                    specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
+                }
+                break;
+            }
+            // ── CTSW103 ──────────────────────────────────────────────────────────
+            // msgs 2,4 are binary (file key); others text (payload key)
+            case "CTSW103": {
+                if (mIdx == 2 || mIdx == 4) {
+                    specs.add(new String[]{"binFile_" + mIdx, "BINARY FILE (msg " + mIdx + ")", raw});
+                } else {
+                    specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
+                }
+                break;
+            }
+            // ── CTSW104 ──────────────────────────────────────────────────────────
+            case "CTSW104":
+                specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
+                break;
+            // ── CTSW105 ──────────────────────────────────────────────────────────
+            // msg 2 has a filing time (always 250102); rest is payload
+            case "CTSW105": {
+                specs.add(new String[]{"p" + mIdx, "TEXT PAYLOAD", raw});
+                if (mIdx == 2) {
+                    specs.add(new String[]{"amhs_ats_ft", "AMHS ATS FILING TIME (DDhhmm)", "250102"});
+                }
+                break;
+            }
+            // ── CTSW106 ──────────────────────────────────────────────────────────
+            // executeSingle reads inputs.get("p"+idx), splits by "|": part[0]=ohi, part[1]=body
+            // We expose both as separate fields using the SAME p<N> key split logic
+            // but to avoid double-read issues we expose them as separate keys and
+            // override the default pipe delivery:
+            // Actually CTSW106's executeSingle reads "p"+idx as raw pipe string.
+            // So expose as single "p<N>" = "OHI|BODY" format for user to edit directly.
+            case "CTSW106": {
+                String[] parts = raw.split("\\|", 2);
+                String defOhi  = parts.length > 0 ? parts[0].trim() : "";
+                String defBody = parts.length > 1 ? parts[1].trim() : "OHI Content";
+                specs.add(new String[]{"amhs_ats_ohi_" + mIdx, "OHI (amhs_ats_ohi, msg " + mIdx + ")", defOhi});
+                specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",                         defBody});
+                break;
+            }
+            // ── CTSW107 ──────────────────────────────────────────────────────────
+            // executeSingle reads "p"+idx as raw pipe string
+            // msg1: subject|body  msg2: subject|body  msg3: amhs_subject|body  msg4: subject|amhs_subject|body
+            case "CTSW107": {
+                String[] parts = raw.split("\\|", -1);
+                if (mIdx == 4) {
+                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",       parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (wins)", parts.length > 1 ? parts[1].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",        parts.length > 2 ? parts[2].trim() : ""});
+                } else if (mIdx == 3) {
+                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (app prop)", parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",             parts.length > 1 ? parts[1].trim() : ""});
+                } else {
+                    specs.add(new String[]{"subject_" + mIdx, "AMQP SUBJECT",  parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,    "BODY PAYLOAD",   parts.length > 1 ? parts[1].trim() : ""});
+                }
+                break;
+            }
+            // ── CTSW108 ──────────────────────────────────────────────────────────
+            // executeSingle reads "p1" as "originator|body"
+            case "CTSW108": {
+                String[] parts = raw.split("\\|", 2);
+                specs.add(new String[]{"originator_108", "AMHS ORIGINATOR (known 8-char)", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
+                specs.add(new String[]{"body_108",        "BODY PAYLOAD",                  parts.length > 1 ? parts[1].trim() : "Known Orig Body"});
+                break;
+            }
+            // ── CTSW109 ──────────────────────────────────────────────────────────
+            case "CTSW109": {
+                String[] parts = raw.split("\\|", 2);
+                specs.add(new String[]{"originator_109", "AMHS ORIGINATOR (unknown → fallback)", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
+                specs.add(new String[]{"body_109",        "BODY PAYLOAD",                         parts.length > 1 ? parts[1].trim() : "Unknown Orig Body"});
+                break;
+            }
+            // ── CTSW110 ──────────────────────────────────────────────────────────
+            case "CTSW110": {
+                if (mIdx == 2 || mIdx == 3) {
+                    specs.add(new String[]{"binFile_" + mIdx, "BINARY FILE", raw});
+                } else if (mIdx == 4 || mIdx == 5 || mIdx == 6) {
+                    specs.add(new String[]{"text_" + mIdx, "TEXT PAYLOAD", raw});
+                }
+                // msg 1 has no editable payload (empty by design)
+                break;
+            }
+            // ── CTSW111 ──────────────────────────────────────────────────────────
+            // All 4 messages have editable payloads for user testing.
+            // Defaults from XML: msgs 1/3 = text payload, msgs 2/4 = binary file path.
+            // EUR Doc 047 §4.5.1.7 — size limit testing.
+            case "CTSW111": {
+                if (mIdx == 1) {
+                    specs.add(new String[]{"maxSizeText",    "TEXT PAYLOAD (≤ max, auto-padded to 1 KB if shorter)", raw});
+                } else if (mIdx == 2) {
+                    specs.add(new String[]{"maxSizeBin",     "BINARY FILE (≤ max)",   raw});
+                } else if (mIdx == 3) {
+                    specs.add(new String[]{"maxSizeTextOver", "TEXT PAYLOAD (> max, padded to max+1 KB if shorter)", raw});
+                } else if (mIdx == 4) {
+                    specs.add(new String[]{"maxSizeBinOver", "BINARY FILE (> max)",    raw});
+                }
+                break;
+            }
+            // ── CTSW112 ──────────────────────────────────────────────────────────
+            // executeSingle reads addressFile_a / addressFile_b
+            // The field stores the FILE PATH only; actual addresses are loaded
+            // at send-time by loadAddressFile(). Display a short label to avoid overflow.
+            case "CTSW112": {
+                String fileKey = (mIdx == 1) ? "addressFile_a" : "addressFile_b";
+                String bodyKey = "p" + mIdx + "_body";
+                // raw is a file path — show only the filename part in the field to avoid overflow,
+                // but store the full path so executeSingle can load the file
+                String displayPath = raw;
+                if (raw != null && raw.contains("/")) {
+                    displayPath = raw.substring(raw.lastIndexOf('/') + 1).trim();
+                } else if (raw != null && raw.contains("\\")) {
+                    displayPath = raw.substring(raw.lastIndexOf('\\') + 1).trim();
+                }
+                String expectedCount = (mIdx == 1) ? "512" : "513";
+                specs.add(new String[]{fileKey,
+                    "ADDRESS FILE (" + expectedCount + " lines, one address per line)",
+                    displayPath});
+                specs.add(new String[]{bodyKey, "MESSAGE BODY", "Msg " + (mIdx == 1 ? "512" : "513")});
+                break;
+            }
+            // ── CTSW113 ──────────────────────────────────────────────────────────
+            // executeSingle reads "p<N>" as payload, "amhs_notification_request" as notif field
+            // Default notif_request = rn,nrn (EUR Doc 047 §4.4.7.3), editable per-session
+            case "CTSW113": {
+                String[] parts = raw.split("\\|", 2);
+                String defPayload = parts.length > 0 ? parts[0].trim() : "";
+                String defNotif   = parts.length > 1 ? parts[1].trim() : "rn,nrn";
+                specs.add(new String[]{"p" + mIdx, "TEXT PAYLOAD", defPayload});
+                specs.add(new String[]{"amhs_notification_request", "NOTIF REQUEST (rn,nrn per §4.4.7.3)", defNotif});
+                break;
+            }
+            // ── CTSW114 ──────────────────────────────────────────────────────────
+            // NDR trigger: executeSingle reads p1 (payload), amhs_originator, amhs_notification_request_114
+            // amhs_originator  — REQUIRED so AMHS knows where to return the NDR (EUR Doc 047 §4.4.1.3)
+            // amhs_notification_request — must include 'nrn' so AMHS generates NDR on delete (§4.4.7.3)
+            case "CTSW114": {
+                String[] parts = raw.split("\\|", 3);
+                String defPayload = parts.length > 0 ? parts[0].trim() : "CTSW114 NDR Trigger";
+                String defOrig    = parts.length > 1 ? parts[1].trim() : "XXXXXXXX";
+                String defNotif   = parts.length > 2 ? parts[2].trim() : "nrn";
+                specs.add(new String[]{"p1",                            "TEXT PAYLOAD",                                      defPayload});
+                specs.add(new String[]{"amhs_originator",               "AMHS ORIGINATOR (NDR return address, EUR Doc §4.4.1.3)", defOrig});
+                specs.add(new String[]{"amhs_notification_request_114", "NOTIF REQUEST (must include 'nrn' per §4.4.7.3)",          defNotif});
+                break;
+            }
+            // ── CTSW115 ──────────────────────────────────────────────────────────
+            // executeSingle reads keys[i], amhs_bodypart_type, amhs_content_encoding
+            // EUR Doc 047 §4.5.2.4-4.5.2.5, Table 10-11
+            case "CTSW115": {
+                String[] parts = raw.split("\\|", 3);
+                String[] specBP  = {"ia5-text","ia5_text_body_part","general-text-body-part","general-text-body-part"};
+                String[] specEnc = {"IA5","IA5","ISO-646","ISO-8859-1"};
+                String[] pkeys   = {"p1","p2","p3","p4"};
+                int i = mIdx - 1;
+                String defPay = parts.length > 0 ? parts[0].trim() : "";
+                String defBP  = parts.length > 1 ? parts[1].trim() : (i >= 0 && i < specBP.length ? specBP[i] : "ia5-text");
+                String defEnc = parts.length > 2 ? parts[2].trim() : (i >= 0 && i < specEnc.length ? specEnc[i] : "IA5");
+                specs.add(new String[]{pkeys[i],                 "TEXT PAYLOAD",                                        defPay});
+                specs.add(new String[]{"amhs_bodypart_type",     "BODYPART TYPE (EUR Doc 047 Table 10)",                 defBP});
+                specs.add(new String[]{"amhs_content_encoding",  "CONTENT ENCODING (EUR Doc 047 Table 11)",              defEnc});
+                break;
+            }
+            // ── CTSW116 ──────────────────────────────────────────────────────────
+            // executeSingle reads binFile/binFile2, amhs_ftbp_last_mod
+            // EUR Doc 047 §4.5.2.6-4.5.2.8
+            case "CTSW116": {
+                String[] parts = raw.split("\\|", 2);
+                String defPath    = parts.length > 0 ? parts[0].trim() : "src/main/resources/sample.pdf";
+                String defLastMod = parts.length > 1 ? parts[1].trim() : "240101120000Z";
+                String fileKey = (mIdx == 1) ? "binFile" : "binFile2";
+                specs.add(new String[]{fileKey,              "BINARY FILE",                              defPath});
+                specs.add(new String[]{"amhs_ftbp_last_mod", "FTBP LAST MOD (DDMMYYhhmmssZ per §4.5.2.7)", defLastMod});
+                break;
+            }
+            default:
+                // Generic: expose the config default as a plain payload field
+                if (!raw.isEmpty()) {
+                    specs.add(new String[]{"payload", "PAYLOAD", raw});
+                }
+                break;
+        }
+        return specs;
     }
     
     private void doUploadField(String fieldName) {
@@ -563,48 +788,69 @@ public class TestCasePanel extends JPanel {
         if (result == JFileChooser.APPROVE_OPTION) {
             File selectedFile = fc.getSelectedFile();
             try {
-                String content = Files.readString(selectedFile.toPath());
-                // Map known standard fields (labels) to their components
                 String lookup = fieldName == null ? "" : fieldName.trim().toUpperCase();
-                JTextField tf = null;
                 
+                // Fields that store a FILE PATH (not file contents):
+                // - any field whose key contains "bin", "file", "path", or "address" (case-insensitive)
+                // - the standard AMHS RECIPIENTS field (line-separated address file)
+                boolean isPathField =
+                       lookup.contains("BIN")
+                    || lookup.contains("FILE")
+                    || lookup.contains("PATH")
+                    || lookup.contains("ADDRESS")
+                    || (currentMsg != null && currentMsg.isFile() && "PAYLOAD".equalsIgnoreCase(lookup));
+
+                if (lookup.startsWith("AMHS RECIPIENTS")) {
+                    // Parse addresses from file content into the standard recipients field
+                    String content = Files.readString(selectedFile.toPath());
+                    String addresses = parseAddressesList(content);
+                    amhsRecipientsField.setText(addresses);
+                    Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI",
+                        "INFO", "Loaded addresses from file: " + selectedFile.getName()
+                               + " → " + addresses.split(",").length + " address(es)");
+                    return;
+                }
+
+                if (isPathField) {
+                    // Store the absolute path — executeSingle reads and resolves the file itself
+                    JTextField tf = configFields.get(fieldName);
+                    if (tf != null) {
+                        tf.setText(selectedFile.getAbsolutePath());
+                        Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI",
+                            "INFO", "Set file path for [" + fieldName + "]: " + selectedFile.getAbsolutePath());
+                    }
+                    return;
+                }
+
+                // Default: read text content into the field
+                String content = Files.readString(selectedFile.toPath());
+                JTextField tf = null;
                 if (lookup.startsWith("AMQP PRIORITY")) {
                     tf = priorityField;
                 } else if (lookup.startsWith("CONTENT TYPE")) {
-                    // content-type is a combo box
                     contentTypeCombo.setSelectedItem(content.trim());
-                } else if (lookup.startsWith("AMQP BROKER")) {
-                    // Broker Profile is now a dropdown - can't be set from file
-                    JOptionPane.showMessageDialog(this, 
-                        "AMQP Broker Profile is now a dropdown selector.\nPlease select from the available options.",
-                        "Info", JOptionPane.INFORMATION_MESSAGE);
                     return;
-                } else if (lookup.startsWith("AMHS RECIPIENTS")) {
-                    // Parse addresses: support both file paths and comma-separated lists
-                    String addresses = parseAddressesList(content);
-                    tf = amhsRecipientsField;
-                    if (tf != null) tf.setText(addresses);
-                    Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
-                        "INFO", "Loaded " + fieldName + " from file: " + selectedFile.getName());
-                    Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
-                        "INFO", "Parsed addresses: " + addresses);
+                } else if (lookup.startsWith("AMQP BROKER")) {
+                    JOptionPane.showMessageDialog(this,
+                        "AMQP Broker Profile is a dropdown selector.\nPlease select from the available options.",
+                        "Info", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 } else if (lookup.startsWith("AMQP BODY TYPE")) {
                     tf = bodyTypeField;
                 } else {
-                    // fallback to dynamic fields map (keys use canonical names)
                     tf = configFields.get(fieldName);
                 }
-                if (tf != null) tf.setText(content);
-                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
-                    "INFO", "Loaded " + fieldName + " from file: " + selectedFile.getName());
+                if (tf != null) tf.setText(content.trim());
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI",
+                    "INFO", "Loaded [" + fieldName + "] from file: " + selectedFile.getName());
             } catch (IOException e) {
                 JOptionPane.showMessageDialog(this, "Failed to read file: " + e.getMessage());
-                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI", 
-                    "ERROR", "Failed to load " + fieldName + ": " + e.getMessage());
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI",
+                    "ERROR", "Failed to load [" + fieldName + "]: " + e.getMessage());
             }
         }
     }
+
 
     /**
      * Parse addresses from file content or comma-separated list.
@@ -655,11 +901,13 @@ public class TestCasePanel extends JPanel {
 
     private void saveMsgState() {
         if (currentCase == null || currentMsg == null) return;
-        CaseSessionState state = ResultManager.getInstance().getState(currentCase.getTestCaseId());
-        if (chkMsgPass.isSelected()) state.setMsgPass(currentMsg.getIndex(), true);
-        else if (chkMsgFail.isSelected()) state.setMsgPass(currentMsg.getIndex(), false);
-        else state.setMsgPass(currentMsg.getIndex(), null);
-        state.setMsgNote(currentMsg.getIndex(), txtMsgNote.getText());
+        TestResult tr = ResultManager.getInstance().getLatestMessageResult(currentCase.getTestCaseId(), currentMsg.getIndex());
+        if (tr != null && !tr.isLocked()) {
+            if (chkMsgPass.isSelected()) tr.setMsgPass(true);
+            else if (chkMsgFail.isSelected()) tr.setMsgPass(false);
+            else tr.setMsgPass(null);
+            tr.setMsgNote(txtMsgNote.getText());
+        }
     }
 
     private void doSendSingle() {
@@ -680,50 +928,64 @@ public class TestCasePanel extends JPanel {
         }
         
         int msgIndex = currentMsg.getIndex();
-        AtomicInteger cnt = attempts.computeIfAbsent(msgIndex, k -> new AtomicInteger(0));
-        int attempt = cnt.incrementAndGet();
+        int attempt = ResultManager.getInstance().getNextAttempt(currentCase.getTestCaseId(), msgIndex);
         
         Map<String, String> inputs = new HashMap<>();
         
-        // Get values from standard AMQP form fields
-        String priority = priorityField.getText().trim();
-        String contentType = (String) contentTypeCombo.getSelectedItem();
+        String priority      = priorityField.getText().trim();
+        String contentType   = (String) contentTypeCombo.getSelectedItem();
         String brokerProfile = (String) brokerProfileField.getSelectedItem();
-        String amhsRecipients = amhsRecipientsField.getText();
-        String bodyType = bodyTypeField.getText();
+        String bodyType      = bodyTypeField.getText();
+
+        // For CTSW112 the address file field drives recipients, NOT the standard field.
+        // For all other cases: AMHS RECIPIENTS standard field drives recip().
+        String caseId = currentCase.getTestCaseId();
+        String amhsRecipients;
+        if (caseId.equals("CTSW112")) {
+            // Leave empty — executeSingle loads addresses from the addressFile_a/b extra field
+            amhsRecipients = "";
+        } else {
+            amhsRecipients = parseAddressesList(amhsRecipientsField.getText());
+        }
         
         // Add standard AMQP properties to inputs
-        inputs.put("amqp_priority", priority);
-        inputs.put("content_type", contentType);
+        inputs.put("amqp_priority",  priority);
+        inputs.put("content_type",   contentType);
         inputs.put("broker_profile", brokerProfile);
-        inputs.put("recipient", amhsRecipients);  // Match SwimToAmhsTests.recip(in) key
-        inputs.put("body_type", bodyType);
+        inputs.put("recipient",      amhsRecipients);  // key read by recip() helper
+        inputs.put("body_type",      bodyType);
         
-        // Build payload: start with the message default payload (if any), then append dynamic/custom fields
-        StringBuilder payloadBuilder = new StringBuilder();
-        CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
-        String configuredDefault = cfgMgr.getPayload(currentCase.getTestCaseId(), msgIndex);
-        String defaultData = (configuredDefault != null && !configuredDefault.isEmpty()) ? configuredDefault : currentMsg.getDefaultData();
-        if (defaultData != null && !defaultData.isEmpty()) {
-            String[] dparts = defaultData.split("\\|");
-            if (dparts.length > 0) payloadBuilder.append(dparts[0].trim());
-        }
-
+        // Put each extra config field value under its own key — this is the critical fix.
+        // Previously all fields were concatenated into one pipe-string; that broke per-field
+        // key lookups (e.g. originator_108, amhs_ats_ohi_1, subject_1, addressFile_a, etc.).
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
-            String txt = entry.getValue().getText();
-            if (txt == null || txt.isEmpty()) continue;
-            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
-            payloadBuilder.append(txt);
+            String val = entry.getValue().getText();
+            if (val != null && !val.isEmpty()) {
+                inputs.put(entry.getKey(), val);
+            }
         }
 
+        // Also build a human-readable payload summary for the primary custom key and log
+        StringBuilder payloadBuilder = new StringBuilder();
+        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+            String val = entry.getValue().getText();
+            if (val == null || val.isEmpty()) continue;
+            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
+            payloadBuilder.append(entry.getKey()).append("=").append(val);
+        }
         String finalPayload = payloadBuilder.toString();
-        inputs.put("p" + msgIndex, finalPayload);
-        inputs.put(currentMsg.getCustomKey(), finalPayload);
+        // Also expose under the message's primary customKey for backward compatibility
+        if (!inputs.containsKey(currentMsg.getCustomKey()) || inputs.get(currentMsg.getCustomKey()).isEmpty()) {
+            inputs.put(currentMsg.getCustomKey(), finalPayload);
+        }
 
-        // Log the prepared message and properties so logs match the config screen
+        // Log the prepared message and properties
+        String recipDisplay = caseId.equals("CTSW112")
+            ? "[loaded from address file]"
+            : amhsRecipients;
         String logMsg = "Prepared message " + msgIndex + " properties: amqp_priority=" + priority
             + ", content_type=" + contentType + ", broker_profile=" + brokerProfile
-            + ", amhs_recipients=" + amhsRecipients + ", body_type=" + bodyType
+            + ", amhs_recipients=" + recipDisplay + ", body_type=" + bodyType
             + " | PAYLOAD: " + finalPayload;
         Logger.logCase(currentCase.getTestCaseId(), "INFO", logMsg);
 
@@ -737,11 +999,6 @@ public class TestCasePanel extends JPanel {
                     inputs.getOrDefault(currentMsg.getCustomKey(), ""),
                     sent ? "SUCCESS" : "ERROR"
                 ));
-                
-                CaseSessionState state = ResultManager.getInstance().getState(currentCase.getTestCaseId());
-                state.msgLockedMap.put(msgIndex, false);
-                state.setMsgPass(msgIndex, null);
-                state.setMsgNote(msgIndex, "");
                 
                 SwingUtilities.invokeLater(() -> {
                     if (currentMsg != null && currentMsg.getIndex() == msgIndex) {
@@ -814,14 +1071,10 @@ public class TestCasePanel extends JPanel {
         // Message Flag
         if (currentMsg != null) {
             int mIdx = currentMsg.getIndex();
-            boolean msgSent = false;
-            for (TestResult r : ResultManager.getInstance().getResults()) {
-                if (r.getCaseCode().equals(currentCase.getTestCaseId()) && r.getMessageIndex() == mIdx) {
-                    msgSent = true; break;
-                }
-            }
-            CaseSessionState state = ResultManager.getInstance().getState(currentCase.getTestCaseId());
-            boolean isLocked = state.msgLockedMap.getOrDefault(mIdx, false);
+            TestResult tr = ResultManager.getInstance().getLatestMessageResult(currentCase.getTestCaseId(), mIdx);
+            
+            boolean msgSent = (tr != null);
+            boolean isLocked = (tr != null) && tr.isLocked();
             
             boolean msgEnabled = msgSent && !isLocked;
             chkMsgPass.setEnabled(msgEnabled);
@@ -921,10 +1174,6 @@ public class TestCasePanel extends JPanel {
 
         // Show assembled payload that will be sent
         StringBuilder payloadBuilder = new StringBuilder();
-        if (defaultData != null && !defaultData.isEmpty()) {
-            String[] dparts = defaultData.split("\\|");
-            if (dparts.length > 0) payloadBuilder.append(dparts[0].trim());
-        }
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
             String txt = entry.getValue().getText();
             if (txt == null || txt.isEmpty()) continue;

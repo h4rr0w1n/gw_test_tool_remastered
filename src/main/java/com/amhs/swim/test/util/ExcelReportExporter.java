@@ -72,16 +72,13 @@ public class ExcelReportExporter {
                 Row row = sheet.createRow(rowIdx++);
                 
                 String combinedResult = res.getAutoResult();
-                CaseSessionState state = ResultManager.getInstance().getState(res.getCaseCode());
-                if (state != null) {
-                    Boolean msgPass = state.getMsgPass(res.getMessageIndex());
-                    if (msgPass != null) {
-                        combinedResult += msgPass ? " [Manual: PASS]" : " [Manual: FAIL]";
-                    }
-                    String note = state.getMsgNote(res.getMessageIndex());
-                    if (!note.isEmpty()) {
-                        combinedResult += " (Note: " + note + ")";
-                    }
+                Boolean msgPass = res.getMsgPass();
+                if (msgPass != null) {
+                    combinedResult += msgPass ? " [Manual: PASS]" : " [Manual: FAIL]";
+                }
+                String note = res.getMsgNote();
+                if (note != null && !note.isEmpty()) {
+                    combinedResult += " (Note: " + note + ")";
                 }
 
                 row.createCell(0).setCellValue(res.getCaseCode());

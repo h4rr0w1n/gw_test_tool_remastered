@@ -17,6 +17,7 @@ public class ResultManager {
     private static ResultManager instance;
     private final List<TestResult> results = Collections.synchronizedList(new ArrayList<>());
     private final Map<String, CaseSessionState> sessionStates = new HashMap<>();
+    private final Map<String, java.util.concurrent.atomic.AtomicInteger> attemptCounters = new HashMap<>();
 
     private ResultManager() {}
 
@@ -38,10 +39,31 @@ public class ResultManager {
     public void clear() {
         results.clear();
         sessionStates.clear();
+        attemptCounters.clear();
+    }
+
+    public int getNextAttempt(String caseCode, int messageIndex) {
+        String key = caseCode + "_" + messageIndex;
+        return attemptCounters.computeIfAbsent(key, k -> new java.util.concurrent.atomic.AtomicInteger(0)).incrementAndGet();
     }
 
     public CaseSessionState getState(String caseCode) {
         return sessionStates.computeIfAbsent(caseCode, k -> new CaseSessionState());
+    }
+
+    /**
+     * Gets the latest TestResult for a specific case and message index.
+     * Searches backwards since newer results are added at the end.
+     */
+    public TestResult getLatestMessageResult(String caseCode, int messageIndex) {
+        List<TestResult> syncResults = getResults(); // thread-safe copy
+        for (int i = syncResults.size() - 1; i >= 0; i--) {
+            TestResult r = syncResults.get(i);
+            if (r.getCaseCode().equals(caseCode) && r.getMessageIndex() == messageIndex) {
+                return r;
+            }
+        }
+        return null;
     }
 
     // ──────────────────────────────────────────────

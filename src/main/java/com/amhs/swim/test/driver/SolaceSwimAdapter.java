@@ -150,13 +150,25 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             msg = bytesMsg;
         }
         
-        // Set User Properties
+        // Set User Properties — all amhs_* keys + message_id + creation_time
         SDTMap userProps = JCSMPFactory.onlyInstance().createMap();
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             if (key.startsWith("amhs_")) {
                 userProps.putString(key, String.valueOf(entry.getValue()));
             }
+        }
+        // amhs_message_id: empty string signals "no message-id" for rejection testing (EUR Doc 047 §4.5.1.2)
+        if (properties.containsKey("amhs_message_id")) {
+            userProps.putString("amhs_message_id", String.valueOf(properties.get("amhs_message_id")));
+        }
+        // creation_time: value 0 signals epoch/zero timestamp for rejection testing (EUR Doc 047 §4.5.1.3)
+        if (properties.containsKey("creation_time")) {
+            Object ct = properties.get("creation_time");
+            if (ct instanceof Long) {
+                msg.setSenderTimestamp((Long) ct);
+            }
+            userProps.putString("creation_time", String.valueOf(ct));
         }
         msg.setProperties(userProps);
         
@@ -171,6 +183,7 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         producer.send(msg, dest);
         
         Logger.log("SUCCESS", "Message published via Solace JCSMP.");
+
     }
     
     @Override

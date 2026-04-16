@@ -14,6 +14,11 @@ public class TestResult {
     private String payloadSummary;
     private String autoResult;
 
+    // Attempt-specific manual validation
+    private Boolean msgPass;
+    private String msgNote = "";
+    private boolean locked = false;
+
     /**
      * Constructs a result record for a specific message attempt.
      */
@@ -31,4 +36,13 @@ public class TestResult {
     public int getMessageIndex() { return messageIndex; }
     public String getPayloadSummary() { return payloadSummary; }
     public String getAutoResult() { return autoResult; }
+
+    public Boolean getMsgPass() { return msgPass; }
+    public void setMsgPass(Boolean msgPass) { this.msgPass = msgPass; }
+
+    public String getMsgNote() { return msgNote; }
+    public void setMsgNote(String msgNote) { this.msgNote = (msgNote == null) ? "" : msgNote; }
+
+    public boolean isLocked() { return locked; }
+    public void setLocked(boolean locked) { this.locked = locked; }
 }

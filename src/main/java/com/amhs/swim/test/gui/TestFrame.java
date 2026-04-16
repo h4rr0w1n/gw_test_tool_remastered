@@ -325,13 +325,10 @@ public class TestFrame extends JFrame {
         java.util.List<ResultManager.ResultRow> out = new java.util.ArrayList<>();
         for (com.amhs.swim.test.util.TestResult res : ResultManager.getInstance().getResults()) {
             String combined = res.getAutoResult();
-            CaseSessionState state = ResultManager.getInstance().getState(res.getCaseCode());
-            if (state != null) {
-                Boolean mp = state.getMsgPass(res.getMessageIndex());
-                if (mp != null) combined += mp ? " [Manual: PASS]" : " [Manual: FAIL]";
-                String note = state.getMsgNote(res.getMessageIndex());
-                if (!note.isEmpty()) combined += " (" + note + ")";
-            }
+            Boolean mp = res.getMsgPass();
+            if (mp != null) combined += mp ? " [Manual: PASS]" : " [Manual: FAIL]";
+            String note = res.getMsgNote();
+            if (note != null && !note.isEmpty()) combined += " (" + note + ")";
             out.add(new ResultManager.ResultRow(
                 res.getCaseCode(),
                 res.getAttempt(),
@@ -438,11 +435,6 @@ public class TestFrame extends JFrame {
         JTextField topicField = styledField(TestConfig.getInstance().getProperty("gateway.default_topic","TEST.TOPIC"), 14);
         configPanel.add(topicField, gc);
 
-        gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 1; gc.weightx = 0;
-        configPanel.add(label("Test Recipient (AMHS O/R):"), gc);
-        gc.gridx = 1; gc.gridwidth = 3; gc.weightx = 1;
-        JTextField recipientField = styledField(TestConfig.getInstance().getProperty("gateway.test_recipient","VVTSYMYX"), 14);
-        configPanel.add(recipientField, gc);
 
         // ── Buttons ──
         gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 2; gc.weightx = 0.5;
@@ -462,7 +454,6 @@ public class TestFrame extends JFrame {
             cfg.setProperty("swim.broker.password", new String(passField.getPassword()));
             cfg.setProperty("swim.broker.vpn", vpnField.getText());
             cfg.setProperty("gateway.default_topic", topicField.getText());
-            cfg.setProperty("gateway.test_recipient", recipientField.getText());
             cfg.setProperty("amqp_broker_profile", (String) profileCombo.getSelectedItem());
             cfg.saveConfig();
             swimToAmhsTests = new SwimToAmhsTests();
@@ -513,7 +504,6 @@ public class TestFrame extends JFrame {
         autoSave(userField,      "swim.broker.user");
         autoSave(vpnField,       "swim.broker.vpn");
         autoSave(topicField,     "gateway.default_topic");
-        autoSave(recipientField, "gateway.test_recipient");
         profileCombo.addActionListener(e ->
             TestConfig.getInstance().setProperty("amqp_broker_profile", (String) profileCombo.getSelectedItem()));
         passField.getDocument().addDocumentListener(docListener(() ->

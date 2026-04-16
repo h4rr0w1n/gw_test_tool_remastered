@@ -46,9 +46,7 @@ public class SwimToAmhsTests {
     }
 
     private String recip(Map<String, String> in) {
-        return in != null ? in.getOrDefault("recipient",
-            TestConfig.getInstance().getProperty("gateway.test_recipient", ""))
-            : TestConfig.getInstance().getProperty("gateway.test_recipient", "");
+        return in != null ? in.getOrDefault("recipient", "") : "";
     }
 
     private void dual(Map<String, String> in, byte[] payload, SwimDriver.AMQPProperties props) throws Exception {
@@ -92,6 +90,16 @@ public class SwimToAmhsTests {
             Logger.logCase(caseId, "ERROR", "Failed to read address file: " + e.getMessage());
             return new String[0];
         }
+    }
+
+    /**
+     * Read a named field from the inputs map.
+     * Returns the inputs value if present and non-blank, otherwise returns defaultValue.
+     */
+    private String getInput(Map<String, String> inputs, String key, String defaultValue) {
+        if (inputs == null) return defaultValue;
+        String v = inputs.get(key);
+        return (v != null && !v.trim().isEmpty()) ? v.trim() : defaultValue;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -193,7 +201,7 @@ public class SwimToAmhsTests {
                     }
                     
                     byte[] payload;
-                    if (Files.exists(Paths.get(path))) {
+                    if (path != null && !path.trim().isEmpty() && Files.exists(Paths.get(path))) {
                         payload = Files.readAllBytes(Paths.get(path));
                         Logger.logCase(testCaseId, "INFO", "Loaded binary file: " + path + " (" + payload.length + " bytes)");
                     } else {
@@ -276,17 +284,25 @@ public class SwimToAmhsTests {
             // Get priority from inputs or use default based on test case
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
             
-            // For indices 7-12, lead binary file bytes if available
+            // For indices 7-12, load binary file bytes if available.
+            // Msg 11: binPayload_11 key holds the file path (first pipe-segment from config).
             if (idx >= 7 && idx <= 12) {
                 String key = "binPayload_" + idx;
-                String path = (inputs != null ? inputs.getOrDefault(key, "src/main/resources/sample.pdf") : "src/main/resources/sample.pdf");
-                if (Files.exists(Paths.get(path))) {
+                // For msg 11 the config payload is pipe-separated: filePath|recip_11
+                // The file upload button puts the path in binPayload_11 directly.
+                String rawDefault = CaseConfigManager.getInstance().getPayload("CTSW102", idx);
+                String defaultPath = (rawDefault != null && rawDefault.contains("|"))
+                    ? rawDefault.split("\\|", 2)[0].trim() : rawDefault;
+                String path = (inputs != null ? inputs.getOrDefault(key, defaultPath != null ? defaultPath : "src/main/resources/sample.pdf") : (defaultPath != null ? defaultPath : "src/main/resources/sample.pdf"));
+                if (path != null && !path.trim().isEmpty() && Files.exists(Paths.get(path))) {
                     payload = Files.readAllBytes(Paths.get(path));
                 } else {
                     payload = (idx == 10 ? new byte[0] : "Dummy Binary".getBytes());
                 }
             } else {
-                payload = (inputs != null ? inputs.getOrDefault("payload", "Content") : "Content").getBytes();
+                String configDefault = CaseConfigManager.getInstance().getPayload("CTSW102", idx);
+                String defPayload = (configDefault != null && !configDefault.isEmpty()) ? configDefault : "Content";
+                payload = (inputs != null ? inputs.getOrDefault("payload", defPayload) : defPayload).getBytes();
             }
 
             switch (idx) {
@@ -362,13 +378,21 @@ public class SwimToAmhsTests {
                     p.setAmqpPriority(pri10); payload = new byte[0];
                     desc = "BINARY empty data element";
                     break;
-                case 11:
+                case 11: {
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    p.setRecipients("LONGADDRESSXXXXX");
+                    // recip_11 loaded from config (default: LONGADDRESSXXXXX per EUR Doc 047 §4.5.1.4);
+                    // editable per-session via config screen field "recip_11".
+                    String defaultRecip11Raw = CaseConfigManager.getInstance().getPayload("CTSW102", 11);
+                    String defaultRecip11 = (defaultRecip11Raw != null && defaultRecip11Raw.contains("|"))
+                        ? defaultRecip11Raw.split("\\|", 2)[1].trim() : "LONGADDRESSXXXXX";
+                    String recip11 = (inputs != null && inputs.containsKey("recip_11") && !inputs.get("recip_11").trim().isEmpty())
+                        ? inputs.get("recip_11") : defaultRecip11;
+                    p.setRecipients(recip11);
                     short pri11 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
                     p.setAmqpPriority(pri11);
-                    desc = "BINARY amhs_recipients >8 chars";
+                    desc = "BINARY amhs_recipients=" + recip11 + " (>8 chars → REJECT)";
                     break;
+                }
                 case 12:
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
                     p.setRecipients(r);
@@ -381,7 +405,10 @@ public class SwimToAmhsTests {
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs),
                 "SENT (expect REJECT by IUT)", desc);
-            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Metadata check for rejection");
+            String loggedPayload = (idx >= 7 && idx <= 12) 
+                    ? "[binary] " + payload.length + " bytes" 
+                    : new String(payload);
+            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
             return true;
         }
 
@@ -471,7 +498,7 @@ public class SwimToAmhsTests {
                     p.setAmqpPriority(priority); 
                     desc="Basic/Binary→REJECT"; 
                     String path = (inputs != null ? inputs.getOrDefault("binFile_2", configMgr.getPayload("CTSW103", 2)) : configMgr.getPayload("CTSW103", 2));
-                    payload = (Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "Dummy".getBytes());
+                    payload = (path != null && !path.trim().isEmpty() && Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "Dummy".getBytes());
                     break;
                 }
                 case 3: {
@@ -492,7 +519,7 @@ public class SwimToAmhsTests {
                     p.setAmqpPriority(priority); 
                     desc="ContentBased/Binary→Ext"; 
                     String path = (inputs != null ? inputs.getOrDefault("binFile_4", configMgr.getPayload("CTSW103", 4)) : configMgr.getPayload("CTSW103", 4));
-                    payload = (Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "Dummy".getBytes());
+                    payload = (path != null && !path.trim().isEmpty() && Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "Dummy".getBytes());
                     break;
                 }
                 case 5: {
@@ -533,7 +560,13 @@ public class SwimToAmhsTests {
             }
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
-            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Service Level conversion check | payload len=" + payload.length);
+            String loggedPayload;
+            if (idx == 2 || idx == 4) {
+                loggedPayload = "[binary] " + payload.length + " bytes";
+            } else {
+                loggedPayload = new String(payload);
+            }
+            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
             return true;
         }
 
@@ -695,7 +728,7 @@ public class SwimToAmhsTests {
             p.setAmqpPriority(priority);
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
-            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Metadata check for Filing Time");
+            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), new String(payload));
             return true;
         }
 
@@ -748,30 +781,36 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
-            // Get priority from inputs or default based on message (per ICAO testbook defaults)
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
             short defaultPriority = (idx <= 3) ? (short) 4 : (short) 6;
             short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
-            
-            int[] pris = {4, 4, 4, 6, 6, 6};
+
             String[] ohiDefaults = {"OHI-SHORT", "A".repeat(53), "A".repeat(60), "OHI-HI-SHORT", "B".repeat(48), "B".repeat(60)};
-            String[] keys = {"ohi1","ohi2","ohi3","ohi4","ohi5","ohi6"};
             if (idx < 1 || idx > 6) return false;
             int i = idx - 1;
-            String raw = inputs != null ? inputs.getOrDefault("p" + idx, "") : "";
-            String[] parts = raw.split("\\|", 2);
-            String ohi = parts[0].trim().isEmpty() ? ohiDefaults[i] : parts[0].trim();
-            String body = (parts.length > 1 && !parts[1].trim().isEmpty()) ? parts[1].trim() : "OHI Content";
+
+            // New field keys from buildExtraFieldSpecs: amhs_ats_ohi_<N>, body_<N>
+            // Fall back to pipe-split of the XML config default for compatibility
+            String configDefault = configMgr.getPayload("CTSW106", idx);
+            String[] cfgParts = (configDefault != null && configDefault.contains("|"))
+                ? configDefault.split("\\|", 2) : new String[]{configDefault, "OHI Content"};
+            String defOhi  = cfgParts[0] != null ? cfgParts[0].trim() : ohiDefaults[i];
+            String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "OHI Content";
+
+            String ohi  = (inputs != null && inputs.containsKey("amhs_ats_ohi_" + idx) && !inputs.get("amhs_ats_ohi_" + idx).trim().isEmpty())
+                ? inputs.get("amhs_ats_ohi_" + idx) : defOhi;
+            String body = (inputs != null && inputs.containsKey("body_" + idx) && !inputs.get("body_" + idx).trim().isEmpty())
+                ? inputs.get("body_" + idx) : defBody;
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-            p.setRecipients(r); 
-            // Use priority from UI if provided, otherwise use case-specific default
-            p.setAmqpPriority((priorityStr != null && !priorityStr.isEmpty()) ? priority : (short) pris[i]);
+            p.setRecipients(r);
+            p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setExtraProp("amhs_ats_ohi", ohi);
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
-                "priority=" + ((priorityStr != null && !priorityStr.isEmpty()) ? priority : pris[i]) + " | amhs_ats_ohi len=" + ohi.length());
+                "priority=" + priority + " | amhs_ats_ohi len=" + ohi.length() + " (" + ohi.substring(0, Math.min(20, ohi.length())) + (ohi.length() > 20 ? "..." : "") + ")");
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), body);
             return true;
         }
@@ -823,29 +862,47 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
-            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
-            short defaultPriority = (short) 4;
-            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
-            
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+
+            // New field keys from buildExtraFieldSpecs:
+            // msg1/2: subject_<N>, body_<N>
+            // msg3:   amhs_subject_<N>, body_<N>
+            // msg4:   subject_<N>, amhs_subject_<N>, body_<N>
+            String configDefault = configMgr.getPayload("CTSW107", idx);
+            String[] cfgParts = configDefault != null ? configDefault.split("\\|", -1) : new String[]{""};
+
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setAmqpPriority(priority);
-            String raw = inputs != null ? inputs.getOrDefault("p" + idx, "") : "";
-            String[] parts = raw.split("\\|");
-            String body = "Msg" + idx;
-            String desc;
+
+            String body; String desc;
             if (idx == 4) {
-                 if (parts.length >= 1) p.setSubject(parts[0].trim());
-                 if (parts.length >= 2) p.setExtraProp("amhs_subject", parts[1].trim());
-                 if (parts.length >= 3) body = parts[2].trim();
-                 desc = "both present; amhs_subject='" + (parts.length > 1 ? parts[1].trim() : "N/A") + "' WINS";
+                String defSubject    = cfgParts.length > 0 ? cfgParts[0].trim() : "subject props";
+                String defAmhsSubj   = cfgParts.length > 1 ? cfgParts[1].trim() : "amhs app prop";
+                String defBody       = cfgParts.length > 2 ? cfgParts[2].trim() : "Msg4";
+                String subject       = getInput(inputs, "subject_" + idx, defSubject);
+                String amhsSubject   = getInput(inputs, "amhs_subject_" + idx, defAmhsSubj);
+                body                 = getInput(inputs, "body_" + idx, defBody);
+                p.setSubject(subject);
+                p.setExtraProp("amhs_subject", amhsSubject);
+                desc = "AMQP-subject='" + subject + "' + amhs_subject='" + amhsSubject + "' (amhs_subject WINS)";
+            } else if (idx == 3) {
+                String defAmhsSubj = cfgParts.length > 0 ? cfgParts[0].trim() : "AMHS App Prop";
+                String defBody     = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg3";
+                String amhsSubject = getInput(inputs, "amhs_subject_" + idx, defAmhsSubj);
+                body               = getInput(inputs, "body_" + idx, defBody);
+                p.setExtraProp("amhs_subject", amhsSubject);
+                desc = "amhs_subject=" + amhsSubject + " (no AMQP subject)";
             } else {
-                 String s = parts[0].trim().isEmpty() ? (idx == 1 ? "S".repeat(150) : (idx == 2 ? "Normal Subject" : "AMHS App Prop")) : parts[0].trim();
-                 if (idx == 3) p.setExtraProp("amhs_subject", s);
-                 else p.setSubject(s);
-                 if (parts.length > 1) body = parts[1].trim();
-                 desc = (idx == 3 ? "amhs_subject: " : "AMQP subject: ") + s;
+                String defSubject = cfgParts.length > 0 ? cfgParts[0].trim()
+                    : (idx == 1 ? "S".repeat(150) : "Normal Subject");
+                String defBody    = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg" + idx;
+                String subject    = getInput(inputs, "subject_" + idx, defSubject);
+                body              = getInput(inputs, "body_" + idx, defBody);
+                p.setSubject(subject);
+                desc = "AMQP-subject='" + subject + "' (len=" + subject.length() + (subject.length() > 128 ? " → trim to 128" : "") + ")";
             }
 
             dual(inputs, body.getBytes(), p);
@@ -896,24 +953,26 @@ public class SwimToAmhsTests {
             if (idx != 1) return false;
             String r = recip(inputs);
             CaseConfigManager configMgr = CaseConfigManager.getInstance();
-            
-            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
-            short defaultPriority = (short) 4;
-            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
-            
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+
+            // New field keys: originator_108, body_108
             String configDefault = configMgr.getPayload("CTSW108", 1);
-            String raw = inputs != null ? inputs.getOrDefault("p1", configDefault) : configDefault;
-            String[] parts = raw.split("\\|");
-            String orig = parts[0].trim().isEmpty() ? "VVTSYMYX" : parts[0].trim();
-            String body = parts.length > 1 ? parts[1].trim() : "Known Originator";
+            String[] cfgParts = (configDefault != null && configDefault.contains("|"))
+                ? configDefault.split("\\|", 2) : new String[]{configDefault, "Known Orig Body"};
+            String defOrig = cfgParts[0] != null ? cfgParts[0].trim() : "VVTSYMYX";
+            String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "Known Orig Body";
+
+            String orig = getInput(inputs, "originator_108", defOrig);
+            String body = getInput(inputs, "body_108", defBody);
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setOriginator(orig);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setAmqpPriority(priority);
             dual(inputs, body.getBytes(), p);
-            Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT", "amhs_originator=" + orig);
+            Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
+                "amhs_originator=" + orig + " (known → expanded to MF-address)");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
             return true;
         }
@@ -956,17 +1015,18 @@ public class SwimToAmhsTests {
             if (idx != 1) return false;
             String r = recip(inputs);
             CaseConfigManager configMgr = CaseConfigManager.getInstance();
-            
-            // Get priority from inputs or default to 4 (per ICAO testbook defaults)
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
-            short defaultPriority = (short) 4;
-            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
-            
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+
+            // New field keys: originator_109, body_109
             String configDefault = configMgr.getPayload("CTSW109", 1);
-            String raw = inputs != null ? inputs.getOrDefault("p1", configDefault) : configDefault;
-            String[] parts = raw.split("\\|");
-            String orig = parts[0].trim().isEmpty() ? "UNKNOWN1" : parts[0].trim();
-            String body = parts.length > 1 ? parts[1].trim() : "Unknown Originator";
+            String[] cfgParts = (configDefault != null && configDefault.contains("|"))
+                ? configDefault.split("\\|", 2) : new String[]{configDefault, "Unknown Orig Body"};
+            String defOrig = cfgParts[0] != null ? cfgParts[0].trim() : "UNKNOWN1";
+            String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "Unknown Orig Body";
+
+            String orig = getInput(inputs, "originator_109", defOrig);
+            String body = getInput(inputs, "body_109", defBody);
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setOriginator(orig);
@@ -974,7 +1034,7 @@ public class SwimToAmhsTests {
             p.setAmqpPriority(priority);
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
-                "amhs_originator=" + orig + " (UNKNOWN → default originator fallback expected)");
+                "amhs_originator=" + orig + " (UNKNOWN → IUT must use default originator per §4.5.2.12)");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
             return true;
         }
@@ -1041,7 +1101,7 @@ public class SwimToAmhsTests {
                     p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); 
                     String confDefault = configMgr.getPayload("CTSW110", 2);
                     String path = (inputs != null ? inputs.getOrDefault("binFile_2", confDefault) : confDefault);
-                    payload = (Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "BinaryData".getBytes());
+                    payload = (path != null && !path.trim().isEmpty() && Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "BinaryData".getBytes());
                     desc="text/utf-8|data PRESENT → REJECT"; 
                     break;
                 }
@@ -1049,7 +1109,7 @@ public class SwimToAmhsTests {
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); 
                     String confDefault = configMgr.getPayload("CTSW110", 3);
                     String path = (inputs != null ? inputs.getOrDefault("binFile_3", confDefault) : confDefault);
-                    payload = (Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "BinaryData".getBytes());
+                    payload = (path != null && !path.trim().isEmpty() && Files.exists(Paths.get(path)) ? Files.readAllBytes(Paths.get(path)) : "BinaryData".getBytes());
                     desc="octet-stream|data PRESENT → ACCEPT"; 
                     break;
                 }
@@ -1084,7 +1144,17 @@ public class SwimToAmhsTests {
             }
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
-            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Content-type mapping check | len=" + payload.length);
+            String loggedPayload;
+            if (idx == 1 || idx == 2 || idx == 3) {
+                loggedPayload = "[binary] " + payload.length + " bytes";
+            } else {
+                try {
+                    loggedPayload = new String(payload, p.getContentType().contains("utf-16") ? "UTF-16" : "UTF-8");
+                } catch(Exception e) {
+                    loggedPayload = new String(payload);
+                }
+            }
+            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
             return true;
         }
 
@@ -1131,35 +1201,95 @@ public class SwimToAmhsTests {
         @Override
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             String r = recip(inputs);
-            int max = 1048576; // 1 MB configured max (must match IUT config)
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
+            int max = 1048576; // 1 MB — must match IUT gateway config
+
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r);
+            p.setAmqpPriority(priority);
             byte[] payload; String desc;
             switch (idx) {
                 case 1: {
-                    p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    payload = new byte[1024]; Arrays.fill(payload, (byte)'A'); desc = "text 1KB ≤ max → ACCEPT"; 
+                    // Text payload ≤ max — user can supply custom text; pad to 1 KB minimum
+                    p.setContentType("text/plain; charset=utf-8");
+                    p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+                    String defText = configMgr.getPayload("CTSW111", 1);
+                    String userText = getInput(inputs, "maxSizeText", defText != null ? defText : "");
+                    byte[] rawBytes = userText.getBytes();
+                    // If user text is shorter than 1 KB, pad with 'A' so it is a real 1-KB payload
+                    if (rawBytes.length < 1024) {
+                        byte[] padded = new byte[1024];
+                        System.arraycopy(rawBytes, 0, padded, 0, rawBytes.length);
+                        Arrays.fill(padded, rawBytes.length, padded.length, (byte) 'A');
+                        payload = padded;
+                        Logger.logCase(testCaseId, "INFO",
+                            "[MSG-1] User text (" + rawBytes.length + "B) padded to 1024B to meet test requirement.");
+                    } else {
+                        payload = rawBytes;
+                    }
+                    desc = "text/plain | " + payload.length + "B ≤ max → ACCEPT";
                     break;
                 }
                 case 2: {
-                    p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); 
-                    String path = (inputs != null ? inputs.getOrDefault("maxSizeBin", "src/main/resources/small_payload.bin") : "src/main/resources/small_payload.bin");
-                    if (Files.exists(Paths.get(path))) payload = Files.readAllBytes(Paths.get(path));
-                    else payload = new byte[1024]; 
-                    desc = "binary (" + payload.length + "B) ≤ max → ACCEPT"; 
+                    // Binary ≤ max — binary file provided by user
+                    p.setContentType("application/octet-stream");
+                    p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
+                    String defPath = configMgr.getPayload("CTSW111", 2);
+                    String path = getInput(inputs, "maxSizeBin", defPath != null ? defPath : "");
+                    if (!path.isEmpty() && Files.exists(Paths.get(path))) {
+                        payload = Files.readAllBytes(Paths.get(path));
+                        Logger.logCase(testCaseId, "INFO",
+                            "[MSG-2] Loaded binary: " + path + " (" + payload.length + "B)");
+                    } else {
+                        payload = new byte[1024];
+                        Arrays.fill(payload, (byte) 0xAB);
+                        Logger.logCase(testCaseId, "WARN",
+                            "[MSG-2] No binary file found at \"" + path + "\"; using 1KB dummy payload.");
+                    }
+                    desc = "binary | " + payload.length + "B ≤ max → ACCEPT";
                     break;
                 }
                 case 3: {
-                    p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    payload = new byte[max + 1024]; Arrays.fill(payload, (byte)'X'); desc = "text " + (max + 1024) + "B > max → REJECT"; 
+                    // Text payload > max — user can supply custom text; pad to max+1 KB if shorter
+                    p.setContentType("text/plain; charset=utf-8");
+                    p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+                    String defText = configMgr.getPayload("CTSW111", 3);
+                    String userText = getInput(inputs, "maxSizeTextOver", defText != null ? defText : "");
+                    byte[] rawBytes = userText.getBytes();
+                    int overSize = max + 1024;
+                    if (rawBytes.length <= max) {
+                        byte[] padded = new byte[overSize];
+                        System.arraycopy(rawBytes, 0, padded, 0, Math.min(rawBytes.length, overSize));
+                        Arrays.fill(padded, rawBytes.length, padded.length, (byte) 'X');
+                        payload = padded;
+                        Logger.logCase(testCaseId, "INFO",
+                            "[MSG-3] User text (" + rawBytes.length + "B) padded to " + overSize + "B to exceed max.");
+                    } else {
+                        payload = rawBytes;
+                    }
+                    desc = "text/plain | " + payload.length + "B > max → REJECT";
                     break;
                 }
                 case 4: {
-                    p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); 
-                    String path = (inputs != null ? inputs.getOrDefault("maxSizeBinOver", "src/main/resources/large_payload.bin") : "src/main/resources/large_payload.bin");
-                    if (Files.exists(Paths.get(path))) payload = Files.readAllBytes(Paths.get(path));
-                    else payload = new byte[max + 1024]; 
-                    desc = "binary (" + payload.length + "B) > max → REJECT"; 
+                    // Binary > max — binary file provided by user
+                    p.setContentType("application/octet-stream");
+                    p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
+                    String defPath = configMgr.getPayload("CTSW111", 4);
+                    String path = getInput(inputs, "maxSizeBinOver", defPath != null ? defPath : "");
+                    if (!path.isEmpty() && Files.exists(Paths.get(path))) {
+                        payload = Files.readAllBytes(Paths.get(path));
+                        Logger.logCase(testCaseId, "INFO",
+                            "[MSG-4] Loaded binary: " + path + " (" + payload.length + "B)");
+                    } else {
+                        payload = new byte[max + 1024];
+                        Arrays.fill(payload, (byte) 0xFF);
+                        Logger.logCase(testCaseId, "WARN",
+                            "[MSG-4] No binary file found at \"" + path + "\"; using " + (max + 1024) + "B dummy payload.");
+                    }
+                    desc = "binary | " + payload.length + "B > max → REJECT";
                     break;
                 }
                 default: return false;
@@ -1169,6 +1299,7 @@ public class SwimToAmhsTests {
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Payload size: " + payload.length + " bytes");
             return true;
         }
+
 
         @Override public boolean execute() throws Exception { return false; }
     };
@@ -1228,10 +1359,23 @@ public class SwimToAmhsTests {
                 }
             }
 
-            String[] addresses = loadAddressFile(path, testCaseId, required);
+            String r = recip(inputs);
+            String[] addresses = new String[0];
+            
+            // If the user used the standard AMHS RECIPIENTS upload/textbox
+            if (r != null && !r.trim().isEmpty()) {
+                addresses = r.split(",");
+                for(int i=0; i<addresses.length; i++) addresses[i] = addresses[i].trim();
+            }
+
+            // Fallback to loading from file if the standard textbox wasn't used or doesn't have enough addresses
+            if (addresses.length == 0 && !path.isBlank()) {
+                addresses = loadAddressFile(path, testCaseId, required);
+            }
+
             if (addresses.length == 0) {
                 Logger.logCase(testCaseId, "ERROR",
-                    "[MSG-" + idx + "] No addresses loaded. Aborting injection.");
+                    "[MSG-" + idx + "] No addresses loaded. Please upload an address file either in AMHS RECIPIENTS or PAYLOAD field.");
                 return false;
             }
 
@@ -1310,22 +1454,34 @@ public class SwimToAmhsTests {
             String r = recip(inputs);
             CaseConfigManager configMgr = CaseConfigManager.getInstance();
             
+            // Config default is pipe-separated: payload | amhs_notification_request
+            // Standard per EUR Doc 047 §4.4.7.3: both rn and nrn must be requested.
+            // The user may override either field from the config screen.
             String configDefault = configMgr.getPayload("CTSW113", idx);
-            String payload = inputs!=null?inputs.getOrDefault("p" + idx, configDefault) : configDefault;
+            String[] cfgParts = (configDefault != null && configDefault.contains("|"))
+                ? configDefault.split("\\|", 2) : new String[]{configDefault, "rn,nrn"};
+            String defPayload = cfgParts[0] != null ? cfgParts[0].trim() : "";
+            String defNotifReq = cfgParts.length > 1 ? cfgParts[1].trim() : "rn,nrn";
+
+            String payload = (inputs != null ? inputs.getOrDefault("p" + idx, defPayload) : defPayload);
+            // notification_request editable via config screen field; default from XML
+            String notifReq = (inputs != null && inputs.containsKey("amhs_notification_request") && !inputs.get("amhs_notification_request").trim().isEmpty())
+                ? inputs.get("amhs_notification_request") : defNotifReq;
+
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             
-            // Get priority from inputs or default to 6
+            // Get priority from inputs or default to 6 (→ SS, per testbook)
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
             short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 6;
             
             p.setRecipients(r); p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-            p.setExtraProp("amhs_notification_request", "rn,nrn");
+            p.setExtraProp("amhs_notification_request", notifReq);
             dual(inputs, payload.getBytes(), p);
             String expected = idx == 1 ? "NRN" : "RN";
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
-                "priority=" + priority + " (→SS) | notification_request=rn,nrn | expect " + expected + " from AMHS Tool");
-            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Notification request check");
+                "priority=" + priority + " (→SS) | notification_request=" + notifReq + " | expect " + expected + " from AMHS Tool");
+            Logger.logPayloadDetail(testCaseId, idx, p.toMap(), payload);
             return true;
         }
 
@@ -1340,33 +1496,54 @@ public class SwimToAmhsTests {
      * CTSW114: Incoming non-delivery reports (NDR).
      * Objective: Verify that non-delivery reports generated by the AMHS system 
      * are correctly received and logged by the gateway's SWIM interface.
+     *
+     * NDR triggering requires (per EUR Doc 047 §4.4.1.3):
+     *  1. amhs_notification_request must include 'nrn' so the AMHS tool generates an NDR
+     *     when the message is deleted (unable-to-transfer scenario)
+     *  2. amhs_originator must be set so the AMHS knows where to send the NDR
+     *  3. A valid AMHS recipient (populated from the AMHS RECIPIENTS standard field)
+     *  The NDR is NOT sent by this tool — it is returned BY the AMHS system after
+     *  the operator deletes the received message in the AMHS Test Tool.
      */
     public BaseTestCase CTSW114 = new BaseTestCase("CTSW114",
             "Incoming non-delivery reports (NDR)") {
 
         @Override
         public String getManualGuide() {
-            return 
-                "Verify that the gateway correctly handles non-delivery reports (NDR). " +
-                "After the message arrives at the AMHS Test Tool, delete it from the queue to trigger an NDR with an 'unable-to-transfer' reason code, " +
-                "then confirm that the gateway logs the event and reports the situation to the Control Position.";
+            return
+                "Step 1: Send this message (priority=4, notification_request=nrn, originator set).\n" +
+                "Step 2: In the AMHS Test Tool, DELETE the received message.\n" +
+                "        This triggers an NDR back to the originator (the gateway).\n" +
+                "Step 3: Verify the gateway receives the NDR containing:\n" +
+                "  - non-delivery-reason-code = 'unable-to-transfer'\n" +
+                "  - non-delivery-diagnostic-code = EMPTY\n" +
+                "Step 4: Confirm the gateway logs the event and reports to Control Position.\n" +
+                "Ref: EUR Doc 047 §4.4.1.3";
         }
 
         @Override
         public String getCriteria() {
             return
-                "• 1 message sent, queued in AMHS Test Tool, then DELETED (triggers NDR to originator)\n" +
+                "• 1 message sent with amhs_notification_request=nrn " +
+                    "(so AMHS generates NDR on unable-to-transfer)\n" +
+                "• amhs_originator set (AMHS returns NDR to this address)\n" +
+                "• AMHS Test Tool operator DELETES the message to trigger NDR\n" +
                 "• IUT receives NDR with:\n" +
                 "  - non-delivery-reason-code = 'unable-to-transfer'\n" +
                 "  - non-delivery-diagnostic-code = EMPTY field\n" +
-                "• IUT logs and reports situation to Control Position\n" +
+                "• IUT MUST log the NDR event and report to Control Position\n" +
                 "Ref: EUR Doc 047 §4.4.1.3";
         }
 
         @Override
         public List<TestMessage> getMessages() {
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
+            String def = configMgr.getPayload("CTSW114", 1);
             return List.of(
-                new TestMessage(1, "Send message to AMHS Tool. After receipt: DELETE it in AMHS Tool to trigger NDR with 'unable-to-transfer'", "Trigger NDR Payload", true, false, "p1")
+                new TestMessage(1,
+                    "Send message to AMHS Tool with amhs_notification_request=nrn + amhs_originator set.\n" +
+                    "After receipt: DELETE it in AMHS Tool → triggers NDR with 'unable-to-transfer'",
+                    def != null ? def : "Trigger NDR Payload", true, false, "p1")
             );
         }
 
@@ -1375,16 +1552,40 @@ public class SwimToAmhsTests {
             if (idx != 1) return false;
             String r = recip(inputs);
             CaseConfigManager configMgr = CaseConfigManager.getInstance();
-            
-            String configDefault = configMgr.getPayload("CTSW114", 1);
-            String payload = inputs!=null?inputs.getOrDefault("p1", configDefault):configDefault;
+
+            String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
+            short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
+
+            // Payload — user-editable via config screen
+            String defPayload = configMgr.getPayload("CTSW114", 1);
+            String payload = getInput(inputs, "p1", defPayload != null ? defPayload : "CTSW114 NDR Trigger");
+
+            // amhs_originator — REQUIRED so AMHS can return the NDR to the gateway.
+            // Must be a known 8-char AFTN address or full AMHS MF-address (per §4.4.1.3).
+            String defOrig = configMgr.getPayload("CTSW114_originator", 0);
+            String originator = getInput(inputs, "amhs_originator",
+                defOrig != null && !defOrig.isEmpty() ? defOrig : "XXXXXXXX");
+
+            // amhs_notification_request — REQUIRED to instruct AMHS to generate NDR.
+            // Must include 'nrn' (non-receipt notification) per EUR Doc 047 §4.4.7.3.
+            String defNotif = configMgr.getPayload("CTSW114_notif", 0);
+            String notifReq = getInput(inputs, "amhs_notification_request_114",
+                defNotif != null && !defNotif.isEmpty() ? defNotif : "nrn");
+
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-            p.setRecipients(r); p.setContentType("text/plain; charset=utf-8");
+            p.setRecipients(r);
+            p.setAmqpPriority(priority);
+            p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+            p.setOriginator(originator);
+            p.setExtraProp("amhs_notification_request", notifReq);
+
             dual(inputs, payload.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
-                "Awaiting NDR: delete message in AMHS Tool after receipt");
-            Logger.logPayloadDetail(testCaseId, 1, p.toMap(), "Trigger NDR mapping check");
+                "priority=" + priority + " | notification_request=" + notifReq
+                + " | originator=" + originator
+                + " | Next step: DELETE message in AMHS Tool → NDR: unable-to-transfer");
+            Logger.logPayloadDetail(testCaseId, 1, p.toMap(), payload);
             return true;
         }
 
@@ -1433,20 +1634,35 @@ public class SwimToAmhsTests {
             String r = recip(inputs);
             CaseConfigManager configMgr = CaseConfigManager.getInstance();
             
-            String[] bodyParts = {"ia5-text","ia5_text_body_part","general-text-body-part","general-text-body-part"};
-            String[] encodings = {"IA5","IA5","ISO-646","ISO-8859-1"};
-            String[] keys      = {"p1","p2","p3","p4"};
+            // Config default is pipe-separated: payload | amhs_bodypart_type | amhs_content_encoding
+            // Mandated per EUR Doc 047 §4.5.2.4-4.5.2.5, Table 10-11. Editable per-session.
+            String[] specBodyParts = {"ia5-text","ia5_text_body_part","general-text-body-part","general-text-body-part"};
+            String[] specEncodings = {"IA5","IA5","ISO-646","ISO-8859-1"};
+            String[] keys = {"p1","p2","p3","p4"};
             if (idx < 1 || idx > 4) return false;
             int i = idx - 1;
+
             String configDefault = configMgr.getPayload("CTSW115", idx);
-            String payload = inputs!=null?inputs.getOrDefault(keys[i], configDefault):configDefault;
+            String[] cfgParts = (configDefault != null && configDefault.contains("|"))
+                ? configDefault.split("\\|", 3) : new String[]{configDefault, specBodyParts[i], specEncodings[i]};
+            String defPayload    = cfgParts[0] != null ? cfgParts[0].trim() : "";
+            String defBodyPart   = cfgParts.length > 1 ? cfgParts[1].trim() : specBodyParts[i];
+            String defEncoding   = cfgParts.length > 2 ? cfgParts[2].trim() : specEncodings[i];
+
+            String payload   = (inputs != null ? inputs.getOrDefault(keys[i], defPayload) : defPayload);
+            String bodyPart  = (inputs != null && inputs.containsKey("amhs_bodypart_type") && !inputs.get("amhs_bodypart_type").trim().isEmpty())
+                ? inputs.get("amhs_bodypart_type") : defBodyPart;
+            String encoding  = (inputs != null && inputs.containsKey("amhs_content_encoding") && !inputs.get("amhs_content_encoding").trim().isEmpty())
+                ? inputs.get("amhs_content_encoding") : defEncoding;
+
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
-            p.setBodyPartType(bodyParts[i]); p.setExtraProp("amhs_content_encoding", encodings[i]);
+            p.setBodyPartType(bodyPart);
+            p.setExtraProp("amhs_content_encoding", encoding);
             dual(inputs, payload.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
-                bodyParts[i] + " | encoding=" + encodings[i]);
+                bodyPart + " | encoding=" + encoding);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "amqp-value: '" + payload + "'");
             return true;
         }
@@ -1498,12 +1714,25 @@ public class SwimToAmhsTests {
         public boolean executeSingle(int idx, int attempt, Map<String, String> inputs) throws Exception {
             if (idx < 1 || idx > 2) return false;
             String r = recip(inputs);
+            CaseConfigManager configMgr = CaseConfigManager.getInstance();
+
+            // Config default is pipe-separated: filePath | amhs_ftbp_last_mod
+            // Mandated per EUR Doc 047 §4.5.2.6-4.5.2.8. Editable per-session.
+            String configDefault = configMgr.getPayload("CTSW116", idx);
+            String[] cfgParts = (configDefault != null && configDefault.contains("|"))
+                ? configDefault.split("\\|", 2) : new String[]{configDefault, "240101120000Z"};
+            String defFilePath = cfgParts[0] != null ? cfgParts[0].trim() : "src/main/resources/sample.pdf";
+            String defLastMod  = cfgParts.length > 1 ? cfgParts[1].trim() : "240101120000Z";
+
             String fileKey = idx == 1 ? "binFile" : "binFile2";
-            String filePath = inputs!=null?inputs.getOrDefault(fileKey,"src/main/resources/sample.pdf"):"src/main/resources/sample.pdf";
+            String filePath = (inputs != null ? inputs.getOrDefault(fileKey, defFilePath) : defFilePath);
+            // amhs_ftbp_last_mod editable via config screen
+            String lastMod = (inputs != null && inputs.containsKey("amhs_ftbp_last_mod") && !inputs.get("amhs_ftbp_last_mod").trim().isEmpty())
+                ? inputs.get("amhs_ftbp_last_mod") : defLastMod;
 
             byte[] binPayload;
             java.nio.file.Path fp = Paths.get(filePath);
-            if (Files.exists(fp)) {
+            if (filePath != null && !filePath.trim().isEmpty() && Files.exists(fp)) {
                 binPayload = Files.readAllBytes(fp);
             } else {
                 Logger.logCase(testCaseId, "WARN",
@@ -1517,26 +1746,26 @@ public class SwimToAmhsTests {
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
             p.setExtraProp("amhs_ftbp_file_name", Paths.get(filePath).getFileName().toString());
             p.setExtraProp("amhs_ftbp_object_size", String.valueOf(fileSize));
-            p.setExtraProp("amhs_ftbp_last_mod", "240101120000Z");
+            p.setExtraProp("amhs_ftbp_last_mod", lastMod);
 
             byte[] sendPayload = binPayload;
             String desc;
             if (idx == 2) {
-                // GZIP compress
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) { gzip.write(binPayload); }
                 sendPayload = baos.toByteArray();
                 p.setExtraProp("swim_compression", "gzip");
-                desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B";
+                desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B | last_mod=" + lastMod;
             } else {
-                desc = "FTBP | size=" + fileSize + "B";
+                desc = "FTBP | size=" + fileSize + "B | last_mod=" + lastMod;
             }
 
             dual(inputs, sendPayload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(),
                 "file=" + filePath + " | size=" + fileSize +
-                (idx==2 ? " | compressed=" + sendPayload.length + "B (gzip)" : ""));
+                (idx==2 ? " | compressed=" + sendPayload.length + "B (gzip)" : "") +
+                " | ftbp_last_mod=" + lastMod);
             return true;
         }
 

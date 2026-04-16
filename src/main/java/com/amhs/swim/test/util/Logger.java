@@ -181,7 +181,11 @@ public class Logger {
         if (props != null) {
             props.forEach((k, v) -> {
                 if (v != null) {
-                    sb.append(String.format("  ║ %-25s : %-40s ║\n", k, v));
+                    String valStr = v.toString();
+                    if (valStr.length() > 80) {
+                        valStr = valStr.substring(0, 77) + "...";
+                    }
+                    sb.append(String.format("  ║ %-25s : %-40s ║\n", k, valStr));
                 }
             });
         }
