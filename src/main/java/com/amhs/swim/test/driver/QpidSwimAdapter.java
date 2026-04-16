@@ -5,6 +5,7 @@ import com.amhs.swim.test.util.Logger;
 import org.apache.qpid.proton.Proton;
 import org.apache.qpid.proton.amqp.Binary;
 import org.apache.qpid.proton.amqp.Symbol;
+import org.apache.qpid.proton.amqp.UnsignedLong;
 import org.apache.qpid.proton.amqp.messaging.AmqpValue;
 import org.apache.qpid.proton.amqp.messaging.Data;
 import org.apache.qpid.proton.amqp.messaging.Section;
@@ -375,6 +376,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                     }
                 }
                 
+                // Per EUR Doc 047 §4.5.2.6: amhs_ftbp_object_size must be AMQP unsigned-long
+                if (key.equals("amhs_ftbp_object_size") && value instanceof Number) {
+                    value = UnsignedLong.valueOf(((Number) value).longValue());
+                }
+                
                 appProperties.put(key, value);
             }
         }
@@ -421,7 +427,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         }
 
         if ("AMQP_VALUE".equalsIgnoreCase(bodyType)) {
-            if ("ia5-text".equalsIgnoreCase(bodyPartType) || "utf8-text".equalsIgnoreCase(bodyPartType)) {
+            // Treat these types as text (AMQP String) per EUR Doc 047
+            if ("ia5-text".equalsIgnoreCase(bodyPartType) || 
+                "ia5_text_body_part".equalsIgnoreCase(bodyPartType) ||
+                "utf8-text".equalsIgnoreCase(bodyPartType) ||
+                "general-text-body-part".equalsIgnoreCase(bodyPartType)) {
                 return new AmqpValue(new String(payload, StandardCharsets.UTF_8));
             } else {
                 return new AmqpValue(new Binary(payload));
