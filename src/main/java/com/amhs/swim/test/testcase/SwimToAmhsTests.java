@@ -168,6 +168,11 @@ public class SwimToAmhsTests {
                     p.setContentType("text/plain; charset=utf-8");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
                     
+                    // Mandatory properties per EUR Doc 047 Appendix A
+                    p.setIpmId("IPM." + System.currentTimeMillis());
+                    p.setRegisteredId("REG.CTSW101.1");
+                    p.setUserVisibleStr("Standard Text Message");
+                    
                     // Get payload from config or input
                     String payloadText = configMgr.getPayload("CTSW101", 1);
                     if (inputs != null && inputs.containsKey("p1")) {
@@ -190,6 +195,11 @@ public class SwimToAmhsTests {
                     p.setAmqpPriority(priority);
                     p.setContentType("application/octet-stream");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
+                    
+                    // Mandatory properties per EUR Doc 047 Appendix A
+                    p.setIpmId("IPM." + System.currentTimeMillis());
+                    p.setRegisteredId("REG.CTSW101.2");
+                    p.setUserVisibleStr("Standard Binary Message");
                     
                     // Get file path from config or input
                     String path = configMgr.getPayload("CTSW101", 2);
@@ -485,6 +495,12 @@ public class SwimToAmhsTests {
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
                     p.setExtraProp("amhs_service_level","basic"); 
                     p.setAmqpPriority(priority); 
+                    
+                    // Mandatory properties per EUR Doc 047
+                    p.setIpmId("IPM.CTSW103.1." + System.currentTimeMillis());
+                    p.setRegisteredId("REG.CTSW103.1");
+                    p.setUserVisibleStr("Basic Mode Text Test");
+
                     desc="Basic/Text"; 
                     String payloadText = configMgr.getPayload("CTSW103", 1);
                     if (inputs != null && inputs.containsKey("p1")) payloadText = inputs.get("p1");
@@ -506,6 +522,12 @@ public class SwimToAmhsTests {
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
                     p.setExtraProp("amhs_service_level","extended"); 
                     p.setAmqpPriority(priority); 
+
+                    // Mandatory properties per EUR Doc 047
+                    p.setIpmId("IPM.CTSW103.3." + System.currentTimeMillis());
+                    p.setRegisteredId("REG.CTSW103.3");
+                    p.setUserVisibleStr("Extended Mode Text Test");
+
                     desc="Extended/Text"; 
                     String payloadText = configMgr.getPayload("CTSW103", 3);
                     if (inputs != null && inputs.containsKey("p3")) payloadText = inputs.get("p3");
@@ -550,6 +572,12 @@ public class SwimToAmhsTests {
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
                     p.setExtraProp("amhs_service_level","recipient-based"); 
                     p.setAmqpPriority(priority); 
+
+                    // Mandatory properties
+                    p.setIpmId("IPM.CTSW103.7." + System.currentTimeMillis());
+                    p.setRegisteredId("REG.CTSW103.7");
+                    p.setUserVisibleStr("Mixed Recipients Test");
+
                     desc="RecipBased/Mixed→Basic"; 
                     String payloadText = configMgr.getPayload("CTSW103", 7);
                     if (inputs != null && inputs.containsKey("p7")) payloadText = inputs.get("p7");
@@ -712,6 +740,12 @@ public class SwimToAmhsTests {
             
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+            
+            // Mandatory properties per EUR Doc 047
+            p.setIpmId("IPM.CTSW105." + System.currentTimeMillis());
+            p.setRegisteredId("REG.CTSW105");
+            p.setUserVisibleStr("Filing Time Test");
+
             byte[] payload; String desc;
             if (idx == 1) {
                 String payloadText = configMgr.getPayload("CTSW105", 1);
@@ -807,6 +841,11 @@ public class SwimToAmhsTests {
             p.setRecipients(r);
             p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
+
+            // Mandatory properties per EUR Doc 047
+            p.setIpmId("IPM.CTSW106." + System.currentTimeMillis());
+            p.setRegisteredId("REG.CTSW106");
+            p.setUserVisibleStr("OHI Data Test");
             p.setExtraProp("amhs_ats_ohi", ohi);
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
@@ -1391,6 +1430,11 @@ public class SwimToAmhsTests {
             p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
 
+            // Mandatory properties per EUR Doc 047
+            p.setIpmId("IPM." + System.currentTimeMillis());
+            p.setRegisteredId("REG.CTSW103");
+            p.setUserVisibleStr("Multiple Recipients Test");
+
             String dft = "Msg " + (idx == 1 ? "512" : "513");
             String body = inputs != null ? inputs.getOrDefault("p" + idx + "_body", dft) : dft;
             dual(inputs, body.getBytes(), p);
@@ -1578,6 +1622,12 @@ public class SwimToAmhsTests {
             p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setOriginator(originator);
+            
+            // Mandatory properties per EUR Doc 047
+            p.setIpmId("IPM.CTSW114." + System.currentTimeMillis());
+            p.setRegisteredId("REG.CTSW114");
+            p.setUserVisibleStr("NDR Trigger Message");
+
             p.setExtraProp("amhs_notification_request", notifReq);
 
             dual(inputs, payload.getBytes(), p);
@@ -1745,7 +1795,7 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setContentType("application/octet-stream");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
             p.setExtraProp("amhs_ftbp_file_name", Paths.get(filePath).getFileName().toString());
-            p.setExtraProp("amhs_ftbp_object_size", String.valueOf(fileSize));
+            p.setExtraProp("amhs_ftbp_object_size", fileSize); // Set as Long for AMQP 1.0 compliance
             p.setExtraProp("amhs_ftbp_last_mod", lastMod);
 
             byte[] sendPayload = binPayload;

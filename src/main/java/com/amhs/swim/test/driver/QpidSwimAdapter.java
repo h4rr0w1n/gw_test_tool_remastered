@@ -72,8 +72,10 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
     public static final Symbol AMHS_CONTENT_TYPE = Symbol.valueOf("amhs_content_type");
     public static final Symbol AMHS_ORIGINATOR = Symbol.valueOf("amhs_originator");
     public static final Symbol AMHS_SUBJECT = Symbol.valueOf("amhs_subject");
-    public static final Symbol AMHS_MESSAGE_ID = Symbol.valueOf("amhs_message_id");
-    public static final Symbol AMHS_FILING_TIME = Symbol.valueOf("amhs_filing_time");
+    public static final Symbol AMHS_IPM_ID = Symbol.valueOf("amhs_ipm_id");
+    public static final Symbol AMHS_ATS_FT = Symbol.valueOf("amhs_ats_ft");
+    public static final Symbol AMHS_REGISTERED_ID = Symbol.valueOf("amhs_registered_identifier");
+    public static final Symbol AMHS_USER_VISIBLE_STR = Symbol.valueOf("amhs_user_visible_string");
     public static final Symbol AMHS_DL_HISTORY = Symbol.valueOf("amhs_dl_history");
     public static final Symbol AMHS_SEC_ENVELOPE = Symbol.valueOf("amhs_sec_envelope");
     
@@ -284,6 +286,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         // Create AMQP 1.0 message per spec
         Message message = Proton.message();
         
+        // Per EUR Doc 047 §4.5.1.1: the 'durable' element must be set to 'true'
+        org.apache.qpid.proton.amqp.messaging.Header header = new org.apache.qpid.proton.amqp.messaging.Header();
+        header.setDurable(true);
+        message.setHeader(header);
+        
         // Set message annotations
         Map<Symbol, Object> annotations = new HashMap<>();
         // Add broker-specific annotations
@@ -311,8 +318,15 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         
         // Set properties per AMQP 1.0 spec
         message.setAddress(topic);
-        if (properties.containsKey("amhs_message_id")) {
-            message.setMessageId(properties.get("amhs_message_id"));
+        if (properties.containsKey("amqp_message_id")) {
+            message.setMessageId(properties.get("amqp_message_id"));
+        }
+        if (properties.containsKey("amhs_ipm_id")) {
+            // Also set as AMQP subject if needed or just keep in app properties?
+            // Usually amhs_ipm_id is an application property, but message-id is the AMQP field.
+            if (!properties.containsKey("amqp_message_id")) {
+                message.setMessageId(properties.get("amhs_ipm_id"));
+            }
         }
         if (properties.containsKey("amhs_subject")) {
             message.setSubject((String) properties.get("amhs_subject"));
@@ -343,7 +357,25 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             if (key.startsWith("amhs_") || key.equals("swim_compression")) {
-                appProperties.put(key, entry.getValue());
+                Object value = entry.getValue();
+                
+                // Per EUR Doc 047 §4.5.2.9: amhs_recipients must be a List of strings
+                if (key.equals("amhs_recipients") && value instanceof String) {
+                    String recips = (String) value;
+                    if (!recips.isEmpty()) {
+                        String[] split = recips.split(",");
+                        java.util.List<String> list = new java.util.ArrayList<>();
+                        for (String s : split) {
+                            String trimmed = s.trim();
+                            if (!trimmed.isEmpty()) list.add(trimmed);
+                        }
+                        value = list;
+                    } else {
+                        value = new java.util.ArrayList<String>();
+                    }
+                }
+                
+                appProperties.put(key, value);
             }
         }
         message.setApplicationProperties(new ApplicationProperties(appProperties));

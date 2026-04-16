@@ -288,7 +288,10 @@ public class SwimDriver {
         private String contentType;      // content-type AMQP property (e.g. application/octet-stream)
         private String originator;       // amhs_originator
         private String subject;          // subject AMQP property
-        private String messageId;        // amhs_message_id
+        private String messageId;        // standard amqp message-id
+        private String ipmId;            // amhs_ipm_id (IPM Identifier)
+        private String registeredId;     // amhs_registered_identifier
+        private String userVisibleStr;   // amhs_user_visible_string
         private Long creationTime;       // amqp creation-time
         private String filingTime;       // amhs_ats_ft (ATS filing time DDhhmm)
         private String dlHistory;        // amhs_dl_history
@@ -367,6 +370,15 @@ public class SwimDriver {
         public String getMessageId() { return messageId; }
         public void setMessageId(String messageId) { this.messageId = messageId; }
         
+        public String getIpmId() { return ipmId; }
+        public void setIpmId(String ipmId) { this.ipmId = ipmId; }
+
+        public String getRegisteredId() { return registeredId; }
+        public void setRegisteredId(String registeredId) { this.registeredId = registeredId; }
+
+        public String getUserVisibleStr() { return userVisibleStr; }
+        public void setUserVisibleStr(String userVisibleStr) { this.userVisibleStr = userVisibleStr; }
+        
         public Long getCreationTime() { return creationTime; }
         public void setCreationTime(Long creationTime) { this.creationTime = creationTime; }
         
@@ -397,7 +409,10 @@ public class SwimDriver {
             if (contentType != null) map.put("content_type", contentType);
             if (originator != null) map.put("amhs_originator", originator);
             if (subject != null) map.put("amhs_subject", subject);
-            if (messageId != null) map.put("amhs_message_id", messageId);
+            if (messageId != null) map.put("amqp_message_id", messageId);
+            if (ipmId != null) map.put("amhs_ipm_id", ipmId);
+            if (registeredId != null) map.put("amhs_registered_identifier", registeredId);
+            if (userVisibleStr != null) map.put("amhs_user_visible_string", userVisibleStr);
             if (creationTime != null) map.put("creation_time", creationTime);
             if (filingTime != null) map.put("amhs_ats_ft", filingTime);
             if (dlHistory != null) map.put("amhs_dl_history", dlHistory);
@@ -422,7 +437,10 @@ public class SwimDriver {
             if (map.containsKey("amhs_content_type")) props.setContentType((String) map.get("amhs_content_type"));
             if (map.containsKey("amhs_originator")) props.setOriginator((String) map.get("amhs_originator"));
             if (map.containsKey("amhs_subject")) props.setSubject((String) map.get("amhs_subject"));
-            if (map.containsKey("amhs_message_id")) props.setMessageId((String) map.get("amhs_message_id"));
+            if (map.containsKey("amqp_message_id")) props.setMessageId((String) map.get("amqp_message_id"));
+            if (map.containsKey("amhs_ipm_id")) props.setIpmId((String) map.get("amhs_ipm_id"));
+            if (map.containsKey("amhs_registered_identifier")) props.setRegisteredId((String) map.get("amhs_registered_identifier"));
+            if (map.containsKey("amhs_user_visible_string")) props.setUserVisibleStr((String) map.get("amhs_user_visible_string"));
             if (map.containsKey("creation_time")) props.setCreationTime((Long) map.get("creation_time"));
             if (map.containsKey("amhs_filing_time")) props.setFilingTime((String) map.get("amhs_filing_time"));
             if (map.containsKey("amhs_dl_history")) props.setDlHistory((String) map.get("amhs_dl_history"));
