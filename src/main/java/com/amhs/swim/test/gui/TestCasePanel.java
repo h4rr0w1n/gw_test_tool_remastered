@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.BadLocationException;
 
 /**
  * Dynamic execution environment for individual AMHS/SWIM test cases.
@@ -56,6 +57,7 @@ public class TestCasePanel extends JPanel {
     
     // Log Panel (Right)
     private JTextArea logArea;
+    private static final int MAX_LOG_LINES = 2000;
 
     // Top Bar Comps
     private JToggleButton btnRecordingTime;
@@ -339,6 +341,13 @@ public class TestCasePanel extends JPanel {
 
         logPanel.add(lblLog, BorderLayout.NORTH);
         logPanel.add(logScroll, BorderLayout.CENTER);
+
+        // Add Clear Logs context menu
+        JPopupMenu logMenu = new JPopupMenu();
+        JMenuItem clearLogItem = new JMenuItem("Clear Logs");
+        clearLogItem.addActionListener(e -> logArea.setText(""));
+        logMenu.add(clearLogItem);
+        logArea.setComponentPopupMenu(logMenu);
 
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, midPanel, logPanel);
         mainSplit.setResizeWeight(0.45);
@@ -1095,6 +1104,20 @@ public class TestCasePanel extends JPanel {
 
     private void appendLog(String message) {
         logArea.append(message + "\n");
+        
+        // Prune old lines if exceeding MAX_LOG_LINES
+        int lines = logArea.getLineCount();
+        if (lines > MAX_LOG_LINES) {
+            try {
+                // Remove the oldest 200 lines to avoid frequent pruning
+                int endOffset = logArea.getLineEndOffset(lines - MAX_LOG_LINES + 200);
+                logArea.getDocument().remove(0, endOffset);
+                logArea.append("... [Old logs pruned for memory stability] ...\n");
+            } catch (BadLocationException e) {
+                // Ignore silent errors in pruning
+            }
+        }
+        
         logArea.setCaretPosition(logArea.getDocument().getLength());
     }
 
