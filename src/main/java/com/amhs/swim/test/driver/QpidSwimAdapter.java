@@ -345,20 +345,30 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         }
         
         // Set priority (AMQP 1.0 uses 0-9, AMHS uses SS/DD/FF/GG/KK)
-        if (properties.containsKey("amqp_priority")) {
-            message.setPriority(((Number) properties.get("amqp_priority")).shortValue());
-        } else if (properties.containsKey("amhs_ats_pri")) {
+        // Per EUR Doc 047 §4.5.2.2: amhs_ats_pri takes precedence over amqp_priority
+        if (properties.containsKey("amhs_ats_pri")) {
             message.setPriority(mapAmhsPriorityToAmqp((String) properties.get("amhs_ats_pri")));
+        } else if (properties.containsKey("amqp_priority")) {
+            message.setPriority(((Number) properties.get("amqp_priority")).shortValue());
         } else {
-            message.setPriority((short) 4); // Default AMQP 1.0 priority
+            message.setPriority((short) 4); // Default AMQP 1.0 priority per EUR Doc 047 §4.4.3.2.2
         }
         
         // Set application properties per EUR Doc 047
         Map<String, Object> appProperties = new HashMap<>();
+        
+        // Validate and use correct originator per EUR Doc 047 §4.5.2.12
+        String validatedOriginator = getValidatedOriginator(properties);
+        
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             if (key.startsWith("amhs_") || key.equals("swim_compression")) {
                 Object value = entry.getValue();
+                
+                // Skip amhs_originator since we'll set the validated version
+                if (key.equals("amhs_originator")) {
+                    continue;
+                }
                 
                 // Per EUR Doc 047 §4.5.2.9: amhs_recipients must be a List of strings
                 if (key.equals("amhs_recipients") && value instanceof String) {
@@ -384,6 +394,10 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                 appProperties.put(key, value);
             }
         }
+        
+        // Always set the validated originator
+        appProperties.put("amhs_originator", validatedOriginator);
+        
         message.setApplicationProperties(new ApplicationProperties(appProperties));
         
         // Set body - Data, AmqpValue, or AmqpSequence
@@ -578,6 +592,35 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         if (receivedMessages != null) {
             receivedMessages.offer(message);
         }
+    }
+    
+    /**
+     * Validate and get originator address per EUR Doc 047 §4.5.2.12.
+     * If amhs_originator is not a valid 8-letter AFTN address, use default originator and log warning.
+     * 
+     * @param properties Map of AMQP properties
+     * @return Valid 8-letter AFTN originator address (guaranteed non-null)
+     */
+    private String getValidatedOriginator(Map<String, Object> properties) {
+        String originator = (String) properties.get("amhs_originator");
+        
+        // Check if originator is valid 8-letter AFTN address
+        if (originator != null && originator.length() == 8 && originator.matches("[A-Z0-9]+")) {
+            return originator;
+        }
+        
+        // Use default originator and log warning
+        TestConfig config = TestConfig.getInstance();
+        String defaultOriginator = config.getProperty("gateway.default_originator", "LFRCZZZZ");
+        
+        if (originator != null && !originator.isEmpty()) {
+            Logger.log("WARNING", "Invalid amhs_originator format '" + originator + 
+                "': must be 8-letter AFTN address. Using default originator: " + defaultOriginator);
+        } else {
+            Logger.log("INFO", "No amhs_originator provided. Using default originator: " + defaultOriginator);
+        }
+        
+        return defaultOriginator;
     }
     
     /**

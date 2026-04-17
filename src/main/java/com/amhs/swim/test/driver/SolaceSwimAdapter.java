@@ -152,12 +152,24 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         
         // Set User Properties — all amhs_* keys + message_id + creation_time
         SDTMap userProps = JCSMPFactory.onlyInstance().createMap();
+        
+        // Validate and use correct originator per EUR Doc 047 §4.5.2.12
+        String validatedOriginator = getValidatedOriginator(properties);
+        
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
             if (key.startsWith("amhs_")) {
+                // Skip amhs_originator since we'll set the validated version
+                if (key.equals("amhs_originator")) {
+                    continue;
+                }
                 userProps.putString(key, String.valueOf(entry.getValue()));
             }
         }
+        
+        // Always set the validated originator
+        userProps.putString("amhs_originator", validatedOriginator);
+        
         // amhs_message_id: empty string signals "no message-id" for rejection testing (EUR Doc 047 §4.5.1.2)
         if (properties.containsKey("amhs_message_id")) {
             userProps.putString("amhs_message_id", String.valueOf(properties.get("amhs_message_id")));
@@ -173,10 +185,11 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         msg.setProperties(userProps);
         
         // Set Priority (0-9, or 10+ for rejection testing)
-        if (properties.containsKey("amqp_priority")) {
-            msg.setPriority(((Number) properties.get("amqp_priority")).intValue());
-        } else if (properties.containsKey("amhs_ats_pri")) {
+        // Per EUR Doc 047 §4.5.2.2: amhs_ats_pri takes precedence over amqp_priority
+        if (properties.containsKey("amhs_ats_pri")) {
             msg.setPriority(mapAmhsPriorityToInt((String) properties.get("amhs_ats_pri")));
+        } else if (properties.containsKey("amqp_priority")) {
+            msg.setPriority(((Number) properties.get("amqp_priority")).intValue());
         }
         
         // Send message
@@ -277,6 +290,35 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         }
         
         return new String[] { scheme, finalHost, finalPort };
+    }
+
+    /**
+     * Validate and get originator address per EUR Doc 047 §4.5.2.12.
+     * If amhs_originator is not a valid 8-letter AFTN address, use default originator and log warning.
+     * 
+     * @param properties Map of AMQP properties
+     * @return Valid 8-letter AFTN originator address (guaranteed non-null)
+     */
+    private String getValidatedOriginator(Map<String, Object> properties) {
+        String originator = (String) properties.get("amhs_originator");
+        
+        // Check if originator is valid 8-letter AFTN address
+        if (originator != null && originator.length() == 8 && originator.matches("[A-Z0-9]+")) {
+            return originator;
+        }
+        
+        // Use default originator and log warning
+        TestConfig config = TestConfig.getInstance();
+        String defaultOriginator = config.getProperty("gateway.default_originator", "LFRCZZZZ");
+        
+        if (originator != null && !originator.isEmpty()) {
+            Logger.log("WARNING", "Invalid amhs_originator format '" + originator + 
+                "': must be 8-letter AFTN address. Using default originator: " + defaultOriginator);
+        } else {
+            Logger.log("INFO", "No amhs_originator provided. Using default originator: " + defaultOriginator);
+        }
+        
+        return defaultOriginator;
     }
 
     private int mapAmhsPriorityToInt(String amhsPriority) {
