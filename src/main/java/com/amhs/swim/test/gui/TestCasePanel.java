@@ -135,7 +135,7 @@ public class TestCasePanel extends JPanel {
         btnSettings = new JButton("Tool Settings");
         
         // SWIM Topic Display - reads from Tool Settings config
-        lblTopicDisplay = new JLabel("Topic: TEST.TOPIC | Queue: TEST.QUEUE");
+        lblTopicDisplay = new JLabel("TEST.TOPIC");
         lblTopicDisplay.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblTopicDisplay.setForeground(clrAccent);
         lblTopicDisplay.setBorder(new EmptyBorder(0, 8, 0, 8));
@@ -374,8 +374,7 @@ public class TestCasePanel extends JPanel {
 
     private void updateTopicDisplay() {
         String topic = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_topic", "TEST.TOPIC");
-        String queue = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
-        lblTopicDisplay.setText("Topic: " + topic + "  |  Queue: " + queue);
+        lblTopicDisplay.setText(topic);
     }
 
     public void loadTestCase(BaseTestCase tc) {
