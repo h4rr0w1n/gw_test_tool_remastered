@@ -21,6 +21,7 @@ import org.apache.qpid.proton.reactor.FlowController;
 import org.apache.qpid.proton.engine.BaseHandler;
 import org.apache.qpid.proton.engine.Event;
 import org.apache.qpid.proton.engine.Sasl;
+import org.apache.qpid.proton.amqp.transport.DeliveryState;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -144,6 +145,12 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                     connection = reactor.connectionToHost(host, Integer.parseInt(port), new ProtonHandler(user, pass));
                     connection.setContainer(containerId);
                     
+                    // Support for Solace Message VPN (AMQP 1.0 vhost) per EUR Doc 047 interoperability
+                    String vpn = config.getProperty("swim.broker.vpn", "default");
+                    if (vpn != null && !vpn.isEmpty()) {
+                        connection.setHostname(vpn);
+                    }
+                    
                     reactor.run();
                 } catch (Exception e) {
                     Logger.log("ERROR", "AMQP Reactor error: " + e.getMessage());
@@ -202,6 +209,14 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         @Override
         public void onConnectionBound(Event event) {
             Transport transport = event.getTransport();
+            
+            // Optimization for Solace: Increase frame size for large headers (Case 112)
+            TestConfig config = TestConfig.getInstance();
+            String profile = config.getProperty("amqp.broker.profile", "STANDARD");
+            if ("SOLACE".equalsIgnoreCase(profile)) {
+                transport.setMaxFrameSize(65536); // 64KB
+            }
+            
             Sasl sasl = transport.sasl();
             if (sasl != null) {
                 sasl.setMechanisms("PLAIN", "ANONYMOUS");
@@ -244,7 +259,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             }
             
             if (delivery.isUpdated()) {
-                // Handled in send loop for synchronous settlement wait if needed
+                DeliveryState state = delivery.getRemoteState();
+                if (state != null) {
+                    // Update: Log settlement state for debugging broker rejections
+                    // Logger.log("DEBUG", "Delivery state updated: " + state);
+                }
             }
         }
         
@@ -320,7 +339,12 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         // Set properties per AMQP 1.0 spec
         message.setAddress(topic);
         if (properties.containsKey("amqp_message_id")) {
-            message.setMessageId(properties.get("amqp_message_id"));
+            Object msgId = properties.get("amqp_message_id");
+            // Solace fix: ensure Message-Id string is URI-safe if using Solace profile
+            if (msgId instanceof String && isSolaceProfile()) {
+                msgId = sanitizeForSolace((String) msgId);
+            }
+            message.setMessageId(msgId);
         }
         if (properties.containsKey("amhs_ipm_id")) {
             // Also set as AMQP subject if needed or just keep in app properties?
@@ -330,10 +354,14 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             }
         }
         if (properties.containsKey("amhs_subject")) {
-            message.setSubject((String) properties.get("amhs_subject"));
+            String sub = (String) properties.get("amhs_subject");
+            if (isSolaceProfile()) sub = sanitizeForSolace(sub);
+            message.setSubject(sub);
         }
         if (properties.containsKey("amhs_reply_to")) {
-            message.setReplyTo((String) properties.get("amhs_reply_to"));
+            String rt = (String) properties.get("amhs_reply_to");
+            if (isSolaceProfile()) rt = sanitizeForSolace(rt);
+            message.setReplyTo(rt);
         }
         if (properties.containsKey("content_type")) {
             message.setContentType((String) properties.get("content_type"));
@@ -389,6 +417,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                 // Per EUR Doc 047 §4.5.2.6: amhs_ftbp_object_size must be AMQP unsigned-long
                 if (key.equals("amhs_ftbp_object_size") && value instanceof Number) {
                     value = UnsignedLong.valueOf(((Number) value).longValue());
+                }
+                
+                // Solace fix: broad sanitization for all strings in app properties
+                if (value instanceof String && isSolaceProfile()) {
+                    value = sanitizeForSolace((String) value);
                 }
                 
                 appProperties.put(key, value);
@@ -475,6 +508,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             case RABBITMQ:
                 annotations.put(Symbol.valueOf("x-amqp-0-9-1-routing-key"), properties.get("amhs_recipients"));
                 break;
+            case SOLACE:
+                // Solace specific: 512+ recipients might cause header overflow unless specifically allowed
+                // We add a hint but primarily use this profile to ensure other strings are URI-safe.
+                annotations.put(Symbol.valueOf("x-opt-sol-msg-type"), (short)0); // Default to standard SMF
+                break;
             default:
                 break;
         }
@@ -524,9 +562,23 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         sender.send(data, 0, encodedSize);
         sender.advance();
         
-        // Wait for settlement
-        while (!delivery.isSettled()) {
+        // Wait for settlement with timeout to prevent "stuck" state
+        long start = System.currentTimeMillis();
+        while (!delivery.isSettled() && (System.currentTimeMillis() - start < 5000)) {
             Thread.sleep(10);
+        }
+        
+        if (!delivery.isSettled()) {
+            throw new Exception("Message send timeout (5s) - broker did not settle delivery.");
+        }
+        
+        DeliveryState state = delivery.getRemoteState();
+        if (state instanceof org.apache.qpid.proton.amqp.messaging.Rejected) {
+            org.apache.qpid.proton.amqp.messaging.Rejected rejected = (org.apache.qpid.proton.amqp.messaging.Rejected) state;
+            String err = rejected.getError() != null ? rejected.getError().toString() : "Unknown rejection reason";
+            throw new Exception("Broker REJECTED the message: " + err);
+        } else if (state instanceof org.apache.qpid.proton.amqp.messaging.Released) {
+            throw new Exception("Broker RELEASED the message (delivery failed).");
         }
     }
     
@@ -755,5 +807,17 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             case "KK": return 0;
             default: return 0;
         }
+    }
+
+    private boolean isSolaceProfile() {
+        String profile = TestConfig.getInstance().getProperty("amqp.broker.profile", "STANDARD");
+        return "SOLACE".equalsIgnoreCase(profile);
+    }
+
+    private String sanitizeForSolace(String input) {
+        if (input == null) return null;
+        // Solace WebUI throws 'Malformed URI sequence' if it sees a stray % 
+        // We escape it or replace it to be safe for display purposes.
+        return input.replace("%", "_pct_");
     }
 }

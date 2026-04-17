@@ -158,12 +158,19 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
-            if (key.startsWith("amhs_")) {
+            if (key.startsWith("amhs_") || key.equals("swim_compression")) {
                 // Skip amhs_originator since we'll set the validated version
                 if (key.equals("amhs_originator")) {
                     continue;
                 }
-                userProps.putString(key, String.valueOf(entry.getValue()));
+                
+                Object value = entry.getValue();
+                // Solace WebUI fix: sanitize all strings to be URI-safe
+                if (value instanceof String) {
+                    value = sanitizeForSolace((String) value);
+                }
+                
+                userProps.putString(key, String.valueOf(value));
             }
         }
         
@@ -172,7 +179,8 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         
         // amhs_message_id: empty string signals "no message-id" for rejection testing (EUR Doc 047 §4.5.1.2)
         if (properties.containsKey("amhs_message_id")) {
-            userProps.putString("amhs_message_id", String.valueOf(properties.get("amhs_message_id")));
+            String msgId = String.valueOf(properties.get("amhs_message_id"));
+            userProps.putString("amhs_message_id", sanitizeForSolace(msgId));
         }
         // creation_time: value 0 signals epoch/zero timestamp for rejection testing (EUR Doc 047 §4.5.1.3)
         if (properties.containsKey("creation_time")) {
@@ -331,5 +339,12 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             case "KK": return 0;
             default: return 4;
         }
+    }
+
+    private String sanitizeForSolace(String input) {
+        if (input == null) return null;
+        // Solace WebUI throws 'Malformed URI sequence' if it sees a stray % 
+        // We replace it to be safe for display purposes in the manager console.
+        return input.replace("%", "_pct_");
     }
 }
