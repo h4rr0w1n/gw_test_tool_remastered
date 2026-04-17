@@ -68,6 +68,7 @@ public class TestConfig {
         props.setProperty("gateway.max_recipients", "512");
         props.setProperty("gateway.max_size", "1000000");
         props.setProperty("gateway.default_topic", "TEST.TOPIC");
+        props.setProperty("gateway.default_queue", "TEST.QUEUE");
         // Note: gateway.test_recipient is now user-configurable via GUI - no default set
         
         // AMQP 1.0 Security (Placeholder for later TLS/SASL configuration)

@@ -428,12 +428,23 @@ public class TestFrame extends JFrame {
         JTextField vpnField = styledField(TestConfig.getInstance().getProperty("swim.broker.vpn","default"), 14);
         configPanel.add(vpnField, gc);
 
-        // ── Topics ──
         gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 1; gc.weightx = 0;
         configPanel.add(label("Target AMQP Topic:"), gc);
         gc.gridx = 1; gc.gridwidth = 3; gc.weightx = 1;
         JTextField topicField = styledField(TestConfig.getInstance().getProperty("gateway.default_topic","TEST.TOPIC"), 14);
         configPanel.add(topicField, gc);
+
+        gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 1; gc.weightx = 0;
+        configPanel.add(label("Target AMQP Queue:"), gc);
+        gc.gridx = 1; gc.gridwidth = 3; gc.weightx = 1;
+        JTextField queueField = styledField(TestConfig.getInstance().getProperty("gateway.default_queue","TEST.QUEUE"), 14);
+        configPanel.add(queueField, gc);
+
+        gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 1; gc.weightx = 0;
+        configPanel.add(label("Gateway Originator:"), gc);
+        gc.gridx = 1; gc.gridwidth = 3; gc.weightx = 1;
+        JTextField originatorField = styledField(TestConfig.getInstance().getProperty("gateway.default_originator","LFRCZZZZ"), 14);
+        configPanel.add(originatorField, gc);
 
 
         // ── Buttons ──
@@ -454,6 +465,8 @@ public class TestFrame extends JFrame {
             cfg.setProperty("swim.broker.password", new String(passField.getPassword()));
             cfg.setProperty("swim.broker.vpn", vpnField.getText());
             cfg.setProperty("gateway.default_topic", topicField.getText());
+            cfg.setProperty("gateway.default_queue", queueField.getText());
+            cfg.setProperty("gateway.default_originator", originatorField.getText());
             cfg.setProperty("amqp_broker_profile", (String) profileCombo.getSelectedItem());
             cfg.saveConfig();
             swimToAmhsTests = new SwimToAmhsTests();
@@ -499,11 +512,13 @@ public class TestFrame extends JFrame {
         configPanel.add(clearRptBtn, gc);
 
         // Auto-save individual fields
-        autoSave(hostField,      "swim.broker.host");
-        autoSave(portField,      "swim.broker.port");
-        autoSave(userField,      "swim.broker.user");
-        autoSave(vpnField,       "swim.broker.vpn");
-        autoSave(topicField,     "gateway.default_topic");
+        autoSave(hostField,        "swim.broker.host");
+        autoSave(portField,        "swim.broker.port");
+        autoSave(userField,        "swim.broker.user");
+        autoSave(vpnField,         "swim.broker.vpn");
+        autoSave(topicField,       "gateway.default_topic");
+        autoSave(queueField,       "gateway.default_queue");
+        autoSave(originatorField,  "gateway.default_originator");
         profileCombo.addActionListener(e ->
             TestConfig.getInstance().setProperty("amqp_broker_profile", (String) profileCombo.getSelectedItem()));
         passField.getDocument().addDocumentListener(docListener(() ->

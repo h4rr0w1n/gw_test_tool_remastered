@@ -135,7 +135,7 @@ public class TestCasePanel extends JPanel {
         btnSettings = new JButton("Tool Settings");
         
         // SWIM Topic Display - reads from Tool Settings config
-        lblTopicDisplay = new JLabel("TEST.TOPIC");
+        lblTopicDisplay = new JLabel("Topic: TEST.TOPIC | Queue: TEST.QUEUE");
         lblTopicDisplay.setFont(new Font("SansSerif", Font.BOLD, 12));
         lblTopicDisplay.setForeground(clrAccent);
         lblTopicDisplay.setBorder(new EmptyBorder(0, 8, 0, 8));
@@ -374,7 +374,8 @@ public class TestCasePanel extends JPanel {
 
     private void updateTopicDisplay() {
         String topic = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_topic", "TEST.TOPIC");
-        lblTopicDisplay.setText(topic);
+        String queue = com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
+        lblTopicDisplay.setText("Topic: " + topic + "  |  Queue: " + queue);
     }
 
     public void loadTestCase(BaseTestCase tc) {
@@ -647,16 +648,18 @@ public class TestCasePanel extends JPanel {
             // msg1: subject|body  msg2: subject|body  msg3: amhs_subject|body  msg4: subject|amhs_subject|body
             case "CTSW107": {
                 String[] parts = raw.split("\\|", -1);
-                if (mIdx == 4) {
-                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",       parts.length > 0 ? parts[0].trim() : ""});
-                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (wins)", parts.length > 1 ? parts[1].trim() : ""});
-                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",        parts.length > 2 ? parts[2].trim() : ""});
-                } else if (mIdx == 3) {
+                if (mIdx == 5) {
+                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",          parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (wins)",    parts.length > 1 ? parts[1].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",           parts.length > 2 ? parts[2].trim() : ""});
+                } else if (mIdx == 4) {
                     specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (app prop)", parts.length > 0 ? parts[0].trim() : ""});
                     specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",             parts.length > 1 ? parts[1].trim() : ""});
+                } else if (mIdx == 1) {
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",             parts.length > 1 ? parts[1].trim() : "Empty Subject Msg"});
                 } else {
-                    specs.add(new String[]{"subject_" + mIdx, "AMQP SUBJECT",  parts.length > 0 ? parts[0].trim() : ""});
-                    specs.add(new String[]{"body_" + mIdx,    "BODY PAYLOAD",   parts.length > 1 ? parts[1].trim() : ""});
+                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",  parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",   parts.length > 1 ? parts[1].trim() : ""});
                 }
                 break;
             }
@@ -988,6 +991,12 @@ public class TestCasePanel extends JPanel {
             inputs.put(currentMsg.getCustomKey(), finalPayload);
         }
 
+        // Resolve final topic/queue from TestConfig (these are always the live values,
+        // regardless of whether they are TEST.TOPIC/TEST.QUEUE or anything else configured)
+        com.amhs.swim.test.config.TestConfig liveConfig = com.amhs.swim.test.config.TestConfig.getInstance();
+        String resolvedTopic = liveConfig.getProperty("gateway.default_topic", "TEST.TOPIC");
+        String resolvedQueue = liveConfig.getProperty("gateway.default_queue", "TEST.QUEUE");
+
         // Log the prepared message and properties
         String recipDisplay = caseId.equals("CTSW112")
             ? "[loaded from address file]"
@@ -997,6 +1006,8 @@ public class TestCasePanel extends JPanel {
             + ", amhs_recipients=" + recipDisplay + ", body_type=" + bodyType
             + " | PAYLOAD: " + finalPayload;
         Logger.logCase(currentCase.getTestCaseId(), "INFO", logMsg);
+        Logger.logCase(currentCase.getTestCaseId(), "INFO",
+            "Destinations → Topic: " + resolvedTopic + "  |  Queue: " + resolvedQueue);
 
         new Thread(() -> {
             try {

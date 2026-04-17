@@ -881,20 +881,22 @@ public class SwimToAmhsTests {
         @Override
         public String getCriteria() {
             return
-                "• Msg 1: AMQP subject >128 chars → trimmed to 128 → IPM element 'subject'\n" +
-                "• Msg 2: AMQP subject (normal) → mapped to IPM element 'subject'\n" +
-                "• Msg 3: empty AMQP subject + amhs_subject app prop → amhs_subject maps to IPM 'subject'\n" +
-                "• Msg 4: AMQP subject + amhs_subject present → amhs_subject TAKES PRECEDENCE\n" +
+                "• Msg 1: no subject mapping → IPM element 'subject' MUST be absent\n" +
+                "• Msg 2: AMQP subject >128 chars → trimmed to 128 → IPM element 'subject'\n" +
+                "• Msg 3: AMQP subject (normal) → mapped to IPM element 'subject'\n" +
+                "• Msg 4: empty AMQP subject + amhs_subject app prop → amhs_subject maps to IPM 'subject'\n" +
+                "• Msg 5: AMQP subject + amhs_subject present → amhs_subject TAKES PRECEDENCE\n" +
                 "Ref: EUR Doc 047 §4.5.2.3";
         }
 
         @Override
         public List<TestMessage> getMessages() {
             return List.of(
-                new TestMessage(1, "AMQP subject > 128 chars → trim to 128 → IPM subject",            "S".repeat(150) + " | Msg1 Payload", true, false, "p1"),
-                new TestMessage(2, "AMQP subject (normal) → IPM subject",                             "Normal Subject | Msg2 Payload", true, false, "p2"),
-                new TestMessage(3, "empty AMQP subject + amhs_subject app prop → IPM subject",        "AMHS App Prop Subject | Msg3 Payload", true, false, "p3"),
-                new TestMessage(4, "AMQP subject + amhs_subject both present → amhs_subject wins",    "subject props | amhs app prop | Msg4 Payload", true, false, "p4")
+                new TestMessage(1, "no subject properties → deliver message with EMPTY/ABSENT subject",        " | Empty Subject Msg", true, false, "body_1"),
+                new TestMessage(2, "AMQP subject > 128 chars → trim to 128 → IPM subject",            "S".repeat(150) + " | Msg1 Payload", true, false, "p2"),
+                new TestMessage(3, "AMQP subject (normal) → IPM subject",                             "Normal Subject | Msg2 Payload", true, false, "p3"),
+                new TestMessage(4, "empty AMQP subject + amhs_subject app prop → IPM subject",        "AMHS App Prop Subject | Msg3 Payload", true, false, "p4"),
+                new TestMessage(5, "AMQP subject + amhs_subject both present → amhs_subject wins",    "subject props | amhs app prop | Msg4 Payload", true, false, "p5")
             );
         }
 
@@ -905,10 +907,6 @@ public class SwimToAmhsTests {
             String priorityStr = inputs != null ? inputs.get("amqp_priority") : null;
             short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
 
-            // New field keys from buildExtraFieldSpecs:
-            // msg1/2: subject_<N>, body_<N>
-            // msg3:   amhs_subject_<N>, body_<N>
-            // msg4:   subject_<N>, amhs_subject_<N>, body_<N>
             String configDefault = configMgr.getPayload("CTSW107", idx);
             String[] cfgParts = configDefault != null ? configDefault.split("\\|", -1) : new String[]{""};
 
@@ -917,26 +915,34 @@ public class SwimToAmhsTests {
             p.setAmqpPriority(priority);
 
             String body; String desc;
-            if (idx == 4) {
+            if (idx == 5) {
                 String defSubject    = cfgParts.length > 0 ? cfgParts[0].trim() : "subject props";
                 String defAmhsSubj   = cfgParts.length > 1 ? cfgParts[1].trim() : "amhs app prop";
-                String defBody       = cfgParts.length > 2 ? cfgParts[2].trim() : "Msg4";
+                String defBody       = cfgParts.length > 2 ? cfgParts[2].trim() : "Msg5";
                 String subject       = getInput(inputs, "subject_" + idx, defSubject);
                 String amhsSubject   = getInput(inputs, "amhs_subject_" + idx, defAmhsSubj);
                 body                 = getInput(inputs, "body_" + idx, defBody);
                 p.setSubject(subject);
                 p.setExtraProp("amhs_subject", amhsSubject);
                 desc = "AMQP-subject='" + subject + "' + amhs_subject='" + amhsSubject + "' (amhs_subject WINS)";
-            } else if (idx == 3) {
+            } else if (idx == 4) {
                 String defAmhsSubj = cfgParts.length > 0 ? cfgParts[0].trim() : "AMHS App Prop";
-                String defBody     = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg3";
+                String defBody     = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg4";
                 String amhsSubject = getInput(inputs, "amhs_subject_" + idx, defAmhsSubj);
                 body               = getInput(inputs, "body_" + idx, defBody);
                 p.setExtraProp("amhs_subject", amhsSubject);
                 desc = "amhs_subject=" + amhsSubject + " (no AMQP subject)";
+            } else if (idx == 1) {
+                String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "Empty Subject Msg";
+                body = getInput(inputs, "body_" + idx, defBody);
+                // No subject property set
+                desc = "EMPTY/ABSENT subject field mapping";
             } else {
-                String defSubject = cfgParts.length > 0 ? cfgParts[0].trim()
-                    : (idx == 1 ? "S".repeat(150) : "Normal Subject");
+                // idx 2 (was 1: long) or 3 (was 2: normal)
+                String defSubject = cfgParts.length > 0 ? cfgParts[0].trim() : "";
+                if (defSubject.isEmpty()) {
+                    defSubject = (idx == 2 ? "S".repeat(150) : "Normal Subject");
+                }
                 String defBody    = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg" + idx;
                 String subject    = getInput(inputs, "subject_" + idx, defSubject);
                 body              = getInput(inputs, "body_" + idx, defBody);
