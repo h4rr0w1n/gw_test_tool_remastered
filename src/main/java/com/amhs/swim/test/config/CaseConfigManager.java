@@ -30,10 +30,12 @@ public class CaseConfigManager {
     private static CaseConfigManager instance;
     private JSONObject caseConfigs;
     private Map<String, Map<Integer, String>> defaultPayloads;
+    private Map<String, Map<String, String>> caseConfigDefaults; // stores <config key="..."> values per case
     
     private CaseConfigManager() {
         caseConfigs = new JSONObject();
         defaultPayloads = new HashMap<>();
+        caseConfigDefaults = new HashMap<>();
         loadConfig();
         loadStandardDefaults();
     }
@@ -72,6 +74,7 @@ public class CaseConfigManager {
      *    <defaults>
      *      <case id="CTSW106">
      *        <msg idx="1"><![CDATA[Payload text...]]></msg>
+     *        <config key="ipm_id_pattern"><![CDATA[IPM.CTSW106.{ts}]]></config>
      *      </case>
      *    </defaults>
      *  - config/default_case_payloads.txt (fallback) with lines:
@@ -90,6 +93,7 @@ public class CaseConfigManager {
                 for (int i = 0; i < caseNodes.getLength(); i++) {
                     Element caseElem = (Element) caseNodes.item(i);
                     String caseId = caseElem.getAttribute("id");
+                    // Load msg elements
                     NodeList msgNodes = caseElem.getElementsByTagName("msg");
                     for (int j = 0; j < msgNodes.getLength(); j++) {
                         Element msgElem = (Element) msgNodes.item(j);
@@ -100,6 +104,16 @@ public class CaseConfigManager {
                             defaultPayloads.computeIfAbsent(caseId, k -> new HashMap<>()).put(idx, payload);
                         } catch (NumberFormatException nfe) {
                             // skip invalid index
+                        }
+                    }
+                    // Load config elements (key-value pairs per case)
+                    NodeList configNodes = caseElem.getElementsByTagName("config");
+                    for (int k = 0; k < configNodes.getLength(); k++) {
+                        Element configElem = (Element) configNodes.item(k);
+                        String key = configElem.getAttribute("key");
+                        String value = configElem.getTextContent();
+                        if (key != null && !key.isEmpty()) {
+                            caseConfigDefaults.computeIfAbsent(caseId, c -> new HashMap<>()).put(key, value);
                         }
                     }
                 }
@@ -178,6 +192,49 @@ public class CaseConfigManager {
         }
         
         return "";
+    }
+    
+    /**
+     * Get a config value for a specific case (e.g., ipm_id_pattern, reg_id_pattern, amhs_originator).
+     * Returns user-customized value if exists in JSON config, otherwise returns default from XML.
+     * @param caseId Case ID (e.g., "CTSW101")
+     * @param configKey Config key name (e.g., "ipm_id_pattern")
+     * @param defaultValue Default value to return if not found
+     * @return Config value or defaultValue
+     */
+    public String getConfig(String caseId, String configKey, String defaultValue) {
+        // First check user customizations in JSON
+        if (caseConfigs.has(caseId)) {
+            JSONObject caseConfig = caseConfigs.getJSONObject(caseId);
+            String jsonKey = "config_" + configKey;
+            if (caseConfig.has(jsonKey)) {
+                return caseConfig.getString(jsonKey);
+            }
+        }
+        
+        // Then check defaults loaded from XML
+        if (caseConfigDefaults.containsKey(caseId) && caseConfigDefaults.get(caseId).containsKey(configKey)) {
+            return caseConfigDefaults.get(caseId).get(configKey);
+        }
+        
+        return defaultValue;
+    }
+    
+    /**
+     * Set a custom config value for a case.
+     * @param caseId Case ID
+     * @param configKey Config key name
+     * @param value Value to store
+     */
+    public void setConfig(String caseId, String configKey, String value) {
+        JSONObject caseConfig;
+        if (caseConfigs.has(caseId)) {
+            caseConfig = caseConfigs.getJSONObject(caseId);
+        } else {
+            caseConfig = new JSONObject();
+            caseConfigs.put(caseId, caseConfig);
+        }
+        caseConfig.put("config_" + configKey, value);
     }
     
     /**

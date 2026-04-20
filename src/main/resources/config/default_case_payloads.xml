@@ -16,6 +16,9 @@
   <case id="CTSW101">
     <msg idx="1"><![CDATA[CTSW101 Text Payload]]></msg>
     <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- IPM-ID and Registered-ID patterns per EUR Doc 047 §4.5.4.27-4.5.4.31 -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW101.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW101.{idx}]]></config>
   </case>
 
   <!-- CTSW102: Reject AMQP messages missing required information
@@ -33,9 +36,13 @@
     <msg idx="9"><![CDATA[src/main/resources/sample.pdf]]></msg>
     <msg idx="10"><![CDATA[]]></msg>
     <!-- msg 11: pipe-separated => binPayload_11 | recip_11
-         recip_11 must be >8 chars to trigger REJECT per EUR Doc 047 §4.5.1.4 -->
-    <msg idx="11"><![CDATA[src/main/resources/sample.pdf|LONGADDRESSXXXXX]]></msg>
+         recip_11 must be >8 chars to trigger REJECT per EUR Doc 047 §4.5.1.4 
+         Using valid O/R address format exceeding 8 characters -->
+    <msg idx="11"><![CDATA[src/main/resources/sample.pdf|/C=EU/ADMD=ICAO/PRMD=TEST/O=GATEWAY/OU=AMHS/CN=LONGADDR1]]></msg>
     <msg idx="12"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW102.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW102.{idx}]]></config>
   </case>
 
   <!-- CTSW103: ATSMHS Service Level conversion -->
@@ -47,6 +54,9 @@
     <msg idx="5"><![CDATA[CTSW103 ContentBased Text Payload]]></msg>
     <msg idx="6"><![CDATA[CTSW103 RecipBased AllExt Payload]]></msg>
     <msg idx="7"><![CDATA[CTSW103 RecipBased Mixed Payload]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW103.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW103.{idx}]]></config>
   </case>
 
   <!-- CTSW104: Priority mapping - values shown are payload defaults only;
@@ -72,12 +82,18 @@
     <msg idx="18"><![CDATA[CTSW104 Pri1+ATS_FF]]></msg>
     <msg idx="19"><![CDATA[CTSW104 Pri1+ATS_GG]]></msg>
     <msg idx="20"><![CDATA[CTSW104 Pri9+ATS_KK]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW104.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW104.{idx}]]></config>
   </case>
 
   <!-- CTSW105: Filing time conversion -->
   <case id="CTSW105">
     <msg idx="1"><![CDATA[CTSW105 Default Filing Time Text]]></msg>
     <msg idx="2"><![CDATA[CTSW105 Explicit Filing Time 250102]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW105.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW105]]></config>
   </case>
 
   <!-- CTSW106: Optional Heading Information - pipe-separated: OHI | BODY -->
@@ -88,6 +104,9 @@
     <msg idx="4"><![CDATA[OHI-HI-SHORT|OHI Content]]></msg>
     <msg idx="5"><![CDATA[BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB|OHI Content]]></msg>
     <msg idx="6"><![CDATA[BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB|OHI Content]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW106.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW106]]></config>
   </case>
 
   <!-- CTSW107: Subject field mapping - pipe-separated:
@@ -100,16 +119,25 @@
     <msg idx="3"><![CDATA[Normal Subject|Msg2 Payload]]></msg>
     <msg idx="4"><![CDATA[AMHS App Prop Subject|Msg3 Payload]]></msg>
     <msg idx="5"><![CDATA[AMQP Subject Props|AMHS App Prop|Msg4 Payload]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW107.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW107]]></config>
   </case>
 
   <!-- CTSW108: Known originator - pipe-separated: AMHS_ORIGINATOR | BODY -->
   <case id="CTSW108">
     <msg idx="1"><![CDATA[VVTSYMYX|Known Originator Body]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW108.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW108]]></config>
   </case>
 
   <!-- CTSW109: Unknown originator - pipe-separated: AMHS_ORIGINATOR | BODY -->
   <case id="CTSW109">
     <msg idx="1"><![CDATA[UNKNOWN1|Unknown Originator Body]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW109.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW109]]></config>
   </case>
 
   <!-- CTSW110: Content-type combinations -->
@@ -120,6 +148,9 @@
     <msg idx="4"><![CDATA[CTSW110 Text Accept Payload]]></msg>
     <msg idx="5"><![CDATA[CTSW110 UTF-16 Payload]]></msg>
     <msg idx="6"><![CDATA[CTSW110 Both Body Parts Payload]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW110.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW110]]></config>
   </case>
 
   <!-- CTSW111: Message size limit -->
@@ -128,12 +159,18 @@
     <msg idx="2"><![CDATA[src/main/resources/small_payload.bin]]></msg>
     <msg idx="3"><![CDATA[OVER_SIZE_TEXT]]></msg>
     <msg idx="4"><![CDATA[src/main/resources/large_payload.bin]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW111.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW111]]></config>
   </case>
 
   <!-- CTSW112: Recipient quantity limit -->
   <case id="CTSW112">
     <msg idx="1"><![CDATA[src/main/resources/address_512.txt]]></msg>
     <msg idx="2"><![CDATA[src/main/resources/address_513.txt]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW112.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW112]]></config>
   </case>
 
   <!-- CTSW113: Receipt / Non-receipt notification
@@ -143,11 +180,21 @@
     <!-- pipe-separated: payload | amhs_notification_request -->
     <msg idx="1"><![CDATA[CTSW113 NRN Request Payload|rn,nrn]]></msg>
     <msg idx="2"><![CDATA[CTSW113 RN Request Payload|rn,nrn]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW113.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW113]]></config>
   </case>
 
   <!-- CTSW114: Non-delivery report -->
   <case id="CTSW114">
     <msg idx="1"><![CDATA[CTSW114 Trigger NDR Payload]]></msg>
+    <!-- amhs_originator: REQUIRED 8-char AFTN address or full AMHS MF-address for NDR return path -->
+    <config key="amhs_originator"><![CDATA[VVTSYMYX]]></config>
+    <!-- amhs_notification_request: must include 'nrn' per EUR Doc 047 §4.4.7.3 -->
+    <config key="amhs_notification_request"><![CDATA[nrn]]></config>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW114.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW114]]></config>
   </case>
 
   <!-- CTSW115: Body-part type and content encoding
@@ -158,6 +205,9 @@
     <msg idx="2"><![CDATA[Lorem ipsum i5bpt|ia5_text_body_part|IA5]]></msg>
     <msg idx="3"><![CDATA[Lorem ipsum 646|general-text-body-part|ISO-646]]></msg>
     <msg idx="4"><![CDATA[Lorem ipsum 8859|general-text-body-part|ISO-8859-1]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW115.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW115]]></config>
   </case>
 
   <!-- CTSW116: FTBP attributes and GZIP
@@ -166,6 +216,9 @@
   <case id="CTSW116">
     <msg idx="1"><![CDATA[src/main/resources/sample.pdf|240101120000Z]]></msg>
     <msg idx="2"><![CDATA[src/main/resources/sample.pdf|240101120000Z]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW116.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW116]]></config>
   </case>
 
 </defaults>
