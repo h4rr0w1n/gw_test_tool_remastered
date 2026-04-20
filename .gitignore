@@ -1,10 +1,39 @@
 ```
-# Java/Maven build artifacts
+# Java / Maven build artifacts
 target/
 *.class
 *.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
 
-# Maven specific
-.mvn/
-mvn/
+# Logs
+*.log
+test_results.log
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Eclipse
+.settings/
+.project
+.classpath
+.factorypath
+
+# OS Specific
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific temporary files
+a.pdf
 ```
