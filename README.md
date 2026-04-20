@@ -68,22 +68,21 @@ java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
    ```cmd
    mvn clean package
    ```
-3. Chạy công cụ:
+3. Chạy công cụ bằng script batch có sẵn:
+   ```cmd
+   run_tool.bat
+   ```
+   
+   Hoặc khởi chạy trực tiếp bằng Java:
    ```cmd
    java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
    ```
-   
-Hoặc tạo file batch `run_tool.bat`:
-```batch
-@echo off
-cd /d %~dp0
-java -jar target/test-tool-1.0.0-jar-with-dependencies.jar %*
-```
 
 #### Lưu ý Windows:
 - Đảm bảo biến môi trường `JAVA_HOME` và `MAVEN_HOME` được thiết lập đúng
 - Nếu gặp lỗi độ dài đường dẫn, enable Long Paths trong Windows Registry
-- Script `install.sh` và `run_tool.sh` chỉ dành cho Linux/macOS; người dùng Windows cần sử dụng Command Prompt/PowerShell hoặc Git Bash
+- Script `install.sh` và `run_tool.sh` chỉ dành cho Linux/macOS; người dùng Windows sử dụng file `run_tool.bat` đi kèm
+- File `run_tool.bat` sẽ tự động kiểm tra Java, biên dịch nếu cần, và khởi chạy công cụ
 
 ---
 
@@ -162,11 +161,11 @@ Người dùng có thể cấu hình tất cả các tham số trên thông qua 
    
    **Trên Windows:**
    ```cmd
-   java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
-   ```
-   Hoặc sử dụng file batch (nếu đã tạo):
-   ```cmd
    run_tool.bat
+   ```
+   Hoặc khởi chạy trực tiếp bằng Java:
+   ```cmd
+   java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
    ```
 
 2. **Kiểm tra Kết nối**: Xác thực trạng thái kết nối với Broker trong tab **Settings** (biểu tượng bánh răng trên thanh công cụ).
