@@ -158,19 +158,38 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         
         for (Map.Entry<String, Object> entry : properties.entrySet()) {
             String key = entry.getKey();
-            if (key.startsWith("amhs_") || key.equals("swim_compression")) {
-                // Skip amhs_originator since we'll set the validated version
-                if (key.equals("amhs_originator")) {
-                    continue;
-                }
+            Object value = entry.getValue();
+
+            // Skip amhs_originator as it's handled separately with validation
+            if (key.equals("amhs_originator")) continue;
+
+            // We only send amhs_*, swim_*, amqp_* and content_type properties to Solace
+            if (key.startsWith("amhs_") || key.startsWith("amqp_") || 
+                key.startsWith("swim_") || key.equals("content_type")) {
                 
-                Object value = entry.getValue();
-                // Solace WebUI fix: sanitize all strings to be URI-safe
-                if (value instanceof String) {
+                // Solace WebUI fix: sanitize strings to be URI-safe to prevent 'Malformed URI sequence' errors.
+                // CRITICAL: We EXEMPT technical metadata like swim_compression or FTBP attributes 
+                // because sanitization (replacing % with _pct_) would corrupt these fields for the IUT.
+                if (value instanceof String && !isTechnicalProperty(key)) {
                     value = sanitizeForSolace((String) value);
                 }
                 
-                userProps.putString(key, String.valueOf(value));
+                // Use typed methods for SDTMap to avoid unnecessary string conversions 
+                // and to help the Solace Management Console render types correctly.
+                if (value instanceof String) {
+                    userProps.putString(key, (String) value);
+                } else if (value instanceof Long) {
+                    userProps.putLong(key, (Long) value);
+                } else if (value instanceof Integer) {
+                    userProps.putInteger(key, (Integer) value);
+                } else if (value instanceof Boolean) {
+                    userProps.putBoolean(key, (Boolean) value);
+                } else if (value instanceof Double) {
+                    userProps.putDouble(key, (Double) value);
+                } else {
+                    // Fallback to string for unknown types
+                    userProps.putString(key, String.valueOf(value));
+                }
             }
         }
         
@@ -178,17 +197,25 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         userProps.putString("amhs_originator", validatedOriginator);
         
         // amhs_message_id: empty string signals "no message-id" for rejection testing (EUR Doc 047 §4.5.1.2)
-        if (properties.containsKey("amhs_message_id")) {
-            String msgId = String.valueOf(properties.get("amhs_message_id"));
-            userProps.putString("amhs_message_id", sanitizeForSolace(msgId));
+        // amhs_message_id and amqp_message_id handling
+        String msgIdKey = properties.containsKey("amhs_message_id") ? "amhs_message_id" : 
+                         (properties.containsKey("amqp_message_id") ? "amqp_message_id" : null);
+        if (msgIdKey != null) {
+            String msgId = String.valueOf(properties.get(msgIdKey));
+            // Message IDs are technical and should be preserved, but they are also a common source of WebUI crashes.
+            // We'll keep them intact for now as they are critical for rejection testing.
+            userProps.putString(msgIdKey, msgId);
         }
-        // creation_time: value 0 signals epoch/zero timestamp for rejection testing (EUR Doc 047 §4.5.1.3)
+
+        // creation_time: value 0 signals epoch/zero timestamp for rejection testing
         if (properties.containsKey("creation_time")) {
             Object ct = properties.get("creation_time");
             if (ct instanceof Long) {
                 msg.setSenderTimestamp((Long) ct);
+                userProps.putLong("creation_time", (Long) ct);
+            } else {
+                userProps.putString("creation_time", String.valueOf(ct));
             }
-            userProps.putString("creation_time", String.valueOf(ct));
         }
         msg.setProperties(userProps);
         
@@ -339,6 +366,19 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             case "KK": return 0;
             default: return 4;
         }
+    }
+
+    /**
+     * Determines if a property is technical metadata that should not be sanitized.
+     */
+    private boolean isTechnicalProperty(String key) {
+        return key.equals("swim_compression") || 
+               key.startsWith("amhs_ftbp_") || 
+               key.equals("amhs_ipm_id") ||
+               key.equals("amhs_registered_identifier") ||
+               key.equals("amhs_bodypart_type") ||
+               key.equals("content_type") ||
+               key.startsWith("amqp_");
     }
 
     private String sanitizeForSolace(String input) {

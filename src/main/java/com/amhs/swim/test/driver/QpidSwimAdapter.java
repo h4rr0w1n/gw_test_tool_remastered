@@ -340,8 +340,9 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         message.setAddress(topic);
         if (properties.containsKey("amqp_message_id")) {
             Object msgId = properties.get("amqp_message_id");
-            // Solace fix: ensure Message-Id string is URI-safe if using Solace profile
-            if (msgId instanceof String && isSolaceProfile()) {
+            // Solace fix: ensure Message-Id string is URI-safe if using Solace profile.
+            // We preserve technical fields by NOT sanitizing them if they are technical properties.
+            if (msgId instanceof String && isSolaceProfile() && !isTechnicalProperty("amqp_message_id")) {
                 msgId = sanitizeForSolace((String) msgId);
             }
             message.setMessageId(msgId);
@@ -420,7 +421,8 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                 }
                 
                 // Solace fix: broad sanitization for all strings in app properties
-                if (value instanceof String && isSolaceProfile()) {
+                // EXCEPT for critical technical metadata like swim_compression or FTBP attributes.
+                if (value instanceof String && isSolaceProfile() && !isTechnicalProperty(key)) {
                     value = sanitizeForSolace((String) value);
                 }
                 
@@ -814,10 +816,23 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         return "SOLACE".equalsIgnoreCase(profile);
     }
 
+    /**
+     * Determines if a property is technical metadata that should not be sanitized.
+     */
+    private boolean isTechnicalProperty(String key) {
+        return key.equals("swim_compression") || 
+               key.startsWith("amhs_ftbp_") || 
+               key.equals("amhs_ipm_id") ||
+               key.equals("amhs_registered_identifier") ||
+               key.equals("amhs_bodypart_type") ||
+               key.equals("content_type") ||
+               key.startsWith("amqp_");
+    }
+
     private String sanitizeForSolace(String input) {
         if (input == null) return null;
         // Solace WebUI throws 'Malformed URI sequence' if it sees a stray % 
-        // We escape it or replace it to be safe for display purposes.
+        // We replace it to be safe for display purposes in the manager console.
         return input.replace("%", "_pct_");
     }
 }

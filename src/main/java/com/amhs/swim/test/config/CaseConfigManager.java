@@ -30,11 +30,13 @@ public class CaseConfigManager {
     private static CaseConfigManager instance;
     private JSONObject caseConfigs;
     private Map<String, Map<Integer, String>> defaultPayloads;
+    private Map<String, Map<Integer, Map<String, String>>> msgMetadata; // stores <msg idx="..." [key]="[value]"> metadata
     private Map<String, Map<String, String>> caseConfigDefaults; // stores <config key="..."> values per case
     
     private CaseConfigManager() {
         caseConfigs = new JSONObject();
         defaultPayloads = new HashMap<>();
+        msgMetadata = new HashMap<>();
         caseConfigDefaults = new HashMap<>();
         loadConfig();
         loadStandardDefaults();
@@ -102,6 +104,18 @@ public class CaseConfigManager {
                             int idx = Integer.parseInt(idxStr);
                             String payload = msgElem.getTextContent();
                             defaultPayloads.computeIfAbsent(caseId, k -> new HashMap<>()).put(idx, payload);
+                            
+                            // Load optional metadata attributes
+                            Map<String, String> meta = new HashMap<>();
+                            if (msgElem.hasAttribute("content-type")) {
+                                meta.put("content-type", msgElem.getAttribute("content-type"));
+                            }
+                            if (msgElem.hasAttribute("body-type")) {
+                                meta.put("body-type", msgElem.getAttribute("body-type"));
+                            }
+                            if (!meta.isEmpty()) {
+                                msgMetadata.computeIfAbsent(caseId, k -> new HashMap<>()).put(idx, meta);
+                            }
                         } catch (NumberFormatException nfe) {
                             // skip invalid index
                         }
@@ -192,6 +206,16 @@ public class CaseConfigManager {
         }
         
         return "";
+    }
+
+    /**
+     * Get specific metadata for a message (e.g., content-type, body-type).
+     */
+    public String getMetadata(String caseId, int msgIndex, String metaKey) {
+        if (msgMetadata.containsKey(caseId) && msgMetadata.get(caseId).containsKey(msgIndex)) {
+            return msgMetadata.get(caseId).get(msgIndex).get(metaKey);
+        }
+        return null;
     }
     
     /**

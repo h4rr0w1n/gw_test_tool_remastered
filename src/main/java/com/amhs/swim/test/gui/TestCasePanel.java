@@ -463,12 +463,17 @@ public class TestCasePanel extends JPanel {
             btype = "DATA";
         }
         if (txt.contains("charset=\"utf-16\"")) ctype = "text/plain; charset=\"utf-16\"";
-        contentTypeCombo.setSelectedItem(ctype);
-        bodyTypeField.setText(btype);
-
         String caseId = currentCase.getTestCaseId();
         int mIdx = msg.getIndex();
         CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
+
+        String overrideCtype = cfgMgr.getMetadata(caseId, mIdx, "content-type");
+        if (overrideCtype != null) ctype = overrideCtype;
+        String overrideBtype = cfgMgr.getMetadata(caseId, mIdx, "body-type");
+        if (overrideBtype != null) btype = overrideBtype;
+
+        contentTypeCombo.setSelectedItem(ctype);
+        bodyTypeField.setText(btype);
 
         // Build explicit field specs for this case/message.
         // Each entry: { inputKey, displayLabel, defaultValue }

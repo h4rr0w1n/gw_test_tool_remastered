@@ -2992,3 +2992,607 @@ CASE CTSW104
 END OF CTSW104.
 ════════════════════════════════════════════════════════════════════════
 
+[2026-04-20 10:43:59] [INFO] Khởi động AMHS/SWIM Gateway Test Tool...
+[2026-04-20 10:44:00] [CONFIG] [INFO] No case payload config found, using defaults
+[2026-04-20 10:44:00] [CONFIG] [INFO] Loaded standard defaults from: config/default_case_payloads.xml
+[2026-04-20 10:45:00] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=text/plain; charset="utf-8", broker_profile=STANDARD, amhs_recipients=, body_type=AMQP_VALUE | PAYLOAD: binFile2=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:45:00] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:45:00] [CTSW116] [WARN] [MSG-2] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 10:45:00] [INFO] Detecting available SWIM messaging adapters...
+[2026-04-20 10:45:00] [SUCCESS] Selected Solace JCSMP adapter (proprietary API detected & reachable).
+[2026-04-20 10:45:00] [INFO] Connecting to SWIM Broker via Solace JCSMP at: tcp://localhost:55555
+[2026-04-20 10:45:00] [SUCCESS] Solace JCSMP connection established.
+[2026-04-20 10:45:00] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:45:00] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:45:00] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:45:00] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:45:00] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:45:00] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:45:00] [CTSW116] [AMQP] [MSG-2 | Attempt #1] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1024B compressed=29B | last_mod=240101120000Z
+[2026-04-20 10:45:00] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | compressed=29B (gzip) | ftbp_last…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:45:00] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=text/plain; charset="utf-8", broker_profile=STANDARD, amhs_recipients=, body_type=AMQP_VALUE | PAYLOAD: binFile2=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:45:00] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:45:00] [CTSW116] [WARN] [MSG-2] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 10:45:00] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:45:00] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:45:00] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:45:00] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:45:00] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:45:00] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:45:00] [CTSW116] [AMQP] [MSG-2 | Attempt #2] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1024B compressed=29B | last_mod=240101120000Z
+[2026-04-20 10:45:00] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | compressed=29B (gzip) | ftbp_last…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:45:01] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=text/plain; charset="utf-8", broker_profile=STANDARD, amhs_recipients=, body_type=AMQP_VALUE | PAYLOAD: binFile2=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:45:01] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:45:01] [CTSW116] [WARN] [MSG-2] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 10:45:01] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:45:01] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:45:01] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:45:01] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:45:01] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:45:01] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:45:01] [CTSW116] [AMQP] [MSG-2 | Attempt #3] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1024B compressed=29B | last_mod=240101120000Z
+[2026-04-20 10:45:01] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | compressed=29B (gzip) | ftbp_last…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:46:43] [CTSW116] [INFO] Set file path for [binFile2]: /home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/sample.pdf
+[2026-04-20 10:46:44] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=text/plain; charset="utf-8", broker_profile=STANDARD, amhs_recipients=, body_type=AMQP_VALUE | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:46:44] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:46:44] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:46:44] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:46:44] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:46:44] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:46:44] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:46:44] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:46:44] [CTSW116] [AMQP] [MSG-2 | Attempt #4] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=18B compressed=38B | last_mod=240101120000Z
+[2026-04-20 10:46:44] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 18                                       ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:47:18] [CTSW116] [INFO] Reverted message 2 to default payload
+[2026-04-20 10:47:39] [CTSW116] [INFO] Set file path for [binFile2]: /home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/sample.zip
+[2026-04-20 10:47:40] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=text/plain; charset="utf-8", broker_profile=STANDARD, amhs_recipients=, body_type=AMQP_VALUE | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/sample.zip | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:47:40] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:47:40] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:47:40] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:47:40] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:47:40] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:47:40] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:47:40] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:47:40] [CTSW116] [AMQP] [MSG-2 | Attempt #5] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=2048B compressed=35B | last_mod=240101120000Z
+[2026-04-20 10:47:40] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 2048                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.zip                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:57:33] [INFO] Khởi động AMHS/SWIM Gateway Test Tool...
+[2026-04-20 10:57:34] [CONFIG] [INFO] No case payload config found, using defaults
+[2026-04-20 10:57:34] [CONFIG] [INFO] Loaded standard defaults from: config/default_case_payloads.xml
+[2026-04-20 10:58:27] [CTSW116] [INFO] Reverted message 1 to default payload
+[2026-04-20 10:58:31] [CTSW116] [INFO] Reverted message 2 to default payload
+[2026-04-20 10:58:37] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:58:37] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:58:37] [CTSW116] [WARN] [MSG-2] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 10:58:37] [INFO] Detecting available SWIM messaging adapters...
+[2026-04-20 10:58:37] [SUCCESS] Selected Solace JCSMP adapter (proprietary API detected & reachable).
+[2026-04-20 10:58:37] [INFO] Connecting to SWIM Broker via Solace JCSMP at: tcp://localhost:55555
+[2026-04-20 10:58:37] [SUCCESS] Solace JCSMP connection established.
+[2026-04-20 10:58:37] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:58:37] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:58:37] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:58:37] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:58:37] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:58:37] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:58:37] [CTSW116] [AMQP] [MSG-2 | Attempt #1] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1024B compressed=29B | last_mod=240101120000Z
+[2026-04-20 10:58:37] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | compressed=29B (gzip) | ftbp_last…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:58:38] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:58:38] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:58:38] [CTSW116] [WARN] [MSG-2] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 10:58:38] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:58:38] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:58:38] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:58:38] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:58:38] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:58:38] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:58:38] [CTSW116] [AMQP] [MSG-2 | Attempt #2] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1024B compressed=29B | last_mod=240101120000Z
+[2026-04-20 10:58:38] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | compressed=29B (gzip) | ftbp_last…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:59:04] [CTSW116] [INFO] Set file path for [binFile2]: /home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin
+[2026-04-20 10:59:06] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:59:06] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:59:06] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:59:06] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:59:06] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:59:06] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:59:06] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:59:06] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:59:06] [CTSW116] [AMQP] [MSG-2 | Attempt #3] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 10:59:06] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 10:59:59] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 10:59:59] [CTSW116] [INFO] Destinations → Topic: TEST.TOPIC  |  Queue: TEST.QUEUE
+[2026-04-20 10:59:59] [INFO] Publishing message via Solace JCSMP to: TEST.QUEUE
+[2026-04-20 10:59:59] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:59:59] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:59:59] [INFO] Publishing message via Solace JCSMP to: TEST.TOPIC
+[2026-04-20 10:59:59] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 10:59:59] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 10:59:59] [CTSW116] [AMQP] [MSG-2 | Attempt #4] >> TEST.TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 10:59:59] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:01:14] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:01:14] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:01:14] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:01:14] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:14] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:14] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:01:14] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:14] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:14] [CTSW116] [AMQP] [MSG-2 | Attempt #5] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:01:14] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:01:15] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:01:15] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:01:15] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:01:15] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:15] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:15] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:01:15] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:15] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:15] [CTSW116] [AMQP] [MSG-2 | Attempt #6] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:01:15] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:01:22] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:01:22] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:01:22] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:01:22] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:22] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:22] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:01:22] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:22] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:22] [CTSW116] [AMQP] [MSG-2 | Attempt #7] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:01:22] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:01:23] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:01:23] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:01:23] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:01:23] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:23] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:23] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:01:23] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:01:23] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:01:23] [CTSW116] [AMQP] [MSG-2 | Attempt #8] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:01:23] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:07:43] [CTSW116] [INFO] Prepared message 1 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:07:43] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:07:43] [CTSW116] [WARN] [MSG-1] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 11:07:43] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:07:43] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:07:43] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:07:43] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:07:43] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:07:43] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:07:43] [CTSW116] [AMQP] [MSG-1 | Attempt #1] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP | size=1024B | last_mod=240101120000Z
+[2026-04-20 11:07:43] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | ftbp_last_mod=240101120000Z          ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:14:51] [INFO] Khởi động AMHS/SWIM Gateway Test Tool...
+[2026-04-20 11:14:52] [CONFIG] [INFO] No case payload config found, using defaults
+[2026-04-20 11:14:52] [CONFIG] [INFO] Loaded standard defaults from: config/default_case_payloads.xml
+[2026-04-20 11:14:58] [CTSW116] [INFO] Prepared message 1 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:14:58] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:14:58] [CTSW116] [WARN] [MSG-1] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 11:14:58] [INFO] Detecting available SWIM messaging adapters...
+[2026-04-20 11:14:58] [SUCCESS] Selected Solace JCSMP adapter (proprietary API detected & reachable).
+[2026-04-20 11:14:58] [INFO] Connecting to SWIM Broker via Solace JCSMP at: tcp://localhost:55555
+[2026-04-20 11:14:58] [SUCCESS] Solace JCSMP connection established.
+[2026-04-20 11:14:58] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:14:58] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:14:58] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:14:58] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:14:58] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:14:58] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:14:58] [CTSW116] [AMQP] [MSG-1 | Attempt #1] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP | size=1024B | last_mod=240101120000Z
+[2026-04-20 11:14:58] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | ftbp_last_mod=240101120000Z          ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:14:59] [CTSW116] [INFO] Prepared message 1 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:14:59] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:14:59] [CTSW116] [WARN] [MSG-1] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 11:14:59] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:14:59] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:14:59] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:14:59] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:14:59] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:14:59] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:14:59] [CTSW116] [AMQP] [MSG-1 | Attempt #2] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP | size=1024B | last_mod=240101120000Z
+[2026-04-20 11:14:59] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | ftbp_last_mod=240101120000Z          ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:15:19] [CTSW116] [INFO] Set file path for [binFile]: /home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/sample.pdf
+[2026-04-20 11:15:35] [CTSW116] [INFO] Set file path for [binFile2]: /home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin
+[2026-04-20 11:15:37] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:15:37] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:15:37] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:15:37] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:15:37] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:15:37] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:15:37] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:15:37] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:15:37] [CTSW116] [AMQP] [MSG-2 | Attempt #1] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:15:37] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:17:32] [CTSW116] [INFO] Reverted message 2 to default payload
+[2026-04-20 11:17:39] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=STANDARD, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=sample.pdf | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:17:39] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:17:39] [CTSW116] [WARN] [MSG-2] File not found: sample.pdf — using 1KB dummy payload.
+[2026-04-20 11:17:39] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:17:39] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:17:39] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:17:39] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:17:39] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:17:39] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:17:39] [CTSW116] [AMQP] [MSG-2 | Attempt #2] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1024B compressed=29B | last_mod=240101120000Z
+[2026-04-20 11:17:39] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1024                                     ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : sample.pdf                               ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=sample.pdf | size=1024 | compressed=29B (gzip) | ftbp_last…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:18:14] [CTSW116] [INFO] Set file path for [binFile2]: /home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin
+[2026-04-20 11:18:25] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:18:25] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:18:25] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:18:25] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:18:25] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:18:25] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:18:25] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:18:25] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:18:25] [CTSW116] [AMQP] [MSG-2 | Attempt #3] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:18:25] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:22:04] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:22:04] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:22:04] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:22:04] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:22:04] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:22:04] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:22:04] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:22:04] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:22:04] [CTSW116] [AMQP] [MSG-2 | Attempt #4] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:22:04] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+
+[2026-04-20 11:23:03] [CTSW116] [INFO] Prepared message 2 properties: amqp_priority=4, content_type=application/octet-stream, broker_profile=SOLACE, amhs_recipients=, body_type=DATA | PAYLOAD: binFile2=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/main/resources/large_payload.bin | amhs_ftbp_last_mod=240101120000Z
+[2026-04-20 11:23:03] [CTSW116] [INFO] Destinations → Topic: ALT_TEST_TOPIC  |  Queue: ALT_TEST_QUEUE
+[2026-04-20 11:23:03] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_QUEUE
+[2026-04-20 11:23:03] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:23:03] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:23:03] [INFO] Publishing message via Solace JCSMP to: ALT_TEST_TOPIC
+[2026-04-20 11:23:03] [INFO] No amhs_originator provided. Using default originator: LFRCZZZZ
+[2026-04-20 11:23:03] [SUCCESS] Message published via Solace JCSMP.
+[2026-04-20 11:23:03] [CTSW116] [AMQP] [MSG-2 | Attempt #5] >> ALT_TEST_TOPIC | Status: SENT | Payload Summary: FTBP + GZIP | original=1100000B compressed=1101B | last_mod=240101120000Z
+[2026-04-20 11:23:03] [CTSW116] [PAYLOAD] 
+  ╔════════════════════════════════════════════════════════════════════╗
+  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA                         ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ amhs_ftbp_object_size     : 1100000                                  ║
+  ║ swim_compression          : gzip                                     ║
+  ║ amhs_ftbp_file_name       : large_payload.bin                        ║
+  ║ content_type              : application/octet-stream                 ║
+  ║ amqp_broker_profile       : STANDARD                                 ║
+  ║ amhs_recipients           :                                          ║
+  ║ amhs_ftbp_last_mod        : 240101120000Z                            ║
+  ║ amqp_body_type            : DATA                                     ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ [PAYLOAD CONTENT]                                                 ║
+  ╠════════════════════════════════════════════════════════════════════╣
+  ║ file=/home/hieuvd-linux/Desktop/gw_test_tool_remastered/src/mai…   ║
+  ╚════════════════════════════════════════════════════════════════════╝
+

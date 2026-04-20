@@ -214,9 +214,9 @@
   <!-- FTBP mapping per EUR Doc 047 §4.5.2.6–§4.5.2.8, §4.5.2.13–§4.5.2.14b -->
   <case id="CTSW116">
     <!-- Msg 1: Binary file with FTBP attributes (no compression) -->
-    <msg idx="1"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="1" content-type="application/octet-stream" body-type="DATA"><![CDATA[src/main/resources/sample.pdf]]></msg>
     <!-- Msg 2: Same binary file with GZIP compression (IUT must decompress) -->
-    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="2" content-type="application/octet-stream" body-type="DATA"><![CDATA[src/main/resources/sample.pdf]]></msg>
   </case>
 
 </defaults>
