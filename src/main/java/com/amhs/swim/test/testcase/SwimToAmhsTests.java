@@ -502,9 +502,15 @@ public class SwimToAmhsTests {
                     p.setExtraProp("amhs_service_level","basic"); 
                     p.setAmqpPriority(priority); 
                     
-                    // Mandatory properties per EUR Doc 047
-                    p.setIpmId("IPM.CTSW103.1." + System.currentTimeMillis());
-                    p.setRegisteredId("REG.CTSW103.1");
+                    // Mandatory properties per EUR Doc 047 - loaded from config
+                    String ipmPattern = configMgr.getConfig("CTSW103", "ipm_id_pattern", "IPM.CTSW103.{ts}");
+                    String ipmId = ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "1");
+                    p.setIpmId(ipmId);
+                    
+                    String regPattern = configMgr.getConfig("CTSW103", "reg_id_pattern", "REG.CTSW103.{idx}");
+                    String regId = regPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "1");
+                    p.setRegisteredId(regId);
+                    
                     p.setUserVisibleStr("Basic Mode Text Test");
 
                     desc="Basic/Text"; 
@@ -529,9 +535,15 @@ public class SwimToAmhsTests {
                     p.setExtraProp("amhs_service_level","extended"); 
                     p.setAmqpPriority(priority); 
 
-                    // Mandatory properties per EUR Doc 047
-                    p.setIpmId("IPM.CTSW103.3." + System.currentTimeMillis());
-                    p.setRegisteredId("REG.CTSW103.3");
+                    // Mandatory properties per EUR Doc 047 - loaded from config
+                    String ipmPattern = configMgr.getConfig("CTSW103", "ipm_id_pattern", "IPM.CTSW103.{ts}");
+                    String ipmId = ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "3");
+                    p.setIpmId(ipmId);
+                    
+                    String regPattern = configMgr.getConfig("CTSW103", "reg_id_pattern", "REG.CTSW103.{idx}");
+                    String regId = regPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "3");
+                    p.setRegisteredId(regId);
+                    
                     p.setUserVisibleStr("Extended Mode Text Test");
 
                     desc="Extended/Text"; 
@@ -579,9 +591,15 @@ public class SwimToAmhsTests {
                     p.setExtraProp("amhs_service_level","recipient-based"); 
                     p.setAmqpPriority(priority); 
 
-                    // Mandatory properties
-                    p.setIpmId("IPM.CTSW103.7." + System.currentTimeMillis());
-                    p.setRegisteredId("REG.CTSW103.7");
+                    // Mandatory properties per EUR Doc 047 - loaded from config
+                    String ipmPattern = configMgr.getConfig("CTSW103", "ipm_id_pattern", "IPM.CTSW103.{ts}");
+                    String ipmId = ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "7");
+                    p.setIpmId(ipmId);
+                    
+                    String regPattern = configMgr.getConfig("CTSW103", "reg_id_pattern", "REG.CTSW103.{idx}");
+                    String regId = regPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "7");
+                    p.setRegisteredId(regId);
+                    
                     p.setUserVisibleStr("Mixed Recipients Test");
 
                     desc="RecipBased/Mixed→Basic"; 
@@ -747,9 +765,16 @@ public class SwimToAmhsTests {
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             
-            // Mandatory properties per EUR Doc 047
-            p.setIpmId("IPM.CTSW105." + System.currentTimeMillis());
-            p.setRegisteredId("REG.CTSW105");
+            // Mandatory properties per EUR Doc 047 - loaded from config
+            CaseConfigManager configMgrCTSW105 = CaseConfigManager.getInstance();
+            String ipmPattern105 = configMgrCTSW105.getConfig("CTSW105", "ipm_id_pattern", "IPM.CTSW105.{ts}");
+            String ipmId105 = ipmPattern105.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setIpmId(ipmId105);
+            
+            String regPattern105 = configMgrCTSW105.getConfig("CTSW105", "reg_id_pattern", "REG.CTSW105");
+            String regId105 = regPattern105.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setRegisteredId(regId105);
+            
             p.setUserVisibleStr("Filing Time Test");
 
             byte[] payload; String desc;
@@ -848,9 +873,16 @@ public class SwimToAmhsTests {
             p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
 
-            // Mandatory properties per EUR Doc 047
-            p.setIpmId("IPM.CTSW106." + System.currentTimeMillis());
-            p.setRegisteredId("REG.CTSW106");
+            // Mandatory properties per EUR Doc 047 - loaded from config
+            CaseConfigManager configMgrCTSW106 = CaseConfigManager.getInstance();
+            String ipmPattern106 = configMgrCTSW106.getConfig("CTSW106", "ipm_id_pattern", "IPM.CTSW106.{ts}");
+            String ipmId106 = ipmPattern106.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setIpmId(ipmId106);
+            
+            String regPattern106 = configMgrCTSW106.getConfig("CTSW106", "reg_id_pattern", "REG.CTSW106");
+            String regId106 = regPattern106.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setRegisteredId(regId106);
+            
             p.setUserVisibleStr("OHI Data Test");
             p.setExtraProp("amhs_ats_ohi", ohi);
             dual(inputs, body.getBytes(), p);
@@ -1442,9 +1474,16 @@ public class SwimToAmhsTests {
             p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
 
-            // Mandatory properties per EUR Doc 047
-            p.setIpmId("IPM." + System.currentTimeMillis());
-            p.setRegisteredId("REG.CTSW103");
+            // Mandatory properties per EUR Doc 047 - loaded from config
+            CaseConfigManager configMgrCTSW112 = CaseConfigManager.getInstance();
+            String ipmPattern112 = configMgrCTSW112.getConfig("CTSW112", "ipm_id_pattern", "IPM.CTSW112.{ts}");
+            String ipmId112 = ipmPattern112.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setIpmId(ipmId112);
+            
+            String regPattern112 = configMgrCTSW112.getConfig("CTSW112", "reg_id_pattern", "REG.CTSW112");
+            String regId112 = regPattern112.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setRegisteredId(regId112);
+            
             p.setUserVisibleStr("Multiple Recipients Test");
 
             String dft = "Msg " + (idx == 1 ? "512" : "513");
@@ -1618,15 +1657,15 @@ public class SwimToAmhsTests {
 
             // amhs_originator — REQUIRED so AMHS can return the NDR to the gateway.
             // Must be a known 8-char AFTN address or full AMHS MF-address (per §4.4.1.3).
-            String defOrig = configMgr.getPayload("CTSW114_originator", 0);
-            String originator = getInput(inputs, "amhs_originator",
-                defOrig != null && !defOrig.isEmpty() ? defOrig : "XXXXXXXX");
+            // Loaded from config with fallback to default value in XML
+            String defOrig = configMgr.getConfig("CTSW114", "amhs_originator", "VVTSYMYX");
+            String originator = getInput(inputs, "amhs_originator", defOrig);
 
             // amhs_notification_request — REQUIRED to instruct AMHS to generate NDR.
             // Must include 'nrn' (non-receipt notification) per EUR Doc 047 §4.4.7.3.
-            String defNotif = configMgr.getPayload("CTSW114_notif", 0);
-            String notifReq = getInput(inputs, "amhs_notification_request_114",
-                defNotif != null && !defNotif.isEmpty() ? defNotif : "nrn");
+            // Loaded from config with fallback to default value in XML
+            String defNotif = configMgr.getConfig("CTSW114", "amhs_notification_request", "nrn");
+            String notifReq = getInput(inputs, "amhs_notification_request_114", defNotif);
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r);
@@ -1635,9 +1674,15 @@ public class SwimToAmhsTests {
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setOriginator(originator);
             
-            // Mandatory properties per EUR Doc 047
-            p.setIpmId("IPM.CTSW114." + System.currentTimeMillis());
-            p.setRegisteredId("REG.CTSW114");
+            // Mandatory properties per EUR Doc 047 - loaded from config
+            String ipmPattern114 = configMgr.getConfig("CTSW114", "ipm_id_pattern", "IPM.CTSW114.{ts}");
+            String ipmId114 = ipmPattern114.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setIpmId(ipmId114);
+            
+            String regPattern114 = configMgr.getConfig("CTSW114", "reg_id_pattern", "REG.CTSW114");
+            String regId114 = regPattern114.replace("{ts}", String.valueOf(System.currentTimeMillis()));
+            p.setRegisteredId(regId114);
+            
             p.setUserVisibleStr("NDR Trigger Message");
 
             p.setExtraProp("amhs_notification_request", notifReq);

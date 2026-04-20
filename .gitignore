@@ -1,37 +1,10 @@
 ```
-# Compiled and build artifacts
-*.class
-*.o
-*.obj
-*.exe
-*.dll
-*.so
-*.a
-*.out
-
-# Dependencies
-lib/
+# Java/Maven build artifacts
 target/
-.gradle/
+*.class
+*.jar
 
-# Logs and temp files
-*.log
-*.tmp
-*.swp
-
-# Environment
-.env
-.env.local
-*.env.*
-
-# Editors
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Build and distribution
-build/
-dist/
-out/
+# Maven specific
+.mvn/
+mvn/
 ```
