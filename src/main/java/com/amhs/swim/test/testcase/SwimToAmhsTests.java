@@ -169,8 +169,12 @@ public class SwimToAmhsTests {
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
                     
                     // Mandatory properties per EUR Doc 047 Appendix A
-                    p.setIpmId("IPM." + System.currentTimeMillis());
-                    p.setRegisteredId("REG.CTSW101.1");
+                    // Load IPM-ID pattern from config, replace {ts} with timestamp
+                    String ipmPattern = configMgr.getConfig("CTSW101", "ipm_id_pattern", "IPM.CTSW101.{ts}");
+                    p.setIpmId(ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())));
+                    // Load Registered-ID pattern, replace {idx} with message index
+                    String regPattern = configMgr.getConfig("CTSW101", "reg_id_pattern", "REG.CTSW101.{idx}");
+                    p.setRegisteredId(regPattern.replace("{idx}", "1"));
                     p.setUserVisibleStr("Standard Text Message");
                     
                     // Get payload from config or input
@@ -197,8 +201,10 @@ public class SwimToAmhsTests {
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
                     
                     // Mandatory properties per EUR Doc 047 Appendix A
-                    p.setIpmId("IPM." + System.currentTimeMillis());
-                    p.setRegisteredId("REG.CTSW101.2");
+                    String ipmPattern = configMgr.getConfig("CTSW101", "ipm_id_pattern", "IPM.CTSW101.{ts}");
+                    p.setIpmId(ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())));
+                    String regPattern = configMgr.getConfig("CTSW101", "reg_id_pattern", "REG.CTSW101.{idx}");
+                    p.setRegisteredId(regPattern.replace("{idx}", "2"));
                     p.setUserVisibleStr("Standard Binary Message");
                     
                     // Get file path from config or input

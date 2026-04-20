@@ -1,1 +1,37 @@
-Nothing needs to be added to .gitignore since the changes only include a batch file (`run_tool.bat`) and a markdown file (`README.md`), which are both source/config files that should not be ignored.
+```
+# Compiled and build artifacts
+*.class
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.a
+*.out
+
+# Dependencies
+lib/
+target/
+.gradle/
+
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Environment
+.env
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build and distribution
+build/
+dist/
+out/
+```
