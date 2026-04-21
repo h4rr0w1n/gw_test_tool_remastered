@@ -1,39 +1,62 @@
 ```
-# Java / Maven build artifacts
-target/
-*.class
-*.jar
-*.war
-*.ear
+# Compressed files
+*.gz
 *.zip
-*.tar.gz
+*.tar
+*.tgz
+*.bz2
+*.xz
+*.7z
 *.rar
+*.Z
+*.lz
+*.lzo
+*.tar.gz
+*.tar.bz2
+*.tar.xz
 
-# Logs
-*.log
-test_results.log
+# Dependencies
+node_modules/
+venv/
+.venv/
+__pycache__/
+dist/
+build/
+target/
+.gradle/
+.mypy_cache/
+.pytest_cache/
 
-# IntelliJ IDEA
-.idea/
-*.iml
-*.iws
-out/
-
-# Visual Studio Code
+# Editors
 .vscode/
-*.code-workspace
+.idea/
+*.swp
+*.swo
 
-# Eclipse
-.settings/
-.project
-.classpath
-.factorypath
-
-# OS Specific
+# System files
 .DS_Store
 Thumbs.db
-desktop.ini
+.env
+.env.local
+*.env.*
 
-# Project specific temporary files
-a.pdf
+# Logs and temp files
+*.log
+*.tmp
+
+# Compiled files
+*.pyc
+*.class
+*.o
+*.exe
+*.dll
+*.so
+*.a
+*.obj
+*.out
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
 ```
