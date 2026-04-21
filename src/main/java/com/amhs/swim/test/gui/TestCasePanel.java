@@ -306,7 +306,7 @@ public class TestCasePanel extends JPanel {
         // Description section
         JPanel descPanel = new JPanel(new BorderLayout());
         descPanel.setBackground(bgPanel);
-        JLabel lblDesc = new JLabel("  Description (synced up with each message and case from ICAO testbook)");
+        JLabel lblDesc = new JLabel("  Description");
         lblDesc.setForeground(clrAccent);
         lblDesc.setBorder(new EmptyBorder(5,0,5,0));
         descriptionArea = new JTextArea();
@@ -328,7 +328,7 @@ public class TestCasePanel extends JPanel {
         // --- RIGHT COLUMN: LOGS ---
         JPanel logPanel = new JPanel(new BorderLayout());
         logPanel.setBackground(bgLog);
-        JLabel lblLog = new JLabel("  Log (as and more detailed than the current logs)");
+        JLabel lblLog = new JLabel("  Log");
         lblLog.setForeground(clrAccent);
         lblLog.setBorder(new EmptyBorder(5,0,5,0));
         logArea = new JTextArea();
