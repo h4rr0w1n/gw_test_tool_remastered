@@ -215,7 +215,7 @@
        amhs_ftbp_file_name and amhs_ftbp_object_size are derived from file at runtime. -->
   <case id="CTSW116">
     <msg idx="1"><![CDATA[src/main/resources/sample.pdf|240101120000Z]]></msg>
-    <msg idx="2"><![CDATA[src/main/resources/sample.pdf|240101120000Z]]></msg>
+    <msg idx="2"><![CDATA[src/main/resources/ctsw116_test.txt|240101120000Z]]></msg>
     <!-- IPM-ID and Registered-ID patterns -->
     <config key="ipm_id_pattern"><![CDATA[IPM.CTSW116.{ts}]]></config>
     <config key="reg_id_pattern"><![CDATA[REG.CTSW116]]></config>

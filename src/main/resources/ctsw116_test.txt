@@ -1,0 +1,13 @@
+ICAO EUR Doc 047 Appendix A - CTSW116 Case Verification Payload
+==========================================================
+Description: Binary file transfer with FTBP attributes and GZIP compression.
+Date: 2026-04-21
+Content: This is a sample text file used as the binary data source for the 
+AMHS/SWIM Gateway FTBP test. When swim_compression=gzip is set in AMQP
+properties, the gateway must decompress this payload and deliver the 
+original text as an AMHS File Transfer Body Part.
+----------------------------------------------------------
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod 
+tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, 
+quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo 
+consequat.
