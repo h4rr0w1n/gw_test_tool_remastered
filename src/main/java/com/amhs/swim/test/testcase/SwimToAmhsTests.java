@@ -1851,6 +1851,15 @@ public class SwimToAmhsTests {
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("application/octet-stream");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
+            
+            // Mandatory properties per EUR Doc 047 Appendix A
+            // Load IPM-ID pattern from config, replace {ts} with timestamp
+            String ipmPattern = configMgr.getConfig("CTSW116", "ipm_id_pattern", "IPM.CTSW116.{ts}");
+            p.setIpmId(ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())));
+            // Load Registered-ID pattern, replace {idx} with message index
+            String regPattern = configMgr.getConfig("CTSW116", "reg_id_pattern", "REG.CTSW116.{idx}");
+            p.setRegisteredId(regPattern.replace("{idx}", String.valueOf(idx)));
+            
             p.setExtraProp("amhs_ftbp_file_name", Paths.get(filePath).getFileName().toString());
             p.setExtraProp("amhs_ftbp_object_size", fileSize); // Set as Long for AMQP 1.0 compliance
             p.setExtraProp("amhs_ftbp_last_mod", lastMod);

@@ -1,62 +1,23 @@
 ```
-# Compressed files
-*.gz
-*.zip
-*.tar
-*.tgz
-*.bz2
-*.xz
-*.7z
-*.rar
-*.Z
-*.lz
-*.lzo
-*.tar.gz
-*.tar.bz2
-*.tar.xz
+# Java build artifacts
+target/
+*.class
+
+# Maven specific
+target/maven-status/
 
 # Dependencies
-node_modules/
-venv/
-.venv/
-__pycache__/
-dist/
-build/
-target/
-.gradle/
-.mypy_cache/
-.pytest_cache/
+lib/
+libs/
 
-# Editors
-.vscode/
+# Logs
+*.log
+
+# IDE
 .idea/
-*.swp
-*.swo
+.vscode/
 
-# System files
+# OS
 .DS_Store
 Thumbs.db
-.env
-.env.local
-*.env.*
-
-# Logs and temp files
-*.log
-*.tmp
-
-# Compiled files
-*.pyc
-*.class
-*.o
-*.exe
-*.dll
-*.so
-*.a
-*.obj
-*.out
-
-# Coverage
-coverage/
-htmlcov/
-.coverage
 ```
