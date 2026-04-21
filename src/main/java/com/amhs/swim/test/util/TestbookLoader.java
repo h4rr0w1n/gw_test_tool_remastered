@@ -49,6 +49,8 @@ public class TestbookLoader {
 
     /**
      * Cleans the raw description by removing irrelevant and messy parts.
+     * Note: Preserves section references (e.g., "4.5.4.27") when they appear as part of descriptive text.
+     * Only removes standalone section reference lines or lines that are purely reference metadata.
      */
     private static String cleanDescription(String raw) {
         if (raw == null) return "";
@@ -70,7 +72,8 @@ public class TestbookLoader {
                 trimmed.equals("AMHS/SWIM Gateway Testing Plan") ||
                 trimmed.equals("AST PG") ||
                 trimmed.startsWith("Appendix A") ||
-                trimmed.matches("^\\d+\\.\\d+.*$") // section numbers like "4.5.2.2"
+                // Only skip lines that are PURELY section references (no descriptive text)
+                trimmed.matches("^\\d+\\.\\d+(?:\\.\\d+)*\\s*$") // ONLY "4.5.2.2" or "4.5.4.27"
                ) {
                 continue;
             }

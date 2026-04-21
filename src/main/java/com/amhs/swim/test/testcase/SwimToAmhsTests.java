@@ -1860,27 +1860,36 @@ public class SwimToAmhsTests {
             String regPattern = configMgr.getConfig("CTSW116", "reg_id_pattern", "REG.CTSW116.{idx}");
             p.setRegisteredId(regPattern.replace("{idx}", String.valueOf(idx)));
             
-            p.setExtraProp("amhs_ftbp_file_name", Paths.get(filePath).getFileName().toString());
-            p.setExtraProp("amhs_ftbp_object_size", fileSize); // Set as Long for AMQP 1.0 compliance
             p.setExtraProp("amhs_ftbp_last_mod", lastMod);
 
             byte[] sendPayload = binPayload;
             String desc;
+            String ftbpFileName = Paths.get(filePath).getFileName().toString();
+            
             if (idx == 2) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 try (GZIPOutputStream gzip = new GZIPOutputStream(baos)) { gzip.write(binPayload); }
                 sendPayload = baos.toByteArray();
                 p.setExtraProp("swim_compression", "gzip");
-                desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B | last_mod=" + lastMod;
+                // Per EUR Doc 047 §4.5.2.6: amhs_ftbp_file_name should reflect the actual file,
+                // including the .gz extension when GZIP compression is applied
+                ftbpFileName = ftbpFileName + ".gz";
+                p.setExtraProp("amhs_ftbp_file_name", ftbpFileName);
+                // Per EUR Doc 047 §4.5.2.7: amhs_ftbp_object_size is the ORIGINAL uncompressed size
+                // (the gateway will decompress before forwarding to AMHS)
+                p.setExtraProp("amhs_ftbp_object_size", fileSize);
+                desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;
             } else {
-                desc = "FTBP | size=" + fileSize + "B | last_mod=" + lastMod;
+                p.setExtraProp("amhs_ftbp_file_name", ftbpFileName);
+                p.setExtraProp("amhs_ftbp_object_size", fileSize); // Set as Long for AMQP 1.0 compliance
+                desc = "FTBP | size=" + fileSize + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;
             }
 
             dual(inputs, sendPayload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(),
                 "file=" + filePath + " | size=" + fileSize +
-                (idx==2 ? " | compressed=" + sendPayload.length + "B (gzip)" : "") +
+                (idx==2 ? " | compressed=" + sendPayload.length + "B (gzip) | filename=" + ftbpFileName : "") +
                 " | ftbp_last_mod=" + lastMod);
             return true;
         }
