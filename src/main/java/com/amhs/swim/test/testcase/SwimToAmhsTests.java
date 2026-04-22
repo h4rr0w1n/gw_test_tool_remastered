@@ -1872,16 +1872,27 @@ public class SwimToAmhsTests {
                 sendPayload = baos.toByteArray();
                 p.setExtraProp("swim_compression", "gzip");
                 // Per EUR Doc 047 §4.5.2.6: amhs_ftbp_file_name should reflect the actual file,
-                // including the .gz extension when GZIP compression is applied
+                // including the .gz extension when GZIP compression is applied.
+                // However, we MUST sanitize the filename for Solace to avoid "Malformed URI" errors
+                // in the Solace WebUI/Gateway if it contains '%' or other non-safe chars.
                 ftbpFileName = ftbpFileName + ".gz";
+                if (ftbpFileName.contains("%")) {
+                    ftbpFileName = ftbpFileName.replace("%", "_pct_");
+                }
                 p.setExtraProp("amhs_ftbp_file_name", ftbpFileName);
                 // Per EUR Doc 047 §4.5.2.7: amhs_ftbp_object_size is the ORIGINAL uncompressed size
                 // (the gateway will decompress before forwarding to AMHS)
                 p.setExtraProp("amhs_ftbp_object_size", fileSize);
+                // Force BINARY body part type to ensure it's not treated as text/ia5
+                p.setBodyPartType("file-transfer-body-part");
                 desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;
             } else {
+                if (ftbpFileName.contains("%")) {
+                    ftbpFileName = ftbpFileName.replace("%", "_pct_");
+                }
                 p.setExtraProp("amhs_ftbp_file_name", ftbpFileName);
-                p.setExtraProp("amhs_ftbp_object_size", fileSize); // Set as Long for AMQP 1.0 compliance
+                p.setExtraProp("amhs_ftbp_object_size", fileSize);
+                p.setBodyPartType("file-transfer-body-part");
                 desc = "FTBP | size=" + fileSize + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;
             }
 
