@@ -1875,9 +1875,12 @@ public class SwimToAmhsTests {
                 // including the .gz extension when GZIP compression is applied.
                 ftbpFileName = ftbpFileName + ".gz";
                 p.setExtraProp("amhs_ftbp_file_name", ftbpFileName);
-                // Per EUR Doc 047 §4.5.2.7: amhs_ftbp_object_size is the ORIGINAL uncompressed size
-                // (the gateway will decompress before forwarding to AMHS)
-                p.setExtraProp("amhs_ftbp_object_size", fileSize);
+                // Per user request: use the ACTUAL compressed size for the object_size metric 
+                // to prevent brokers from dropping messages due to perceived truncation.
+                p.setExtraProp("amhs_ftbp_object_size", (long)sendPayload.length);
+                // Also provide the original uncompressed size for IUT reference.
+                p.setExtraProp("amhs_ftbp_uncompressed_size", fileSize);
+                
                 // Force BINARY body part type to ensure it's not treated as text/ia5
                 p.setBodyPartType("file-transfer-body-part");
                 desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;

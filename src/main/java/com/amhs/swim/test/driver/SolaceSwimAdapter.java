@@ -125,7 +125,13 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             connect();
         }
         
-        Logger.log("INFO", "Publishing message via Solace JCSMP to: " + dest.getName());
+        String destName = dest.getName();
+        if (destName != null) {
+            // Solace topics are hierarchical and case-sensitive. 
+            // We sanitize only if it's a Solace profile (which it always is here, but for consistency)
+            destName = sanitizeForSolace(destName);
+        }
+        Logger.log("INFO", "Publishing message via Solace JCSMP to: " + destName);
         
         // Create message
         XMLMessage msg;
@@ -202,8 +208,9 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
                          (properties.containsKey("amqp_message_id") ? "amqp_message_id" : null);
         if (msgIdKey != null) {
             String msgId = String.valueOf(properties.get(msgIdKey));
-            // Message IDs are technical and should be preserved, but they are also a common source of WebUI crashes.
-            // We'll keep them intact for now as they are critical for rejection testing.
+            // Message IDs are technical but are a common source of WebUI crashes.
+            // We sanitize them to prevent 'Malformed URI sequence' errors.
+            msgId = sanitizeForSolace(msgId);
             userProps.putString(msgIdKey, msgId);
         }
 
@@ -372,13 +379,12 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
      * Determines if a property is technical metadata that should not be sanitized.
      */
     private boolean isTechnicalProperty(String key) {
+        // Only exempt properties whose literal values are mandated by protocol or logic
         return key.equals("swim_compression") || 
-               key.startsWith("amhs_ftbp_") || 
-               key.equals("amhs_ipm_id") ||
-               key.equals("amhs_registered_identifier") ||
                key.equals("amhs_bodypart_type") ||
                key.equals("content_type") ||
-               key.startsWith("amqp_");
+               key.equals("amqp_body_type") ||
+               key.equals("amqp_broker_profile");
     }
 
     private String sanitizeForSolace(String input) {
