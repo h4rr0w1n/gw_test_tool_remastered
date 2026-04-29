@@ -596,13 +596,17 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             connect();
         }
         
-        Logger.log("INFO", "Consuming message via AMQP 1.0 from: " + address);
+        String finalAddress = address;
+        if (isSolaceProfile()) {
+            finalAddress = sanitizeForSolace(address);
+        }
+        Logger.log("INFO", "Consuming message via AMQP 1.0 from: " + finalAddress);
         
         // Create receiver link
         if (receiver == null) {
-            receiver = getActiveSession().receiver(address);
+            receiver = getActiveSession().receiver(finalAddress);
             receiver.setSource(new org.apache.qpid.proton.amqp.messaging.Source());
-            ((org.apache.qpid.proton.amqp.messaging.Source)receiver.getSource()).setAddress(address);
+            ((org.apache.qpid.proton.amqp.messaging.Source)receiver.getSource()).setAddress(finalAddress);
             receiver.open();
             
             // Grant flow credits to the sender
@@ -831,7 +835,10 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                key.equals("amhs_bodypart_type") ||
                key.equals("content_type") ||
                key.equals("amqp_body_type") ||
-               key.equals("amqp_broker_profile");
+               key.equals("amqp_broker_profile") ||
+               key.equals("amhs_ftbp_file_name") ||
+               key.equals("amhs_ftbp_object_size") ||
+               key.equals("amhs_ftbp_last_mod");
     }
 
     private String sanitizeForSolace(String input) {

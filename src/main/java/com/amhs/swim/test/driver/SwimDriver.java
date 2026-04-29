@@ -156,7 +156,22 @@ public class SwimDriver {
             connect();
         }
         
-        return activeAdapter.consumeMessage(address, timeoutMs);
+        byte[] payload = activeAdapter.consumeMessage(address, timeoutMs);
+        
+        // Auto-decompression for GZIP payloads per EUR Doc 047 CTSW116
+        // Note: The adapter currently doesn't return properties along with payload here,
+        // but we can probe the payload for GZIP magic bytes (1f 8b) as a fallback,
+        // or assume that if it's GZIP, we should decompress.
+        if (payload != null && payload.length > 2 && payload[0] == (byte)0x1f && payload[1] == (byte)0x8b) {
+            try (java.util.zip.GZIPInputStream gis = new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(payload))) {
+                Logger.log("INFO", "Detected GZIP payload, automatically decompressing for display...");
+                return gis.readAllBytes();
+            } catch (Exception e) {
+                Logger.log("WARN", "Failed to decompress GZIP payload: " + e.getMessage());
+            }
+        }
+        
+        return payload;
     }
     
     /**

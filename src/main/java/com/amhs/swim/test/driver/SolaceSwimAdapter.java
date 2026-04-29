@@ -125,13 +125,17 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             connect();
         }
         
-        String destName = dest.getName();
-        if (destName != null) {
-            // Solace topics are hierarchical and case-sensitive. 
-            // We sanitize only if it's a Solace profile (which it always is here, but for consistency)
-            destName = sanitizeForSolace(destName);
+        String originalName = dest.getName();
+        String sanitizedName = sanitizeForSolace(originalName);
+        Destination finalDest = dest;
+        if (originalName != null && !originalName.equals(sanitizedName)) {
+            if (dest instanceof com.solacesystems.jcsmp.Topic) {
+                finalDest = JCSMPFactory.onlyInstance().createTopic(sanitizedName);
+            } else {
+                finalDest = JCSMPFactory.onlyInstance().createQueue(sanitizedName);
+            }
         }
-        Logger.log("INFO", "Publishing message via Solace JCSMP to: " + destName);
+        Logger.log("INFO", "Publishing message via Solace JCSMP to: " + sanitizedName);
         
         // Create message
         XMLMessage msg;
@@ -235,7 +239,7 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         }
         
         // Send message
-        producer.send(msg, dest);
+        producer.send(msg, finalDest);
         
         Logger.log("SUCCESS", "Message published via Solace JCSMP.");
 
@@ -249,7 +253,8 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         
         Logger.log("INFO", "Consuming message via Solace JCSMP from: " + address);
         
-        Topic solaceTopic = JCSMPFactory.onlyInstance().createTopic(address);
+        String sanitizedAddress = sanitizeForSolace(address);
+        Topic solaceTopic = JCSMPFactory.onlyInstance().createTopic(sanitizedAddress);
         consumer = session.getMessageConsumer(new XMLMessageListener() {
             @Override
             public void onReceive(BytesXMLMessage msg) {}
@@ -384,7 +389,10 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
                key.equals("amhs_bodypart_type") ||
                key.equals("content_type") ||
                key.equals("amqp_body_type") ||
-               key.equals("amqp_broker_profile");
+               key.equals("amqp_broker_profile") ||
+               key.equals("amhs_ftbp_file_name") ||
+               key.equals("amhs_ftbp_object_size") ||
+               key.equals("amhs_ftbp_last_mod");
     }
 
     private String sanitizeForSolace(String input) {
