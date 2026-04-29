@@ -206,16 +206,28 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         // Always set the validated originator
         userProps.putString("amhs_originator", validatedOriginator);
         
-        // amhs_message_id: empty string signals "no message-id" for rejection testing (EUR Doc 047 §4.5.1.2)
-        // amhs_message_id and amqp_message_id handling
+        // amqp_message_id handling
         String msgIdKey = properties.containsKey("amhs_message_id") ? "amhs_message_id" : 
-                         (properties.containsKey("amqp_message_id") ? "amqp_message_id" : null);
+                         (properties.containsKey("amqp_message_id") ? "amqp_message_id" : 
+                         (properties.containsKey("amhs_ipm_id") ? "amhs_ipm_id" : null));
+                         
         if (msgIdKey != null) {
             String msgId = String.valueOf(properties.get(msgIdKey));
-            // Message IDs are technical but are a common source of WebUI crashes.
-            // We sanitize them to prevent 'Malformed URI sequence' errors.
+            // Sanitize to prevent downstream parsing errors
             msgId = sanitizeForSolace(msgId);
             userProps.putString(msgIdKey, msgId);
+            // Must map to the native Solace ApplicationMessageId so AMQP consumers get the 'message-id' field
+            msg.setApplicationMessageId(msgId);
+        }
+        
+        if (properties.containsKey("amqp_correlation_id")) {
+            String cid = String.valueOf(properties.get("amqp_correlation_id"));
+            msg.setCorrelationId(sanitizeForSolace(cid));
+        }
+        
+        if (properties.containsKey("amhs_reply_to")) {
+            String rt = String.valueOf(properties.get("amhs_reply_to"));
+            msg.setReplyTo(JCSMPFactory.onlyInstance().createQueue(sanitizeForSolace(rt)));
         }
 
         // creation_time: value 0 signals epoch/zero timestamp for rejection testing
@@ -228,6 +240,16 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
                 userProps.putString("creation_time", String.valueOf(ct));
             }
         }
+        
+        // Native content-type to help Solace WebUI handle binary payloads safely
+        if (properties.containsKey("content_type")) {
+            try {
+                msg.setHTTPContentType(String.valueOf(properties.get("content_type")));
+            } catch (Exception e) {
+                // Ignore if method not supported in this version
+            }
+        }
+        
         msg.setProperties(userProps);
         
         // Set Priority (0-9, or 10+ for rejection testing)
