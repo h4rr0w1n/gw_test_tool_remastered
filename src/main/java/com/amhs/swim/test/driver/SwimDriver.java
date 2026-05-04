@@ -165,7 +165,9 @@ public class SwimDriver {
         if (payload != null && payload.length > 2 && payload[0] == (byte)0x1f && payload[1] == (byte)0x8b) {
             try (java.util.zip.GZIPInputStream gis = new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(payload))) {
                 Logger.log("INFO", "Detected GZIP payload, automatically decompressing for display...");
-                return gis.readAllBytes();
+                byte[] decompressed = gis.readAllBytes();
+                Logger.log("SUCCESS", "GZIP payload successfully decompressed (Original size: " + payload.length + " bytes, Decompressed size: " + decompressed.length + " bytes).");
+                return decompressed;
             } catch (Exception e) {
                 Logger.log("WARN", "Failed to decompress GZIP payload: " + e.getMessage());
             }

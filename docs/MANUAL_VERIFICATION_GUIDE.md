@@ -35,7 +35,7 @@ This document provides detailed manual verification steps for each test case (CT
 | ID | Title | Purpose | Manual Verification Steps |
 |:---|:---|:---|:---|
 | **CTSW115** | Encoding Mapping | Mapping to GeneralText/IA5Text body parts. | 1. IA5: Should be ia5-text-body-part.<br>2. ISO-646: Should be general-text-body-part.<br>3. Verify encoding identifiers in O/R structure. |
-| **CTSW116** | FTBP & GZIP | FTBP attributes and GZIP decompression. | 1. Msg 1 (FTBP): Check filename 'test.txt' and size 1024.<br>2. Msg 2 (GZIP): Confirm plain text content matches injection. |
+| **CTSW116** | FTBP & GZIP | FTBP attributes and GZIP decompression. | 1. Msg 1 (FTBP): Check filename 'test.txt' and size 1024.<br>2. Msg 2 (GZIP): Confirm plain text content matches injection.<br>**Note:** Solace Web UI may throw 'Malformed URI sequence' for GZIP files; this is a UI bug and does not affect the Gateway. |
 
 ---
 
