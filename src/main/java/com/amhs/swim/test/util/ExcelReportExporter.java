@@ -51,6 +51,7 @@ public class ExcelReportExporter {
             Row titleRow = sheet.createRow(0);
             Cell titleCell = titleRow.createCell(0);
             titleCell.setCellValue("Báo cáo kiểm thử AMHS/SWIM Gateway");
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 5));
             
             CellStyle titleStyle = workbook.createCellStyle();
             titleStyle.setFont(headFont);
@@ -64,45 +65,50 @@ public class ExcelReportExporter {
             Row row2 = sheet.createRow(1);
             Cell cellA2 = row2.createCell(0);
             cellA2.setCellValue("Ngày lập báo cáo");
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 2));
+
+            Cell cellB2 = row2.createCell(1);
+            cellB2.setCellValue(sdf.format(new Date()));
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 1, 2));
 
             Cell cellD2 = row2.createCell(3);
-            cellD2.setCellValue(sdf.format(new Date()));
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 3, 5));
+            cellD2.setCellValue("Người lập báo cáo");
+
+            Cell cellE2 = row2.createCell(4);
+            cellE2.setCellValue("");
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 4, 5));
 
             // Third line
             Row row3 = sheet.createRow(2);
             Cell cellA3 = row3.createCell(0);
             cellA3.setCellValue("Ngày/giờ bắt đầu");
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 0, 2));
+
+            Cell cellB3 = row3.createCell(1);
+            if (startTime != null) {
+                cellB3.setCellValue(sdf.format(new Date(startTime)));
+            } else {
+                cellB3.setCellValue("");
+            }
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 1, 2));
 
             Cell cellD3 = row3.createCell(3);
-            if (startTime != null) {
-                cellD3.setCellValue(sdf.format(new Date(startTime)));
-            } else {
-                cellD3.setCellValue("");
-            }
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 3, 5));
+            cellD3.setCellValue("Ngày/giờ kết thúc");
 
-            Cell cellG3 = row3.createCell(6);
-            cellG3.setCellValue("Ngày/giờ kết thúc");
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 6, 8));
-
-            Cell cellJ3 = row3.createCell(9);
+            Cell cellE3 = row3.createCell(4);
             if (startTime != null) {
                 if (endTime != null) {
-                    cellJ3.setCellValue(sdf.format(new Date(endTime)));
+                    cellE3.setCellValue(sdf.format(new Date(endTime)));
                 } else {
-                    cellJ3.setCellValue("(Ongoing)");
+                    cellE3.setCellValue("(Ongoing)");
                 }
             } else {
-                cellJ3.setCellValue("");
+                cellE3.setCellValue("");
             }
-            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 9, 11));
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 4, 5));
 
             cellA2.setCellStyle(titleStyle);
+            cellD2.setCellStyle(titleStyle);
             cellA3.setCellStyle(titleStyle);
-            cellG3.setCellStyle(titleStyle);
+            cellD3.setCellStyle(titleStyle);
 
             Row headerRow = sheet.createRow(3);
             for (int i = 0; i < headers.length; i++) {
