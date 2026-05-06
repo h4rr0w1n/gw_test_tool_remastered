@@ -590,24 +590,25 @@ public class TestFrame extends JFrame {
             BorderFactory.createLineBorder(Color.BLACK),
             BorderFactory.createEmptyBorder(2, 4, 2, 4)
         ));
-        cb.setRenderer(new DefaultListCellRenderer() {
+        cb.setRenderer(new ListCellRenderer<Object>() {
+            private final JLabel label = new JLabel();
+            {
+                label.setOpaque(true);
+                label.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                label.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+            }
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component c = super.getListCellRendererComponent(list, value, index, isSelected, false);
-                if (index == -1) {
-                    c.setBackground(Color.WHITE);
-                    c.setForeground(Color.BLACK);
-                } else if (isSelected) {
-                    c.setBackground(new Color(0x3B, 0x82, 0xF6));
-                    c.setForeground(Color.WHITE);
+                label.setText(value == null ? "" : value.toString());
+                label.setForeground(Color.BLACK);
+                
+                if (index != -1 && isSelected) {
+                    label.setBackground(new Color(0xE2, 0xE8, 0xF0)); // Light grey for hovered option
                 } else {
-                    c.setBackground(Color.WHITE);
-                    c.setForeground(Color.BLACK);
+                    label.setBackground(Color.WHITE);
                 }
-                if (c instanceof JComponent) {
-                    ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
-                }
-                return c;
+                
+                return label;
             }
         });
     }
