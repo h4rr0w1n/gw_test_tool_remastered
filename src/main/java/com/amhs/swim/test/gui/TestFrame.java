@@ -572,6 +572,20 @@ public class TestFrame extends JFrame {
         cb.setForeground(Color.BLACK);
         cb.setFont(new Font("Monospaced", Font.PLAIN, 12));
         cb.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        cb.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (isSelected) {
+                    c.setBackground(new Color(0x3B, 0x82, 0xF6));
+                    c.setForeground(Color.WHITE);
+                } else {
+                    c.setBackground(Color.WHITE);
+                    c.setForeground(Color.BLACK);
+                }
+                return c;
+            }
+        });
     }
 
     private JButton settingsBtn(String text) {

@@ -97,9 +97,12 @@ public class TestCasePanel extends JPanel {
             if (btnRecordingTime.isSelected()) {
                 btnRecordingTime.setText("Stop Recording");
                 btnRecordingTime.setForeground(clrSuccess != null ? clrSuccess : Color.GREEN.darker());
+                ResultManager.getInstance().setSessionStartTime(System.currentTimeMillis());
+                ResultManager.getInstance().setSessionEndTime(null);
             } else {
                 btnRecordingTime.setText("Start Recording");
                 btnRecordingTime.setForeground(clrFg);
+                ResultManager.getInstance().setSessionEndTime(System.currentTimeMillis());
             }
         });
 

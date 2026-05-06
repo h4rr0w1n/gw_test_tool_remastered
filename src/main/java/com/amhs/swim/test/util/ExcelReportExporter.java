@@ -50,7 +50,20 @@ public class ExcelReportExporter {
             // Date Range Row
             Row dateRow = sheet.createRow(0);
             Cell dateCell = dateRow.createCell(0);
-            dateCell.setCellValue("DATE: " + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date()));
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Long startTime = ResultManager.getInstance().getSessionStartTime();
+            Long endTime = ResultManager.getInstance().getSessionEndTime();
+            
+            String dateText = "REPORT GENERATED: " + sdf.format(new Date());
+            if (startTime != null) {
+                dateText += "  |  TEST STARTED: " + sdf.format(new Date(startTime));
+                if (endTime != null) {
+                    dateText += "  |  TEST ENDED: " + sdf.format(new Date(endTime));
+                } else {
+                    dateText += "  |  TEST ENDED: (Ongoing)";
+                }
+            }
+            dateCell.setCellValue(dateText);
             
             // Note: Poi requires adding merging regions for spanning if wanted, but simpler to just place it in cell 0.
             org.apache.poi.ss.util.CellRangeAddress mergedRegion = new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 4);

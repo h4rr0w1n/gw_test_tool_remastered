@@ -18,6 +18,8 @@ public class ResultManager {
     private final List<TestResult> results = Collections.synchronizedList(new ArrayList<>());
     private final Map<String, CaseSessionState> sessionStates = new HashMap<>();
     private final Map<String, java.util.concurrent.atomic.AtomicInteger> attemptCounters = new HashMap<>();
+    private Long sessionStartTime = null;
+    private Long sessionEndTime = null;
 
     private ResultManager() {}
 
@@ -27,6 +29,12 @@ public class ResultManager {
         }
         return instance;
     }
+
+    public void setSessionStartTime(Long t) { this.sessionStartTime = t; }
+    public Long getSessionStartTime() { return this.sessionStartTime; }
+
+    public void setSessionEndTime(Long t) { this.sessionEndTime = t; }
+    public Long getSessionEndTime() { return this.sessionEndTime; }
 
     public void addResult(TestResult result) {
         results.add(result);
@@ -40,6 +48,8 @@ public class ResultManager {
         results.clear();
         sessionStates.clear();
         attemptCounters.clear();
+        sessionStartTime = null;
+        sessionEndTime = null;
     }
 
     public int getNextAttempt(String caseCode, int messageIndex) {
