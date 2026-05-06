@@ -48,39 +48,70 @@ public class ExcelReportExporter {
             };
 
             // Date Range Row
-            Row dateRow = sheet.createRow(0);
-            Cell dateCell = dateRow.createCell(0);
+            Row titleRow = sheet.createRow(0);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue("Báo cáo kiểm thử AMHS/SWIM Gateway");
+            
+            CellStyle titleStyle = workbook.createCellStyle();
+            titleStyle.setFont(headFont);
+            titleCell.setCellStyle(titleStyle);
+
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Long startTime = ResultManager.getInstance().getSessionStartTime();
             Long endTime = ResultManager.getInstance().getSessionEndTime();
-            
-            String dateText = "REPORT GENERATED: " + sdf.format(new Date());
-            if (startTime != null) {
-                dateText += "  |  TEST STARTED: " + sdf.format(new Date(startTime));
-                if (endTime != null) {
-                    dateText += "  |  TEST ENDED: " + sdf.format(new Date(endTime));
-                } else {
-                    dateText += "  |  TEST ENDED: (Ongoing)";
-                }
-            }
-            dateCell.setCellValue(dateText);
-            
-            // Note: Poi requires adding merging regions for spanning if wanted, but simpler to just place it in cell 0.
-            org.apache.poi.ss.util.CellRangeAddress mergedRegion = new org.apache.poi.ss.util.CellRangeAddress(0, 0, 0, 4);
-            sheet.addMergedRegion(mergedRegion);
-            
-            CellStyle dateStyle = workbook.createCellStyle();
-            dateStyle.setFont(headFont);
-            dateCell.setCellStyle(dateStyle);
 
-            Row headerRow = sheet.createRow(1);
+            // Second line
+            Row row2 = sheet.createRow(1);
+            Cell cellA2 = row2.createCell(0);
+            cellA2.setCellValue("Ngày lập báo cáo");
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 0, 2));
+
+            Cell cellD2 = row2.createCell(3);
+            cellD2.setCellValue(sdf.format(new Date()));
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(1, 1, 3, 5));
+
+            // Third line
+            Row row3 = sheet.createRow(2);
+            Cell cellA3 = row3.createCell(0);
+            cellA3.setCellValue("Ngày/giờ bắt đầu");
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 0, 2));
+
+            Cell cellD3 = row3.createCell(3);
+            if (startTime != null) {
+                cellD3.setCellValue(sdf.format(new Date(startTime)));
+            } else {
+                cellD3.setCellValue("");
+            }
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 3, 5));
+
+            Cell cellG3 = row3.createCell(6);
+            cellG3.setCellValue("Ngày/giờ kết thúc");
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 6, 8));
+
+            Cell cellJ3 = row3.createCell(9);
+            if (startTime != null) {
+                if (endTime != null) {
+                    cellJ3.setCellValue(sdf.format(new Date(endTime)));
+                } else {
+                    cellJ3.setCellValue("(Ongoing)");
+                }
+            } else {
+                cellJ3.setCellValue("");
+            }
+            sheet.addMergedRegion(new org.apache.poi.ss.util.CellRangeAddress(2, 2, 9, 11));
+
+            cellA2.setCellStyle(titleStyle);
+            cellA3.setCellStyle(titleStyle);
+            cellG3.setCellStyle(titleStyle);
+
+            Row headerRow = sheet.createRow(3);
             for (int i = 0; i < headers.length; i++) {
                 Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
                 cell.setCellStyle(headerStyle);
             }
 
-            int rowIdx = 2;
+            int rowIdx = 4;
             for (TestResult res : results) {
                 Row row = sheet.createRow(rowIdx++);
                 
