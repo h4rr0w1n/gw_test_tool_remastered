@@ -576,7 +576,10 @@ public class TestFrame extends JFrame {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (isSelected) {
+                if (index == -1) {
+                    c.setBackground(Color.WHITE);
+                    c.setForeground(Color.BLACK);
+                } else if (isSelected) {
                     c.setBackground(new Color(0x3B, 0x82, 0xF6));
                     c.setForeground(Color.WHITE);
                 } else {
