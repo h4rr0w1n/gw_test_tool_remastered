@@ -1763,7 +1763,7 @@ public class SwimToAmhsTests {
                 ? inputs.get("amhs_content_encoding") : defEncoding;
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
-            p.setRecipients(r); p.setContentType("text/plain; charset=utf-8");
+            p.setRecipients(r); p.setContentType("text/plain; charset=\"utf-8\"");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setBodyPartType(bodyPart);
             p.setExtraProp("amhs_content_encoding", encoding);
