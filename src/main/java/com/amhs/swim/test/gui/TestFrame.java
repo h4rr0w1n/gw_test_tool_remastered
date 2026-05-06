@@ -470,6 +470,9 @@ public class TestFrame extends JFrame {
             cfg.setProperty("amqp_broker_profile", (String) profileCombo.getSelectedItem());
             cfg.saveConfig();
             swimToAmhsTests = new SwimToAmhsTests();
+            if (casePanel != null) {
+                casePanel.updateBrokerProfile((String) profileCombo.getSelectedItem());
+            }
         });
         configPanel.add(saveBtn, gc);
         row++;
@@ -566,16 +569,31 @@ public class TestFrame extends JFrame {
     }
 
     private void styleCombo(JComboBox<?> cb) {
-        cb.setUI(new BasicComboBoxUI());
+        cb.setUI(new javax.swing.plaf.basic.BasicComboBoxUI() {
+            @Override
+            protected JButton createArrowButton() {
+                JButton btn = new JButton("▼");
+                btn.setBackground(Color.WHITE);
+                btn.setForeground(Color.BLACK);
+                btn.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+                btn.setFocusPainted(false);
+                btn.setContentAreaFilled(false);
+                btn.setOpaque(true);
+                return btn;
+            }
+        });
         cb.setOpaque(true);
         cb.setBackground(Color.WHITE);
         cb.setForeground(Color.BLACK);
         cb.setFont(new Font("Monospaced", Font.PLAIN, 12));
-        cb.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        cb.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(Color.BLACK),
+            BorderFactory.createEmptyBorder(2, 4, 2, 4)
+        ));
         cb.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                Component c = super.getListCellRendererComponent(list, value, index, isSelected, false);
                 if (index == -1) {
                     c.setBackground(Color.WHITE);
                     c.setForeground(Color.BLACK);
@@ -585,6 +603,9 @@ public class TestFrame extends JFrame {
                 } else {
                     c.setBackground(Color.WHITE);
                     c.setForeground(Color.BLACK);
+                }
+                if (c instanceof JComponent) {
+                    ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
                 }
                 return c;
             }

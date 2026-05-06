@@ -380,6 +380,12 @@ public class TestCasePanel extends JPanel {
         lblTopicDisplay.setText(topic);
     }
 
+    public void updateBrokerProfile(String profile) {
+        if (brokerProfileField != null && profile != null) {
+            brokerProfileField.setSelectedItem(profile);
+        }
+    }
+
     public void loadTestCase(BaseTestCase tc) {
         currentCase = tc;
         currentMsg = null;
