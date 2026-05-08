@@ -684,14 +684,14 @@ public class SwimToAmhsTests {
 
             if (idx >= 1 && idx <= 10) {
                 int pri = idx - 1;
-                String dft = "P" + pri;
+                String dft = "[CTSW104-" + idx + "] P" + pri;
                 payload = inputs != null ? inputs.getOrDefault("p" + idx, dft) : dft;
                 short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) pri;
                 p.setAmqpPriority(priority); desc = "priority=" + pri;
             } else if (idx >= 11 && idx <= 15) {
                 String[] ats = {"SS","DD","FF","GG","KK"};
                 String at = ats[idx-11];
-                String dft = "Pri4+ATS_" + at;
+                String dft = "[CTSW104-" + idx + "] Pri4+ATS_" + at;
                 payload = inputs != null ? inputs.getOrDefault("p" + idx, dft) : dft;
                 short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
                 p.setAmqpPriority(priority); p.setAtsPri(at);
@@ -699,13 +699,13 @@ public class SwimToAmhsTests {
             } else if (idx >= 16 && idx <= 19) {
                 String[] ats = {"SS","DD","FF","GG"};
                 String at = ats[idx-16];
-                String dft = "Pri1+ATS_" + at;
+                String dft = "[CTSW104-" + idx + "] Pri1+ATS_" + at;
                 payload = inputs != null ? inputs.getOrDefault("p" + idx, dft) : dft;
                 short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 1;
                 p.setAmqpPriority(priority); p.setAtsPri(at);
                 desc = "priority=1 + amhs_ats_pri=" + at;
             } else if (idx == 20) {
-                String dft = "Pri9+ATS_KK";
+                String dft = "[CTSW104-20] Pri9+ATS_KK";
                 payload = inputs != null ? inputs.getOrDefault("p20", dft) : dft;
                 short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 9;
                 p.setAmqpPriority(priority); p.setAtsPri("KK");
