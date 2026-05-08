@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# CTSW116 Payload Verification Runner
-# This script runs the standalone AMQP consumer to verify GZIP payload delivery.
+# AMQP Universal Payload Verification Runner
+# This script runs the standalone AMQP consumer to verify any payload delivery.
 
 # 1. Check for Python
 if ! command -v python3 &> /dev/null; then
@@ -18,32 +18,38 @@ fi
 # 2. Check for python-proton library
 $PYTHON_CMD -c "import proton" &> /dev/null
 if [ $? -ne 0 ]; then
-    echo "Error: 'python-proton' library not found."
-    echo "Please install it using: pip install python-proton"
-    exit 1
+    echo "[!] 'proton' library not found."
+    echo "[*] Attempting to install python3-qpid-proton..."
+    
+    if command -v apt-get &> /dev/null; then
+        sudo apt-get update
+        sudo apt-get install -y python3-qpid-proton
+        if [ $? -ne 0 ]; then
+            echo "[-] Failed to install via apt-get. Trying pip..."
+            pip3 install python-qpid-proton || pip install python-qpid-proton
+        fi
+    elif command -v yum &> /dev/null; then
+        sudo yum install -y python3-qpid-proton
+    else
+        echo "[*] Using pip to install python-qpid-proton..."
+        pip3 install python-qpid-proton || pip install python-qpid-proton
+    fi
+    
+    # Check again
+    $PYTHON_CMD -c "import proton" &> /dev/null
+    if [ $? -ne 0 ]; then
+        echo "[-] Error: Failed to install proton library automatically."
+        echo "Please install it manually: sudo apt install python3-qpid-proton OR pip install python-qpid-proton"
+        exit 1
+    fi
+    echo "[+] proton library installed successfully."
 fi
 
 # 3. Run the verifier
 # It will automatically pick up settings from config/test.properties
-echo "[*] Starting Standalone AMQP Verifier..."
-$PYTHON_CMD verify_ctsw116_consumer.py "$@"
+echo "[*] Starting Universal AMQP Verifier..."
 
-# 4. Check if payload was received
-if [ -f "ctsw116_payload_received.gz" ]; then
-    echo ""
-    echo "[+] SUCCESS: Payload file 'ctsw116_payload_received.gz' found."
-    echo "[*] Checking GZIP integrity..."
-    if command -v gzip &> /dev/null; then
-        gzip -t ctsw116_payload_received.gz
-        if [ $? -eq 0 ]; then
-            echo "[+] GZIP Integrity Check: PASSED"
-        else
-            echo "[-] GZIP Integrity Check: FAILED (Malformed payload)"
-        fi
-    else
-        echo "[!] 'gzip' command not found, skipping automatic integrity check."
-    fi
-else
-    echo ""
-    echo "[-] No payload file found. Ensure the test case is running and sending to the correct queue."
-fi
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+$PYTHON_CMD verifier/verifying_consumer.py "$@"

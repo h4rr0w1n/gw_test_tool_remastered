@@ -1,6 +1,8 @@
 import sys
 import os
+# pyrefly: ignore [missing-import]
 from proton.handlers import MessagingHandler
+# pyrefly: ignore [missing-import]
 from proton.reactor import Container
 
 def load_properties(filepath):
@@ -20,9 +22,9 @@ def load_properties(filepath):
                 props[key.strip()] = value.strip()
     return props
 
-class CTSW116Consumer(MessagingHandler):
+class VerifyingConsumer(MessagingHandler):
     def __init__(self, server, address, vpn=None):
-        super(CTSW116Consumer, self).__init__()
+        super(VerifyingConsumer, self).__init__()
         self.server = server
         self.address = address
         self.vpn = vpn
@@ -35,40 +37,35 @@ class CTSW116Consumer(MessagingHandler):
         # Create a receiver for the specified queue/topic
         event.container.create_receiver(conn, self.address)
         print(f"[*] Listening for address/queue: {self.address}")
+        print("[*] Waiting for messages. Press Ctrl+C to stop.")
 
     def on_message(self, event):
         msg = event.message
-        print("\n--- Message Received ---")
-        print(f"Message ID: {msg.id}")
-        print(f"Subject: {msg.subject}")
-        print(f"Content-Type: {msg.content_type}")
-        print(f"Application Properties: {msg.properties}")
+        print("\n" + "="*60)
+        print("--- Message Received ---")
         
-        # Extract the body payload
-        body_bytes = b""
-        if isinstance(msg.body, bytes):
-            body_bytes = msg.body
-        elif isinstance(msg.body, str):
-            body_bytes = msg.body.encode('utf-8')
-        elif hasattr(msg.body, 'value'): # Handle AmqpValue wrappers
-            val = msg.body.value
-            if isinstance(val, bytes):
-                body_bytes = val
-            elif isinstance(val, str):
-                body_bytes = val.encode('utf-8')
+        # Display all standard AMQP properties
+        for attr in [
+            'id', 'user_id', 'address', 'subject', 'reply_to', 
+            'correlation_id', 'content_type', 'content_encoding', 
+            'expiry_time', 'creation_time', 'group_id', 
+            'group_sequence', 'reply_to_group_id', 
+            'instructions', 'annotations', 'properties'
+        ]:
+            if hasattr(msg, attr):
+                val = getattr(msg, attr)
+                if val is not None:
+                    print(f"{attr.capitalize().replace('_', ' ')}: {val}")
         
-        # Save the payload if bytes were found
-        if body_bytes:
-            filename = "ctsw116_payload_received.gz"
-            with open(filename, "wb") as f:
-                f.write(body_bytes)
-            print(f"\n[+] Saved binary payload to {filename} ({len(body_bytes)} bytes)")
-            print(f"[*] Verification: Run 'gzip -t {filename}' to check integrity.")
-        else:
-            print("[-] No binary body payload could be extracted from the message.")
-        
-        # Stop after receiving one message
-        event.connection.close()
+        # Extract and show the body payload
+        print("\n--- Payload ---")
+        body_val = msg.body
+        if hasattr(msg.body, 'value'):
+            body_val = msg.body.value
+            
+        print(f"Payload Type: {type(body_val)}")
+        print(f"Payload Data: {body_val}")
+        print("="*60 + "\n")
 
     def on_transport_error(self, event):
         print(f"[-] Transport error: {event.transport.condition}")
@@ -79,6 +76,9 @@ class CTSW116Consumer(MessagingHandler):
 if __name__ == "__main__":
     # Load defaults from config/test.properties
     config_path = os.path.join("config", "test.properties")
+    if not os.path.exists(config_path):
+        config_path = os.path.join("..", "config", "test.properties")
+
     props = load_properties(config_path)
     
     def_host = props.get("swim.broker.host", "localhost")
@@ -93,8 +93,8 @@ if __name__ == "__main__":
     default_url = f"amqp://{def_user}:{def_pass}@{def_host}:{def_port}"
 
     if len(sys.argv) < 2:
-        print("--- CTSW116 Standalone Verifier ---")
-        print(f"Usage: python verify_ctsw116_consumer.py <queue-address> [amqp-url] [vpn-name]")
+        print("--- Universal AMQP Verifier ---")
+        print(f"Usage: python verifying_consumer.py <queue-address> [amqp-url] [vpn-name]")
         print(f"Defaults (from config):")
         print(f"  Queue:    {def_queue}")
         print(f"  URL:      {default_url}")
@@ -111,9 +111,8 @@ if __name__ == "__main__":
         vpn_name = sys.argv[3] if len(sys.argv) > 3 else def_vpn
     
     try:
-        Container(CTSW116Consumer(server_url, target_address, vpn_name)).run()
+        Container(VerifyingConsumer(server_url, target_address, vpn_name)).run()
     except KeyboardInterrupt:
         print("\n[*] Exiting consumer...")
     except Exception as e:
         print(f"[-] Fatal error: {e}")
-
