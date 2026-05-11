@@ -52,7 +52,7 @@ public class TestFrame extends JFrame {
         initComponents();
 
         setSize(1540, 935);
-        setMinimumSize(new Dimension(1100, 715));
+        setMinimumSize(new Dimension(1100, 765));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
