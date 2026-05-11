@@ -51,8 +51,11 @@ public class TestFrame extends JFrame {
         setupTheme();
         initComponents();
 
-        setSize(1540, 935);
-        setMinimumSize(new Dimension(1100, 765));
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int width = Math.min(1540, screenSize.width - 100);
+        int height = Math.min(935, screenSize.height - 100);
+        setSize(width, height);
+        setMinimumSize(new Dimension(800, 600));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
