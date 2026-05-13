@@ -64,7 +64,7 @@ class VerifyingConsumer(MessagingHandler):
             'amhs_ipm_id', 'amhs_registered_identifier', 'amhs_originator', 
             'amhs_user_visible_string', 'amqp_body_type'
         ]
-        print("Properties: {")
+        print("Properties:")
         for i, prop in enumerate(fixed_props):
             if prop == 'amqp_priority':
                 value = getattr(msg, 'priority', None)
@@ -76,17 +76,15 @@ class VerifyingConsumer(MessagingHandler):
                     value = msg.properties.get(prop)
             
             if value is None:
-                value = ""
+                if prop == 'content_encoding':
+                    value = 'None'
+                else:
+                    value = ""
             
             # Format as a single-quoted string, escaping interior single quotes
             escaped_value = str(value).replace("'", "\\'")
-            line = f"'{prop}': '{escaped_value}'"
             
-            if i < len(fixed_props) - 1:
-                line += ","
-            
-            print(f" {line}")
-        print("}")
+            print(f"'{prop}': '{escaped_value}'")
         
         # Extract and show the body payload
         print("\n--- Payload ---")
