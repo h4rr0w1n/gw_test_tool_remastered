@@ -35,27 +35,56 @@ class VerifyingConsumer(MessagingHandler):
         print(f"[*] Connecting to {self.server} (VPN: {self.vpn if self.vpn else 'default'})...")
         conn = event.container.connect(self.server, virtual_host=self.vpn)
         # Create a receiver for the specified queue/topic
+        # This receiver is non-exclusive and can coexist with other subscribers (e.g., Solace TryMe)
         event.container.create_receiver(conn, self.address)
         print(f"[*] Listening for address/queue: {self.address}")
         print("[*] Waiting for messages. Press Ctrl+C to stop.")
+        print("[*] Note: This verifier uses non-exclusive access and can run concurrently with other subscribers.")
+        if "QUEUE" in self.address.upper():
+            print("[!] Statement: For Queue addresses, messages are distributed among subscribers. Concurrent consumption of the SAME message by multiple subscribers (including Solace TryMe) is unavailable for queues.")
+        else:
+            print("[*] For Topic addresses, multiple subscribers can consume the same message concurrently.")
 
     def on_message(self, event):
         msg = event.message
         print("\n" + "="*60)
         print("--- Message Received ---")
         
-        # Display all standard AMQP properties
-        for attr in [
+        # Display AMQP properties in a fixed format
+        standard_attrs = set(['id', 'user_id', 'address', 'subject', 'reply_to', 
+                              'correlation_id', 'content_type', 'content_encoding', 
+                              'expiry_time', 'creation_time', 'group_id', 
+                              'group_sequence', 'reply_to_group_id'])
+        fixed_props = [
             'id', 'user_id', 'address', 'subject', 'reply_to', 
             'correlation_id', 'content_type', 'content_encoding', 
             'expiry_time', 'creation_time', 'group_id', 
-            'group_sequence', 'reply_to_group_id', 
-            'instructions', 'annotations', 'properties'
-        ]:
-            if hasattr(msg, attr):
-                val = getattr(msg, attr)
-                if val is not None:
-                    print(f"{attr.capitalize().replace('_', ' ')}: {val}")
+            'group_sequence', 'reply_to_group_id',
+            'amqp_priority', 'amqp_broker_profile', 'amhs_recipients', 
+            'amhs_ipm_id', 'amhs_registered_identifier', 'amhs_originator', 
+            'amhs_user_visible_string', 'amqp_body_type'
+        ]
+        print("Properties: {")
+        for i, prop in enumerate(fixed_props):
+            if prop in standard_attrs:
+                value = getattr(msg, prop, None)
+            else:
+                value = None
+                if msg.properties is not None:
+                    value = msg.properties.get(prop)
+            
+            if value is None:
+                value = ""
+            
+            # Format as a single-quoted string, escaping interior single quotes
+            escaped_value = str(value).replace("'", "\\'")
+            line = f"'{prop}': '{escaped_value}'"
+            
+            if i < len(fixed_props) - 1:
+                line += ","
+            
+            print(f" {line}")
+        print("}")
         
         # Extract and show the body payload
         print("\n--- Payload ---")
