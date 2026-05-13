@@ -1,0 +1,26 @@
+To run the verifier, use the following command structure:
+
+General Command Syntax
+
+ python verifier/verifying_consumer.py <queue_or_topic_address> [amqp_url] [vpn_name]
+
+Execution Examples
+
+1. Using Defaults (from config/test.properties) If you only provide the address, the verifier will use the host,
+port, credentials, and VPN defined in your config file.
+
+ python verifier/verifying_consumer.py "TEST.QUEUE"
+
+2. Overriding AMQP URL and VPN If you need to connect to a different broker or use a specific VPN:
+
+ python verifier/verifying_consumer.py "TEST.QUEUE" "amqp://user:password@host:5672" "MY_VPN_NAME"
+
+3. Listening to a Topic Since the verifier supports topics, you can specify a topic string:
+
+ python verifier/verifying_consumer.py "my/test/topic"
+
+Argument Details
+
+ - <queue_or_topic_address> (Required): The destination address to consume from.
+ - [amqp_url] (Optional): The connection string in the format amqp://user:password@host:port.
+ - [vpn_name] (Optional): The Solace VPN name (virtual host).

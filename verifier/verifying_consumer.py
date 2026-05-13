@@ -54,7 +54,7 @@ class VerifyingConsumer(MessagingHandler):
         standard_attrs = set(['id', 'user_id', 'address', 'subject', 'reply_to', 
                               'correlation_id', 'content_type', 'content_encoding', 
                               'expiry_time', 'creation_time', 'group_id', 
-                              'group_sequence', 'reply_to_group_id'])
+                              'group_sequence', 'reply_to_group_id', 'priority'])
         fixed_props = [
             'id', 'user_id', 'address', 'subject', 'reply_to', 
             'correlation_id', 'content_type', 'content_encoding', 
@@ -66,7 +66,9 @@ class VerifyingConsumer(MessagingHandler):
         ]
         print("Properties: {")
         for i, prop in enumerate(fixed_props):
-            if prop in standard_attrs:
+            if prop == 'amqp_priority':
+                value = getattr(msg, 'priority', None)
+            elif prop in standard_attrs:
                 value = getattr(msg, prop, None)
             else:
                 value = None
