@@ -751,14 +751,8 @@ public class TestCasePanel extends JPanel {
             case "CTSW112": {
                 String fileKey = (mIdx == 1) ? "addressFile_a" : "addressFile_b";
                 String bodyKey = "p" + mIdx + "_body";
-                String displayPath = raw;
-                if (raw != null && raw.contains("/")) {
-                    displayPath = raw.substring(raw.lastIndexOf('/') + 1).trim();
-                } else if (raw != null && raw.contains("\\")) {
-                    displayPath = raw.substring(raw.lastIndexOf('\\') + 1).trim();
-                }
                 String expectedCount = (mIdx == 1) ? "512" : "513";
-                specs.add(new String[]{fileKey, "ADDRESS FILE (" + expectedCount + " lines, one address per line)", displayPath});
+                specs.add(new String[]{fileKey, "ADDRESS FILE (" + expectedCount + " lines, one address per line)", raw});
                 specs.add(new String[]{bodyKey, "MESSAGE BODY", "Msg " + (mIdx == 1 ? "512" : "513")});
                 specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
                 specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
