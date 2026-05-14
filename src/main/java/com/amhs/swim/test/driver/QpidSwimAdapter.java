@@ -374,9 +374,11 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             message.setContentEncoding((String) properties.get("swim_compression"));
         }
         
-        // Set creation time if present
-        if (properties.containsKey("creation_time")) {
+        // Set creation time if present, otherwise default to current time to prevent 0.0 unintended errors
+        if (properties.containsKey("creation_time") && properties.get("creation_time") != null) {
             message.setCreationTime((Long) properties.get("creation_time"));
+        } else {
+            message.setCreationTime(System.currentTimeMillis());
         }
         
         // Set priority (AMQP 1.0 uses 0-9, AMHS uses SS/DD/FF/GG/KK)

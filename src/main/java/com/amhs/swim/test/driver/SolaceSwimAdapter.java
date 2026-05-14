@@ -231,7 +231,7 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         }
 
         // creation_time: value 0 signals epoch/zero timestamp for rejection testing
-        if (properties.containsKey("creation_time")) {
+        if (properties.containsKey("creation_time") && properties.get("creation_time") != null) {
             Object ct = properties.get("creation_time");
             if (ct instanceof Long) {
                 msg.setSenderTimestamp((Long) ct);
@@ -239,6 +239,10 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             } else {
                 userProps.putString("creation_time", String.valueOf(ct));
             }
+        } else {
+            long now = System.currentTimeMillis();
+            msg.setSenderTimestamp(now);
+            userProps.putLong("creation_time", now);
         }
         
         // Native content-type to help Solace WebUI handle binary payloads safely
