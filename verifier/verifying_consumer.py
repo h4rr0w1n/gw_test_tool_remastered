@@ -83,7 +83,10 @@ class VerifyingConsumer(MessagingHandler):
                         line_str = " ".join(str(x) for x in chunk)
                         print(f" {line_str}")
                 else:
-                    print(f"  {k}: {v}")
+                    val = str(v)
+                    if len(val) > 300:
+                        val = val[:297] + "..."
+                    print(f"  {k}: {val}")
         else:
             print("  None")
             
@@ -125,11 +128,14 @@ class VerifyingConsumer(MessagingHandler):
         lines = body_str.splitlines()
         
         if len(lines) > 67:
-            truncated_body = "\n".join(lines[:67])
+            truncated_lines = [line[:297] + "..." if len(line) > 300 else line for line in lines[:67]]
+            truncated_body = "\n".join(truncated_lines)
             print(f"Payload Data:\n{truncated_body}\n\n... [Truncated {len(lines) - 67} lines]")
             print(f"Total payload size: {total_bytes} bytes")
         else:
-            print(f"Payload Data: {body_str}")
+            trimmed_lines = [line[:297] + "..." if len(line) > 300 else line for line in lines]
+            print(f"Payload Data: {'\n'.join(trimmed_lines)}")
+            print(f"Total payload size: {total_bytes} bytes")
             
         print("="*60 + "\n")
 
