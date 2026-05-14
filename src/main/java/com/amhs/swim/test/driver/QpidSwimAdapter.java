@@ -365,6 +365,53 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             if (isSolaceProfile()) rt = sanitizeForSolace(rt);
             message.setReplyTo(rt);
         }
+        // Set correlation_id if present
+        if (properties.containsKey("amqp_correlation_id")) {
+            Object corrId = properties.get("amqp_correlation_id");
+            if (isSolaceProfile() && corrId instanceof String) {
+                corrId = sanitizeForSolace((String) corrId);
+            }
+            message.setCorrelationId(corrId);
+        }
+        // Set user_id if present (per EUR Doc 047 §4.5.2.13)
+        if (properties.containsKey("amqp_user_id")) {
+            Object userId = properties.get("amqp_user_id");
+            if (userId instanceof String) {
+                message.setUserId(((String) userId).getBytes(StandardCharsets.UTF_8));
+            } else if (userId instanceof byte[]) {
+                message.setUserId((byte[]) userId);
+            }
+        }
+        // Set expiry_time if present (per EUR Doc 047 §4.5.2.14 - TTL in milliseconds)
+        if (properties.containsKey("amqp_expiry_time")) {
+            Object expiryVal = properties.get("amqp_expiry_time");
+            if (expiryVal instanceof Number) {
+                message.setExpiryTime(((Number) expiryVal).longValue());
+            }
+        }
+        // Set group_id if present (per EUR Doc 047 §4.5.2.15)
+        if (properties.containsKey("amqp_group_id")) {
+            Object groupId = properties.get("amqp_group_id");
+            if (isSolaceProfile() && groupId instanceof String) {
+                groupId = sanitizeForSolace((String) groupId);
+            }
+            message.setGroupId(groupId);
+        }
+        // Set group_sequence if present (per EUR Doc 047 §4.5.2.16)
+        if (properties.containsKey("amqp_group_sequence")) {
+            Object groupSeq = properties.get("amqp_group_sequence");
+            if (groupSeq instanceof Number) {
+                message.setGroupSequence(((Number) groupSeq).intValue());
+            }
+        }
+        // Set reply_to_group_id if present (per EUR Doc 047 §4.5.2.17)
+        if (properties.containsKey("amqp_reply_to_group_id")) {
+            Object replyToGroupId = properties.get("amqp_reply_to_group_id");
+            if (isSolaceProfile() && replyToGroupId instanceof String) {
+                replyToGroupId = sanitizeForSolace((String) replyToGroupId);
+            }
+            message.setReplyToGroupId(replyToGroupId);
+        }
         if (properties.containsKey("content_type")) {
             message.setContentType((String) properties.get("content_type"));
         }
