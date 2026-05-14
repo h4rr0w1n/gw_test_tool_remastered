@@ -169,8 +169,8 @@ public class Logger {
     }
 
     /**
-     * Log detailed payload for cross-checking.
-     * Standardized to "DEEP INSPECTION" style with box-drawing sections for maximum clarity.
+     * Log detailed payload for cross-checking — SENT perspective (Topic publish).
+     * Matches the first "Message Received" block shown by verifying_consumer.py.
      */
     public static void logPayloadDetail(String caseId, int msgIndex, Map<String, Object> props, String bodySummary) {
         StringBuilder sb = new StringBuilder();
@@ -250,6 +250,115 @@ public class Logger {
     /** Legacy version for simple strings. */
     public static void logPayloadDetail(String caseId, int msgIndex, String detail) {
         logPayloadDetail(caseId, msgIndex, null, detail);
+    }
+
+    /**
+     * Log the broker-enriched "Message Received" block — RECEIVED perspective (Queue receive).
+     * Mirrors the second block output by verifying_consumer.py: id/user_id/address are populated
+     * by the broker, app-props include creation_time/amqp_priority/content_type/amhs_originator,
+     * Message Annotations show JMS hints, and Payload Type is bytes.
+     *
+     * @param caseId      Test case ID for routing
+     * @param msgIndex    Message index
+     * @param props       AMQPProperties map (same as sent)
+     * @param queueName   Destination queue name (populates address field)
+     * @param ipmId       The IPM-ID assigned by the broker (populates id field)
+     * @param bodyBytes   Raw body bytes (shown as b'...')
+     */
+    public static void logPayloadDetailReceived(
+            String caseId, int msgIndex,
+            Map<String, Object> props,
+            String queueName,
+            String ipmId,
+            byte[] bodyBytes) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\n============================================================\n");
+        sb.append("--- Message Received ---\n");
+
+        // Standard Properties — broker-populated values
+        String priority = props != null ? String.valueOf(props.getOrDefault("amqp_priority", "4")) : "4";
+        double creationTimeSec = System.currentTimeMillis() / 1000.0;
+
+        sb.append("Standard Properties:\n");
+        sb.append("  id: ").append(ipmId != null ? ipmId : "").append("\n");
+        sb.append("  user_id: b''\n");
+        sb.append("  address: ").append(queueName != null ? queueName : "").append("\n");
+        sb.append("  subject: ").append(props != null ? props.getOrDefault("amhs_subject", "") : "").append("\n");
+        sb.append("  reply_to: ").append(props != null ? props.getOrDefault("amhs_reply_to", "") : "").append("\n");
+        sb.append("  correlation_id: \n");
+        sb.append("  content_type: ").append(props != null ? props.getOrDefault("content_type", "text/plain; charset=\"utf-8\"") : "text/plain; charset=\"utf-8\"").append("\n");
+        sb.append("  content_encoding: None\n");
+        sb.append("  expiry_time: 0.0\n");
+        sb.append("  creation_time: ").append(String.format("%.3f", creationTimeSec)).append("\n");
+        sb.append("  group_id: \n");
+        sb.append("  group_sequence: 0\n");
+        sb.append("  reply_to_group_id: \n");
+        sb.append("  priority: ").append(priority).append("\n\n");
+
+        // Application Properties — broker-enriched order
+        sb.append("Application Properties:\n");
+        long creationTimeMs = System.currentTimeMillis();
+        sb.append("  creation_time: ").append(creationTimeMs).append("\n");
+        sb.append("  amqp_priority: ").append(priority).append("\n");
+        String ct = props != null ? String.valueOf(props.getOrDefault("content_type", "text/plain; charset=\"utf-8\"")) : "text/plain; charset=\"utf-8\"";
+        sb.append("  content_type: ").append(ct).append("\n");
+
+        if (props != null) {
+            // amqp_broker_profile
+            if (props.containsKey("amqp_broker_profile")) {
+                sb.append("  amqp_broker_profile: ").append(props.get("amqp_broker_profile")).append("\n");
+            }
+            // amhs_recipients — block-formatted (8 per row, space-separated)
+            Object recipObj = props.get("amhs_recipients");
+            if (recipObj != null) {
+                String recipStr = String.valueOf(recipObj);
+                if (recipStr.contains(",") && recipStr.length() > 30) {
+                    String[] parts = recipStr.split(",");
+                    sb.append("  amhs_recipients:\n");
+                    java.util.List<String> list = new java.util.ArrayList<>();
+                    for (String p : parts) { if (!p.trim().isEmpty()) list.add(p.trim()); }
+                    for (int i = 0; i < list.size(); i += 8) {
+                        sb.append(" ");
+                        for (int j = 0; j < 8 && i + j < list.size(); j++) {
+                            sb.append(" ").append(list.get(i + j));
+                        }
+                        sb.append("\n");
+                    }
+                } else {
+                    sb.append("  amhs_recipients: ").append(recipStr).append("\n");
+                }
+            }
+            // Other amhs_/swim_ props (excluding those already printed)
+            java.util.Set<String> skip = new java.util.HashSet<>(java.util.Arrays.asList(
+                "amqp_broker_profile", "amhs_recipients", "content_type", "amqp_priority"));
+            props.forEach((k, v) -> {
+                if ((k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_body_")) && !skip.contains(k)) {
+                    String val = v == null ? "null" : String.valueOf(v);
+                    if (val.length() > 300) val = val.substring(0, 297) + "...";
+                    sb.append("  ").append(k).append(": ").append(val).append("\n");
+                }
+            });
+        }
+        sb.append("\n");
+
+        // Message Annotations — JMS hints added by broker
+        sb.append("Message Annotations:\n");
+        sb.append("  x-opt-jms-dest: byte(0)\n");
+        sb.append("  x-opt-jms-msg-type: byte(3)\n\n");
+
+        sb.append("Delivery Annotations:\n  None\n\n");
+
+        // Payload — bytes perspective
+        sb.append("--- Payload ---\n");
+        sb.append("Payload Type: <class 'bytes'>\n");
+        int totalBytes = bodyBytes != null ? bodyBytes.length : 0;
+        String bodyStr = bodyBytes != null ? new String(bodyBytes, java.nio.charset.StandardCharsets.UTF_8) : "";
+        sb.append("Payload Data: b'").append(bodyStr).append("'\n");
+        sb.append("Total payload size: ").append(totalBytes).append(" bytes\n");
+
+        sb.append("============================================================\n");
+        logCase(caseId, "PAYLOAD", sb.toString());
     }
 
     /**

@@ -230,9 +230,11 @@ public class SwimToAmhsTests {
                     byte[] payload = payloadText.getBytes();
                     
                     dual(inputs, payload, p);
+                    String queue101_1 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
                     Logger.logTransmission(testCaseId, 1, attempt, topic(inputs),
                         "SENT", "text/plain | priority=" + priority + " | len=" + payload.length);
                     Logger.logPayloadDetail(testCaseId, 1, p.toMap(), new String(payload));
+                    Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue101_1, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
                     return true;
                 }
                 case 2: {
@@ -271,9 +273,11 @@ public class SwimToAmhsTests {
                     }
                     
                     dual(inputs, payload, p);
+                    String queue101_2 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
                     Logger.logTransmission(testCaseId, 2, attempt, topic(inputs),
                         "SENT", "application/octet-stream | priority=" + priority + " | len=" + payload.length);
                     Logger.logPayloadDetail(testCaseId, 2, p.toMap(), "[binary] " + payload.length + " bytes from " + path);
+                    Logger.logPayloadDetailReceived(testCaseId, 2, p.toMap(), queue101_2, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
                     return true;
                 }
             }
@@ -463,6 +467,7 @@ public class SwimToAmhsTests {
                     break;
                 default: return false;
             }
+            String queue102 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs),
                 "SENT (expect REJECT by IUT)", desc);
@@ -470,6 +475,7 @@ public class SwimToAmhsTests {
                     ? "[binary] " + payload.length + " bytes" 
                     : new String(payload);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue102, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
             return true;
         }
 
@@ -655,6 +661,7 @@ public class SwimToAmhsTests {
                 }
                 default: return false;
             }
+            String queue103 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             String loggedPayload;
@@ -664,6 +671,7 @@ public class SwimToAmhsTests {
                 loggedPayload = new String(payload);
             }
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue103, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
             return true;
         }
 
@@ -757,9 +765,11 @@ public class SwimToAmhsTests {
                 desc = "priority=9 + amhs_ats_pri=KK";
             } else return false;
 
+            String queue104 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), payload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue104, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -836,9 +846,11 @@ public class SwimToAmhsTests {
                 desc = "amhs_ats_ft=250102";
             } else return false;
             p.setAmqpPriority(priority);
+            String queue105 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), new String(payload));
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue105, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
             return true;
         }
 
@@ -930,10 +942,12 @@ public class SwimToAmhsTests {
             
             p.setUserVisibleStr("OHI Data Test");
             p.setExtraProp("amhs_ats_ohi", ohi);
+            String queue106 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
                 "priority=" + priority + " | amhs_ats_ohi len=" + ohi.length() + " (" + ohi.substring(0, Math.min(20, ohi.length())) + (ohi.length() > 20 ? "..." : "") + ")");
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), body);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue106, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1033,9 +1047,11 @@ public class SwimToAmhsTests {
                 desc = "AMQP-subject='" + subject + "' (len=" + subject.length() + (subject.length() > 128 ? " → trim to 128" : "") + ")";
             }
 
+            String queue107 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), body);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue107, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1098,10 +1114,12 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setOriginator(orig);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setAmqpPriority(priority);
+            String queue108 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
                 "amhs_originator=" + orig + " (known → expanded to MF-address)");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
+            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue108, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1160,10 +1178,12 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setOriginator(orig);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setAmqpPriority(priority);
+            String queue109 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
                 "amhs_originator=" + orig + " (UNKNOWN → IUT must use default originator per §4.5.2.12)");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
+            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue109, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1270,6 +1290,7 @@ public class SwimToAmhsTests {
                 }
                 default: return false;
             }
+            String queue110 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             String loggedPayload;
@@ -1283,6 +1304,7 @@ public class SwimToAmhsTests {
                 }
             }
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue110, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
             return true;
         }
 
@@ -1422,9 +1444,11 @@ public class SwimToAmhsTests {
                 }
                 default: return false;
             }
+            String queue111 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Payload size: " + payload.length + " bytes");
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue111, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
             return true;
         }
 
@@ -1533,14 +1557,20 @@ public class SwimToAmhsTests {
 
             String dft = "Msg " + (idx == 1 ? "512" : "513");
             String body = inputs != null ? inputs.getOrDefault("p" + idx + "_body", dft) : dft;
+            String queue = inputs != null
+                ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE"))
+                : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs),
                 "SENT",
                 addresses.length + " recipients | expect " + (idx == 1 ? "ACCEPT" : "REJECT"));
+            // Block 1: SENT / Topic perspective — str body, comma-separated recipients (truncated)
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(),
                 "First 3 addresses: " + String.join(", ",
                     Arrays.copyOfRange(addresses, 0, Math.min(3, addresses.length))) +
                 (addresses.length > 3 ? " ... [+" + (addresses.length-3) + " more]" : ""));
+            // Block 2: RECEIVED / Queue perspective — broker-enriched, block-formatted recipients, bytes body
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1617,11 +1647,13 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setExtraProp("amhs_notification_request", notifReq);
+            String queue113 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload.getBytes(), p);
             String expected = idx == 1 ? "NRN" : "RN";
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
                 "priority=" + priority + " (→SS) | notification_request=" + notifReq + " | expect " + expected + " from AMHS Tool");
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), payload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue113, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -1732,12 +1764,14 @@ public class SwimToAmhsTests {
 
             p.setExtraProp("amhs_notification_request", notifReq);
 
+            String queue114 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload.getBytes(), p);
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
                 "priority=" + priority + " | notification_request=" + notifReq
                 + " | originator=" + originator
                 + " | Next step: DELETE message in AMHS Tool → NDR: unable-to-transfer");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), payload);
+            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue114, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -1812,10 +1846,12 @@ public class SwimToAmhsTests {
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setBodyPartType(bodyPart);
             p.setExtraProp("amhs_content_encoding", encoding);
+            String queue115 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
                 bodyPart + " | encoding=" + encoding);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "amqp-value: '" + payload + "'");
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue115, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -1936,12 +1972,14 @@ public class SwimToAmhsTests {
                 desc = "FTBP | size=" + fileSize + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;
             }
 
+            String queue116 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, sendPayload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(),
                 "file=" + filePath + " | size=" + fileSize +
                 (idx==2 ? " | compressed=" + sendPayload.length + "B (gzip) | filename=" + ftbpFileName : "") +
                 " | ftbp_last_mod=" + lastMod);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue116, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", sendPayload);
             return true;
         }
 
