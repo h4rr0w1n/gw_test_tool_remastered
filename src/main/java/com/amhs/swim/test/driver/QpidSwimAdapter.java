@@ -340,6 +340,10 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         String finalTopic = topic;
         if (isSolaceProfile()) finalTopic = sanitizeForSolace(topic);
         message.setAddress(finalTopic);
+        
+        // Add address to properties for JMS annotation detection
+        properties.put("address", finalTopic);
+        
         if (properties.containsKey("amqp_message_id")) {
             Object msgId = properties.get("amqp_message_id");
             // Solace fix: ensure Message-Id string is URI-safe if using Solace profile.
@@ -392,10 +396,13 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         // Set group_id if present (per EUR Doc 047 §4.5.2.15)
         if (properties.containsKey("amqp_group_id")) {
             Object groupId = properties.get("amqp_group_id");
-            if (isSolaceProfile() && groupId instanceof String) {
-                groupId = sanitizeForSolace((String) groupId);
+            if (groupId instanceof String) {
+                String groupIdStr = (String) groupId;
+                if (isSolaceProfile()) {
+                    groupIdStr = sanitizeForSolace(groupIdStr);
+                }
+                message.setGroupId(groupIdStr);
             }
-            message.setGroupId(groupId);
         }
         // Set group_sequence if present (per EUR Doc 047 §4.5.2.16)
         if (properties.containsKey("amqp_group_sequence")) {
@@ -407,10 +414,13 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         // Set reply_to_group_id if present (per EUR Doc 047 §4.5.2.17)
         if (properties.containsKey("amqp_reply_to_group_id")) {
             Object replyToGroupId = properties.get("amqp_reply_to_group_id");
-            if (isSolaceProfile() && replyToGroupId instanceof String) {
-                replyToGroupId = sanitizeForSolace((String) replyToGroupId);
+            if (replyToGroupId instanceof String) {
+                String replyToGroupIdStr = (String) replyToGroupId;
+                if (isSolaceProfile()) {
+                    replyToGroupIdStr = sanitizeForSolace(replyToGroupIdStr);
+                }
+                message.setReplyToGroupId(replyToGroupIdStr);
             }
-            message.setReplyToGroupId(replyToGroupId);
         }
         if (properties.containsKey("content_type")) {
             message.setContentType((String) properties.get("content_type"));
@@ -553,6 +563,19 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
     private void applyBrokerProfileAnnotations(Map<Symbol, Object> annotations, Map<String, Object> properties) {
         String profileStr = (String) properties.getOrDefault("amqp_broker_profile", "STANDARD");
         SwimDriver.AMQPProperties.BrokerProfile profile = SwimDriver.AMQPProperties.BrokerProfile.valueOf(profileStr);
+        
+        // Add JMS mapping annotations per AMQP 1.0 JMS spec
+        // x-opt-jms-dest: byte(0) for queue, byte(1) for topic
+        String address = (String) properties.get("address");
+        if (address != null) {
+            boolean isTopic = address.toUpperCase().contains("TOPIC");
+            annotations.put(Symbol.valueOf("x-opt-jms-dest"), (byte)(isTopic ? 1 : 0));
+        } else {
+            annotations.put(Symbol.valueOf("x-opt-jms-dest"), (byte)0); // default to queue
+        }
+        
+        // x-opt-jms-msg-type: byte(3) for regular message, byte(4) for request, etc.
+        annotations.put(Symbol.valueOf("x-opt-jms-msg-type"), (byte)3); // default to regular message
         
         switch (profile) {
             case AZURE_SERVICE_BUS:
