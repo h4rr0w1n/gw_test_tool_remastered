@@ -68,7 +68,14 @@ class VerifyingConsumer(MessagingHandler):
         print("\nApplication Properties:")
         if msg.properties:
             for k, v in msg.properties.items():
-                print(f"  {k}: {v}")
+                if isinstance(v, (list, tuple)) and len(v) > 0:
+                    print(f"  {k}:")
+                    for i in range(0, len(v), 8):
+                        chunk = v[i:i+8]
+                        line_str = " ".join(str(x) for x in chunk)
+                        print(f"    (line {(i//8)+1}) {line_str}")
+                else:
+                    print(f"  {k}: {v}")
         else:
             print("  None")
             
