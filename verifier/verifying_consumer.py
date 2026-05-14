@@ -74,6 +74,14 @@ class VerifyingConsumer(MessagingHandler):
                         chunk = v[i:i+8]
                         line_str = " ".join(str(x) for x in chunk)
                         print(f"    (line {(i//8)+1}) {line_str}")
+                elif isinstance(v, str) and k in ('amhs_recipients', 'amhs_address') and (',' in v or ' ' in v) and len(v) > 30:
+                    print(f"  {k}:")
+                    # Split by comma if present, else space
+                    v_list = [x.strip() for x in v.split(',' if ',' in v else ' ') if x.strip()]
+                    for i in range(0, len(v_list), 8):
+                        chunk = v_list[i:i+8]
+                        line_str = " ".join(str(x) for x in chunk)
+                        print(f"    (line {(i//8)+1}) {line_str}")
                 else:
                     print(f"  {k}: {v}")
         else:
