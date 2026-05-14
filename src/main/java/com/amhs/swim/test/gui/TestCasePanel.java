@@ -1316,12 +1316,24 @@ public class TestCasePanel extends JPanel {
             if (lines.length > 67) {
                 sb.append("Payload Data:\n");
                 for (int i = 0; i < 67; i++) {
-                    sb.append(lines[i]).append(i == 66 ? "" : "\n");
+                    String line = lines[i];
+                    if (line.length() > 500) line = line.substring(0, 497) + "...";
+                    sb.append(line).append(i == 66 ? "" : "\n");
                 }
                 sb.append("\n\n... [Truncated ").append(lines.length - 67).append(" lines]\n");
                 sb.append("Total payload size: ").append(totalBytes).append(" bytes\n");
             } else {
-                sb.append("Payload Data: ").append(payloadData).append("\n");
+                sb.append("Payload Data: ");
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i];
+                    if (line.length() > 500) {
+                        sb.append(line.substring(0, 497)).append("... (line ").append(i+1).append(" too long)");
+                    } else {
+                        sb.append(line);
+                    }
+                    if (i < lines.length - 1) sb.append("\n");
+                }
+                sb.append("\n");
             }
         } else {
             sb.append("Payload Data: \n");

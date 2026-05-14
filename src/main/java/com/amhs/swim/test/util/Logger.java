@@ -174,39 +174,74 @@ public class Logger {
      */
     public static void logPayloadDetail(String caseId, int msgIndex, Map<String, Object> props, String bodySummary) {
         StringBuilder sb = new StringBuilder();
-        sb.append("\n  ╔" + "═".repeat(68) + "╗\n");
-        sb.append("  ║ [DEEP INSPECTION] AMQP 1.0 MESSAGE METADATA" + " ".repeat(25) + "║\n");
-        sb.append("  ╠" + "═".repeat(68) + "╣\n");
+        sb.append("\n============================================================\n");
+        sb.append("--- Message Received ---\n");
         
+        // Standard Properties
+        sb.append("Standard Properties:\n");
+        sb.append("  id: ").append(props != null ? props.getOrDefault("amqp_message_id", "") : "").append("\n");
+        sb.append("  user_id: \n");
+        sb.append("  address: \n");
+        sb.append("  subject: ").append(props != null ? props.getOrDefault("amhs_subject", "") : "").append("\n");
+        sb.append("  reply_to: ").append(props != null ? props.getOrDefault("amhs_reply_to", "") : "").append("\n");
+        sb.append("  correlation_id: \n");
+        sb.append("  content_type: ").append(props != null ? props.getOrDefault("content_type", "application/octet-stream") : "application/octet-stream").append("\n");
+        sb.append("  content_encoding: None\n");
+        sb.append("  expiry_time: \n");
+        sb.append("  creation_time: ").append(props != null ? props.getOrDefault("creation_time", "") : "").append("\n");
+        sb.append("  group_id: \n");
+        sb.append("  group_sequence: \n");
+        sb.append("  reply_to_group_id: \n");
+        sb.append("  priority: ").append(props != null ? props.getOrDefault("amqp_priority", "4") : "4").append("\n\n");
+
+        // Application Properties
+        sb.append("Application Properties:\n");
         if (props != null) {
             props.forEach((k, v) -> {
-                if (v != null) {
-                    String valStr = v.toString();
-                    if (valStr.length() > 80) {
-                        valStr = valStr.substring(0, 77) + "...";
-                    }
-                    sb.append(String.format("  ║ %-25s : %-40s ║\n", k, valStr));
+                if (k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_broker_") || k.startsWith("amqp_body_")) {
+                    sb.append("  ").append(k).append(": ").append(v).append("\n");
                 }
             });
         }
+        sb.append("\n");
+
+        sb.append("Message Annotations:\n  None\n\n");
+        sb.append("Delivery Annotations:\n  None\n\n");
+
+        // Payload
+        sb.append("--- Payload ---\n");
+        sb.append("Payload Type: <class 'str'>\n");
         
         if (bodySummary != null && !bodySummary.isEmpty()) {
-            sb.append("  ╠" + "═".repeat(68) + "╣\n");
-            sb.append("  ║ [PAYLOAD CONTENT] " + " ".repeat(48) + "║\n");
-            sb.append("  ╠" + "═".repeat(68) + "╣\n");
-            
-            // Handle multiple lines if any
-            String[] lines = bodySummary.split("\n");
-            for (String line : lines) {
-                if (line.length() > 64) {
-                    sb.append(String.format("  ║ %-66s ║\n", line.substring(0, 63) + "…"));
-                } else {
-                    sb.append(String.format("  ║ %-66s ║\n", line));
+            byte[] bytes = bodySummary.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+            String[] lines = bodySummary.split("\\r?\\n");
+            if (lines.length > 67) {
+                sb.append("Payload Data:\n");
+                for (int i = 0; i < 67; i++) {
+                    String line = lines[i];
+                    if (line.length() > 500) line = line.substring(0, 497) + "...";
+                    sb.append(line).append(i == 66 ? "" : "\n");
                 }
+                sb.append("\n\n... [Truncated ").append(lines.length - 67).append(" lines]\n");
+                sb.append("Total payload size: ").append(bytes.length).append(" bytes\n");
+            } else {
+                sb.append("Payload Data: ");
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i];
+                    if (line.length() > 500) {
+                        sb.append(line.substring(0, 497)).append("... (line ").append(i+1).append(" too long)");
+                    } else {
+                        sb.append(line);
+                    }
+                    if (i < lines.length - 1) sb.append("\n");
+                }
+                sb.append("\nTotal payload size: ").append(bytes.length).append(" bytes\n");
             }
+        } else {
+            sb.append("Payload Data: None\n");
         }
         
-        sb.append("  ╚" + "═".repeat(68) + "╝\n");
+        sb.append("============================================================\n");
         logCase(caseId, "PAYLOAD", sb.toString());
     }
 
