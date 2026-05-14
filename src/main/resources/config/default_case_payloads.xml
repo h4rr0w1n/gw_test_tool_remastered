@@ -166,8 +166,8 @@
 
   <!-- CTSW112: Recipient quantity limit -->
   <case id="CTSW112">
-    <msg idx="1"><![CDATA[src/main/resources/address_512.txt]]></msg>
-    <msg idx="2"><![CDATA[src/main/resources/address_513.txt]]></msg>
+    <msg idx="1"><![CDATA[materials/address_512.txt]]></msg>
+    <msg idx="2"><![CDATA[materials/address_513.txt]]></msg>
     <!-- IPM-ID and Registered-ID patterns -->
     <config key="ipm_id_pattern"><![CDATA[IPM.CTSW112.{ts}]]></config>
     <config key="reg_id_pattern"><![CDATA[REG.CTSW112]]></config>
