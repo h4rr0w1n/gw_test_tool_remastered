@@ -108,7 +108,29 @@ class VerifyingConsumer(MessagingHandler):
             body_val = msg.body.value
             
         print(f"Payload Type: {type(body_val)}")
-        print(f"Payload Data: {body_val}")
+        
+        # Calculate total bytes
+        total_bytes = 0
+        if isinstance(body_val, bytes):
+            total_bytes = len(body_val)
+        elif isinstance(body_val, str):
+            total_bytes = len(body_val.encode('utf-8'))
+        else:
+            try:
+                total_bytes = len(str(body_val).encode('utf-8'))
+            except:
+                total_bytes = 0
+                
+        body_str = str(body_val)
+        lines = body_str.splitlines()
+        
+        if len(lines) > 67:
+            truncated_body = "\n".join(lines[:67])
+            print(f"Payload Data:\n{truncated_body}\n\n... [Truncated {len(lines) - 67} lines]")
+            print(f"Total payload size: {total_bytes} bytes")
+        else:
+            print(f"Payload Data: {body_str}")
+            
         print("="*60 + "\n")
 
     def on_transport_error(self, event):
