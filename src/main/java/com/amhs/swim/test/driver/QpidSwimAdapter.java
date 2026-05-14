@@ -340,6 +340,10 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         String finalTopic = topic;
         if (isSolaceProfile()) finalTopic = sanitizeForSolace(topic);
         message.setAddress(finalTopic);
+        
+        // Add address to properties for JMS annotation detection
+        properties.put("address", finalTopic);
+        
         if (properties.containsKey("amqp_message_id")) {
             Object msgId = properties.get("amqp_message_id");
             // Solace fix: ensure Message-Id string is URI-safe if using Solace profile.
@@ -364,6 +368,59 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
             String rt = (String) properties.get("amhs_reply_to");
             if (isSolaceProfile()) rt = sanitizeForSolace(rt);
             message.setReplyTo(rt);
+        }
+        // Set correlation_id if present
+        if (properties.containsKey("amqp_correlation_id")) {
+            Object corrId = properties.get("amqp_correlation_id");
+            if (isSolaceProfile() && corrId instanceof String) {
+                corrId = sanitizeForSolace((String) corrId);
+            }
+            message.setCorrelationId(corrId);
+        }
+        // Set user_id if present (per EUR Doc 047 §4.5.2.13)
+        if (properties.containsKey("amqp_user_id")) {
+            Object userId = properties.get("amqp_user_id");
+            if (userId instanceof String) {
+                message.setUserId(((String) userId).getBytes(StandardCharsets.UTF_8));
+            } else if (userId instanceof byte[]) {
+                message.setUserId((byte[]) userId);
+            }
+        }
+        // Set expiry_time if present (per EUR Doc 047 §4.5.2.14 - TTL in milliseconds)
+        if (properties.containsKey("amqp_expiry_time")) {
+            Object expiryVal = properties.get("amqp_expiry_time");
+            if (expiryVal instanceof Number) {
+                message.setExpiryTime(((Number) expiryVal).longValue());
+            }
+        }
+        // Set group_id if present (per EUR Doc 047 §4.5.2.15)
+        if (properties.containsKey("amqp_group_id")) {
+            Object groupId = properties.get("amqp_group_id");
+            if (groupId instanceof String) {
+                String groupIdStr = (String) groupId;
+                if (isSolaceProfile()) {
+                    groupIdStr = sanitizeForSolace(groupIdStr);
+                }
+                message.setGroupId(groupIdStr);
+            }
+        }
+        // Set group_sequence if present (per EUR Doc 047 §4.5.2.16)
+        if (properties.containsKey("amqp_group_sequence")) {
+            Object groupSeq = properties.get("amqp_group_sequence");
+            if (groupSeq instanceof Number) {
+                message.setGroupSequence(((Number) groupSeq).intValue());
+            }
+        }
+        // Set reply_to_group_id if present (per EUR Doc 047 §4.5.2.17)
+        if (properties.containsKey("amqp_reply_to_group_id")) {
+            Object replyToGroupId = properties.get("amqp_reply_to_group_id");
+            if (replyToGroupId instanceof String) {
+                String replyToGroupIdStr = (String) replyToGroupId;
+                if (isSolaceProfile()) {
+                    replyToGroupIdStr = sanitizeForSolace(replyToGroupIdStr);
+                }
+                message.setReplyToGroupId(replyToGroupIdStr);
+            }
         }
         if (properties.containsKey("content_type")) {
             message.setContentType((String) properties.get("content_type"));
@@ -506,6 +563,19 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
     private void applyBrokerProfileAnnotations(Map<Symbol, Object> annotations, Map<String, Object> properties) {
         String profileStr = (String) properties.getOrDefault("amqp_broker_profile", "STANDARD");
         SwimDriver.AMQPProperties.BrokerProfile profile = SwimDriver.AMQPProperties.BrokerProfile.valueOf(profileStr);
+        
+        // Add JMS mapping annotations per AMQP 1.0 JMS spec
+        // x-opt-jms-dest: byte(0) for queue, byte(1) for topic
+        String address = (String) properties.get("address");
+        if (address != null) {
+            boolean isTopic = address.toUpperCase().contains("TOPIC");
+            annotations.put(Symbol.valueOf("x-opt-jms-dest"), (byte)(isTopic ? 1 : 0));
+        } else {
+            annotations.put(Symbol.valueOf("x-opt-jms-dest"), (byte)0); // default to queue
+        }
+        
+        // x-opt-jms-msg-type: byte(3) for regular message, byte(4) for request, etc.
+        annotations.put(Symbol.valueOf("x-opt-jms-msg-type"), (byte)3); // default to regular message
         
         switch (profile) {
             case AZURE_SERVICE_BUS:

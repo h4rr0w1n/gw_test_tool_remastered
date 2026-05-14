@@ -16,8 +16,11 @@
   <case id="CTSW101">
     <!-- Msg 1: Text message with AMQP priority default (4) → DD/Normal in AMHS -->
     <msg idx="1"><![CDATA[[CTSW101-1] Test message priority-4 content text]]></msg>
-    <!-- Msg 2: Binary message (PDF file path) - loaded from resources -->
-    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <!-- Msg 2: Binary message (PDF file path) - loaded from materials directory -->
+    <msg idx="2"><![CDATA[materials/sample.pdf]]></msg>
+    <!-- IPM-ID and Registered-ID patterns per EUR Doc 047 §4.5.4.27-4.5.4.31 -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW101.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW101.{idx}]]></config>
   </case>
 
   <!-- CTSW102: Reject AMQP messages missing required information (Erroneous AMQP messages E1) -->
@@ -27,16 +30,19 @@
     <msg idx="1"><![CDATA[[CTSW102-1] Erroneous Message 1]]></msg>
     <msg idx="2"><![CDATA[[CTSW102-2] Erroneous Message 2]]></msg>
     <msg idx="3"><![CDATA[[CTSW102-3] Erroneous Message 3]]></msg>
-    <msg idx="4"><![CDATA[]]></msg> <!-- Empty payload for Msg 4 -->
+    <msg idx="4"><![CDATA[]]></msg> <!-- Empty payload for Msg 4 (amqp-value empty) -->
     <msg idx="5"><![CDATA[[CTSW102-5] Erroneous Message 5]]></msg>
     <msg idx="6"><![CDATA[[CTSW102-6] Erroneous Message 6]]></msg>
     <!-- Binary Messages (7–12): File-based payloads -->
-    <msg idx="7"><![CDATA[src/main/resources/sample.pdf]]></msg>
-    <msg idx="8"><![CDATA[src/main/resources/sample.pdf]]></msg>
-    <msg idx="9"><![CDATA[src/main/resources/sample.pdf]]></msg>
-    <msg idx="10"><![CDATA[]]></msg> <!-- Empty binary payload for Msg 10 -->
-    <msg idx="11"><![CDATA[src/main/resources/sample.pdf]]></msg>
-    <msg idx="12"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="7"><![CDATA[materials/sample.pdf]]></msg>
+    <msg idx="8"><![CDATA[materials/sample.pdf]]></msg>
+    <msg idx="9"><![CDATA[materials/sample.pdf]]></msg>
+    <msg idx="10"><![CDATA[]]></msg> <!-- Empty binary payload for Msg 10 (data element empty) -->
+    <msg idx="11"><![CDATA[materials/sample.pdf|/C=EU/ADMD=ICAO/PRMD=TEST/O=GATEWAY/OU=AMHS/CN=LONGADDR1]]></msg>
+    <msg idx="12"><![CDATA[materials/sample.pdf]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW102.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW102.{idx}]]></config>
   </case>
 
   <!-- CTSW103: ATSMHS Service Level conversion (Basic/Extended/Content-based/Recipient-based) -->
@@ -45,17 +51,20 @@
     <!-- Msg 1: Basic/Text -->
     <msg idx="1"><![CDATA[[CTSW103-1] Service Level Basic Text Message]]></msg>
     <!-- Msg 2: Basic/Binary (expected to be rejected) -->
-    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="2"><![CDATA[materials/sample.pdf]]></msg>
     <!-- Msg 3: Extended/Text -->
     <msg idx="3"><![CDATA[[CTSW103-3] Service Level Extended Text Message]]></msg>
     <!-- Msg 4: Content-based/Binary → Extended mapping -->
-    <msg idx="4"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="4"><![CDATA[materials/sample.pdf]]></msg>
     <!-- Msg 5: Content-based/Text → Basic mapping -->
     <msg idx="5"><![CDATA[[CTSW103-5] Service Level Content-Based Text]]></msg>
     <!-- Msg 6: Recipient-based/All extended capable → Extended -->
     <msg idx="6"><![CDATA[[CTSW103-6] Service Level Recipient-Based All Extended]]></msg>
     <!-- Msg 7: Recipient-based/Mixed recipients → Basic fallback -->
     <msg idx="7"><![CDATA[[CTSW103-7] Service Level Recipient-Based Mixed]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW103.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW103.{idx}]]></config>
   </case>
 
   <!-- CTSW104: AMQP to AMHS Priority Mapping -->
@@ -145,17 +154,20 @@
   <!-- Content-type mapping per EUR Doc 047 §4.5.1.6 -->
   <case id="CTSW110">
     <!-- Msg 1: octet-stream + empty data + empty amqp-value → REJECT -->
-    <msg idx="1"><![CDATA[N/A]]></msg>
+    <msg idx="1"><![CDATA[]]></msg>
     <!-- Msg 2: text/utf-8 + data present + amqp-value empty → REJECT -->
-    <msg idx="2"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="2"><![CDATA[materials/sample.pdf]]></msg>
     <!-- Msg 3: octet-stream + data present + amqp-value empty → ACCEPT -->
-    <msg idx="3"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="3"><![CDATA[materials/sample.pdf]]></msg>
     <!-- Msg 4: text/utf-8 + amqp-value present + data empty → ACCEPT -->
     <msg idx="4"><![CDATA[[CTSW110-4] Content-Type Text Payload]]></msg>
     <!-- Msg 5 (opt): text/utf-16 → REJECT -->
     <msg idx="5"><![CDATA[[CTSW110-5] UTF-16 Payload]]></msg>
     <!-- Msg 6 (opt): text/utf-8 + both amqp-value and data present → REJECT -->
     <msg idx="6"><![CDATA[[CTSW110-6] Both Payload Fields]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW110.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW110]]></config>
   </case>
 
   <!-- CTSW111: Maximum message size enforcement -->
@@ -164,11 +176,14 @@
     <!-- Msg 1: text within size limit -->
     <msg idx="1"><![CDATA[[CTSW111-1] 1 KB Text Payload]]></msg>
     <!-- Msg 2: binary file within size limit -->
-    <msg idx="2"><![CDATA[src/main/resources/small_payload.bin]]></msg>
+    <msg idx="2"><![CDATA[materials/small_payload.bin]]></msg>
     <!-- Msg 3: text exceeding size limit (generated in code) -->
     <msg idx="3"><![CDATA[OVER max]]></msg>
     <!-- Msg 4: binary file exceeding size limit -->
-    <msg idx="4"><![CDATA[src/main/resources/large_payload.bin]]></msg>
+    <msg idx="4"><![CDATA[materials/large_payload.bin]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW111.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW111]]></config>
   </case>
 
   <!-- CTSW112: Maximum recipient count enforcement -->
@@ -176,9 +191,9 @@
   <!-- CRITICAL: Messages use external address files (not inline payloads) -->
   <case id="CTSW112">
     <!-- Msg 1: Load 512 addresses from file → ACCEPT -->
-    <msg idx="1"><![CDATA[src/main/resources/address_512.txt]]></msg>
+    <msg idx="1"><![CDATA[materials/address_512.txt]]></msg>
     <!-- Msg 2: Load 513 addresses from file → REJECT -->
-    <msg idx="2"><![CDATA[src/main/resources/address_513.txt]]></msg>
+    <msg idx="2"><![CDATA[materials/address_513.txt]]></msg>
   </case>
 
   <!-- CTSW113: Receipt and Non-Receipt Notifications (RN/NRN) -->
@@ -188,6 +203,9 @@
     <msg idx="1"><![CDATA[[CTSW113-1] Notification Request NRN Expected]]></msg>
     <!-- Msg 2: RN expected (accept message in AMHS Tool to trigger) -->
     <msg idx="2"><![CDATA[[CTSW113-2] Notification Request RN Expected]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW113.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW113]]></config>
   </case>
 
   <!-- CTSW114: Non-Delivery Report (NDR) handling -->
@@ -195,6 +213,13 @@
   <case id="CTSW114">
     <!-- Msg 1: Trigger NDR by deleting message in AMHS Tool -->
     <msg idx="1"><![CDATA[[CTSW114-1] Trigger Non-Delivery Report]]></msg>
+    <!-- amhs_originator: REQUIRED 8-char AFTN address or full AMHS MF-address for NDR return path -->
+    <config key="amhs_originator"><![CDATA[VVTSYMYX]]></config>
+    <!-- amhs_notification_request: must include 'nrn' per EUR Doc 047 §4.4.7.3 -->
+    <config key="amhs_notification_request"><![CDATA[nrn]]></config>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW114.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW114]]></config>
   </case>
 
   <!-- CTSW115: Body-part type and content encoding mapping -->
@@ -208,15 +233,21 @@
     <msg idx="3"><![CDATA[[CTSW115-3] Lorem ipsum 646]]></msg>
     <!-- Msg 4: General text body part (ISO-8859-1) -->
     <msg idx="4"><![CDATA[[CTSW115-4] Lorem ipsum 8859]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW115.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW115]]></config>
   </case>
 
   <!-- CTSW116: File Transfer Body Part (FTBP) with GZIP compression -->
   <!-- FTBP mapping per EUR Doc 047 §4.5.2.6–§4.5.2.8, §4.5.2.13–§4.5.2.14b -->
   <case id="CTSW116">
     <!-- Msg 1: Binary file with FTBP attributes (no compression) -->
-    <msg idx="1" content-type="application/octet-stream" body-type="DATA"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="1" content-type="application/octet-stream" body-type="DATA"><![CDATA[materials/sample.pdf]]></msg>
     <!-- Msg 2: Same binary file with GZIP compression (IUT must decompress) -->
-    <msg idx="2" content-type="application/octet-stream" body-type="DATA"><![CDATA[src/main/resources/sample.pdf]]></msg>
+    <msg idx="2" content-type="application/octet-stream" body-type="DATA"><![CDATA[materials/sample.pdf]]></msg>
+    <!-- IPM-ID and Registered-ID patterns -->
+    <config key="ipm_id_pattern"><![CDATA[IPM.CTSW116.{ts}]]></config>
+    <config key="reg_id_pattern"><![CDATA[REG.CTSW116]]></config>
   </case>
 
 </defaults>
