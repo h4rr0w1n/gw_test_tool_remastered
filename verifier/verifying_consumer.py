@@ -50,38 +50,41 @@ class VerifyingConsumer(MessagingHandler):
         print("\n" + "="*60)
         print("--- Message Received ---")
         
-        # Display AMQP properties in a fixed format
-        standard_attrs = set(['id', 'user_id', 'address', 'subject', 'reply_to', 
-                              'correlation_id', 'content_type', 'content_encoding', 
-                              'expiry_time', 'creation_time', 'group_id', 
-                              'group_sequence', 'reply_to_group_id', 'priority'])
-        fixed_props = [
-            'id', 'user_id', 'address', 'subject', 'reply_to', 
-            'correlation_id', 'content_type', 'content_encoding', 
-            'expiry_time', 'creation_time', 'group_id', 
-            'group_sequence', 'reply_to_group_id',
-            'amqp_priority', 'amqp_broker_profile', 'amhs_recipients', 
-            'amhs_ipm_id', 'amhs_registered_identifier', 'amhs_originator', 
-            'amhs_user_visible_string', 'amqp_body_type'
-        ]
-        print("Properties:")
-        for i, prop in enumerate(fixed_props):
-            if prop == 'amqp_priority':
-                value = getattr(msg, 'priority', None)
-            elif prop in standard_attrs:
-                value = getattr(msg, prop, None)
-            else:
-                value = None
-                if msg.properties is not None:
-                    value = msg.properties.get(prop)
+        # Display standard message properties dynamically
+        standard_attrs = ['id', 'user_id', 'address', 'subject', 'reply_to', 
+                          'correlation_id', 'content_type', 'content_encoding', 
+                          'expiry_time', 'creation_time', 'group_id', 
+                          'group_sequence', 'reply_to_group_id', 'priority']
+        
+        print("Standard Properties:")
+        for prop in standard_attrs:
+            val = getattr(msg, prop, None)
+            if val is None and prop == 'content_encoding':
+                val = 'None'
+            elif val is None:
+                val = ""
+            print(f"  {prop}: {val}")
             
-            if value is None:
-                if prop == 'content_encoding':
-                    value = 'None'
-                else:
-                    value = ""
+        print("\nApplication Properties:")
+        if msg.properties:
+            for k, v in msg.properties.items():
+                print(f"  {k}: {v}")
+        else:
+            print("  None")
             
-            print(f"{prop}: {value}")
+        print("\nMessage Annotations:")
+        if msg.annotations:
+            for k, v in msg.annotations.items():
+                print(f"  {k}: {v}")
+        else:
+            print("  None")
+            
+        print("\nDelivery Annotations:")
+        if msg.instructions:
+            for k, v in msg.instructions.items():
+                print(f"  {k}: {v}")
+        else:
+            print("  None")
         
         # Extract and show the body payload
         print("\n--- Payload ---")

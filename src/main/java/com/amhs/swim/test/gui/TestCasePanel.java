@@ -603,10 +603,15 @@ public class TestCasePanel extends JPanel {
         if (raw == null) raw = "";
 
         switch (caseId) {
+            // ── CTSW101 ──────────────────────────────────────────────────────────
+            case "CTSW101": {
+                specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
+                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
+                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", mIdx == 1 ? "Standard Text Message" : "Standard Binary Message"});
+                break;
+            }
             // ── CTSW102 ──────────────────────────────────────────────────────────
-            // msgs 1-6: text payload key "payload"
-            // msgs 7-12: binary file key "binPayload_N"
-            // msg 11 extra: recip_11 (>8-char recipient per EUR Doc 047 §4.5.1.4)
             case "CTSW102": {
                 if (mIdx >= 7 && mIdx <= 12) {
                     // Parse pipe: filePath|recip_11 (only msg 11 has second segment)
@@ -620,6 +625,13 @@ public class TestCasePanel extends JPanel {
                 } else {
                     specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
                 }
+                
+                if (mIdx == 2 || mIdx == 8) {
+                    specs.add(new String[]{"amqp_message_id", "AMQP MESSAGE-ID (empty → REJECT)", ""});
+                }
+                if (mIdx == 3 || mIdx == 9) {
+                    specs.add(new String[]{"creation_time", "AMQP CREATION-TIME (0 → REJECT)", "0"});
+                }
                 break;
             }
             // ── CTSW103 ──────────────────────────────────────────────────────────
@@ -630,34 +642,43 @@ public class TestCasePanel extends JPanel {
                 } else {
                     specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
                 }
+                String sl = "basic";
+                if (mIdx == 3 || mIdx == 4) sl = "extended";
+                else if (mIdx == 5 || mIdx == 6) sl = "content-based";
+                else if (mIdx == 7 || mIdx == 8) sl = "recipient-based";
+                specs.add(new String[]{"amhs_service_level", "AMHS SERVICE LEVEL", sl});
+                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
+                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "Service Level Test"});
                 break;
             }
             // ── CTSW104 ──────────────────────────────────────────────────────────
-            case "CTSW104":
+            case "CTSW104": {
                 specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
+                specs.add(new String[]{"amhs_ats_pri", "ATS PRIORITY (SS/DD/FF/GG/KK)", (mIdx == 1 || mIdx == 2) ? "at" : "KK"});
                 break;
+            }
             // ── CTSW105 ──────────────────────────────────────────────────────────
             // msg 2 has a filing time (always 250102); rest is payload
             case "CTSW105": {
                 specs.add(new String[]{"p" + mIdx, "TEXT PAYLOAD", raw});
-                if (mIdx == 2) {
-                    specs.add(new String[]{"amhs_ats_ft", "AMHS ATS FILING TIME (DDhhmm)", "250102"});
-                }
+                specs.add(new String[]{"amhs_ats_ft", "AMHS ATS FILING TIME (DDhhmm)", mIdx == 2 ? "250102" : ""});
+                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
+                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "Filing Time Test"});
                 break;
             }
             // ── CTSW106 ──────────────────────────────────────────────────────────
             // executeSingle reads inputs.get("p"+idx), splits by "|": part[0]=ohi, part[1]=body
-            // We expose both as separate fields using the SAME p<N> key split logic
-            // but to avoid double-read issues we expose them as separate keys and
-            // override the default pipe delivery:
-            // Actually CTSW106's executeSingle reads "p"+idx as raw pipe string.
-            // So expose as single "p<N>" = "OHI|BODY" format for user to edit directly.
             case "CTSW106": {
                 String[] parts = raw.split("\\|", 2);
                 String defOhi  = parts.length > 0 ? parts[0].trim() : "";
                 String defBody = parts.length > 1 ? parts[1].trim() : "OHI Content";
                 specs.add(new String[]{"amhs_ats_ohi_" + mIdx, "OHI (amhs_ats_ohi, msg " + mIdx + ")", defOhi});
                 specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",                         defBody});
+                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
+                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "OHI Data Test"});
                 break;
             }
             // ── CTSW107 ──────────────────────────────────────────────────────────
@@ -684,14 +705,16 @@ public class TestCasePanel extends JPanel {
             // executeSingle reads "p1" as "originator|body"
             case "CTSW108": {
                 String[] parts = raw.split("\\|", 2);
-                specs.add(new String[]{"originator_108", "AMHS ORIGINATOR (known 8-char)", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
+                specs.add(new String[]{"amhs_originator", "AMHS ORIGINATOR (known 8-char)", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
+                specs.add(new String[]{"originator_108", "amhs_originator compatibility", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
                 specs.add(new String[]{"body_108",        "BODY PAYLOAD",                  parts.length > 1 ? parts[1].trim() : "Known Orig Body"});
                 break;
             }
             // ── CTSW109 ──────────────────────────────────────────────────────────
             case "CTSW109": {
                 String[] parts = raw.split("\\|", 2);
-                specs.add(new String[]{"originator_109", "AMHS ORIGINATOR (unknown → fallback)", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
+                specs.add(new String[]{"amhs_originator", "AMHS ORIGINATOR (unknown → fallback)", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
+                specs.add(new String[]{"originator_109", "amhs_originator compatibility", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
                 specs.add(new String[]{"body_109",        "BODY PAYLOAD",                         parts.length > 1 ? parts[1].trim() : "Unknown Orig Body"});
                 break;
             }
@@ -728,8 +751,6 @@ public class TestCasePanel extends JPanel {
             case "CTSW112": {
                 String fileKey = (mIdx == 1) ? "addressFile_a" : "addressFile_b";
                 String bodyKey = "p" + mIdx + "_body";
-                // raw is a file path — show only the filename part in the field to avoid overflow,
-                // but store the full path so executeSingle can load the file
                 String displayPath = raw;
                 if (raw != null && raw.contains("/")) {
                     displayPath = raw.substring(raw.lastIndexOf('/') + 1).trim();
@@ -737,10 +758,11 @@ public class TestCasePanel extends JPanel {
                     displayPath = raw.substring(raw.lastIndexOf('\\') + 1).trim();
                 }
                 String expectedCount = (mIdx == 1) ? "512" : "513";
-                specs.add(new String[]{fileKey,
-                    "ADDRESS FILE (" + expectedCount + " lines, one address per line)",
-                    displayPath});
+                specs.add(new String[]{fileKey, "ADDRESS FILE (" + expectedCount + " lines, one address per line)", displayPath});
                 specs.add(new String[]{bodyKey, "MESSAGE BODY", "Msg " + (mIdx == 1 ? "512" : "513")});
+                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
+                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "Multiple Recipients Test"});
                 break;
             }
             // ── CTSW113 ──────────────────────────────────────────────────────────
@@ -795,6 +817,11 @@ public class TestCasePanel extends JPanel {
                 String fileKey = (mIdx == 1) ? "binFile" : "binFile2";
                 specs.add(new String[]{fileKey,              "BINARY FILE",                              defPath});
                 specs.add(new String[]{"amhs_ftbp_last_mod", "FTBP LAST MOD (DDMMYYhhmmssZ per §4.5.2.7)", defLastMod});
+                specs.add(new String[]{"swim_compression", "SWIM COMPRESSION (e.g. gzip)", mIdx == 1 ? "gzip" : ""});
+                specs.add(new String[]{"amhs_ftbp_file_name", "FTBP FILE NAME", "sample.pdf"});
+                specs.add(new String[]{"amhs_bodypart_type", "BODY PART TYPE", "file-transfer-body-part"});
+                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
                 break;
             }
             default:

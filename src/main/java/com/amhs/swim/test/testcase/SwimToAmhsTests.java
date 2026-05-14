@@ -51,9 +51,7 @@ public class SwimToAmhsTests {
 
     private void dual(Map<String, String> in, byte[] payload, SwimDriver.AMQPProperties props) throws Exception {
         if (in != null) {
-            if (in.containsKey("content_type")) {
-                props.setContentType(in.get("content_type"));
-            }
+            if (in.containsKey("content_type")) props.setContentType(in.get("content_type"));
             if (in.containsKey("amqp_priority")) {
                 String pStr = in.get("amqp_priority");
                 if (pStr != null && !pStr.isEmpty()) {
@@ -64,6 +62,36 @@ public class SwimToAmhsTests {
                 String bt = in.get("body_type");
                 if (bt != null && !bt.isEmpty()) {
                     try { props.setBodyType(SwimDriver.AMQPProperties.BodyType.valueOf(bt)); } catch (Exception ignored) {}
+                }
+            }
+            if (in.containsKey("amhs_ats_pri")) props.setAtsPri(in.get("amhs_ats_pri"));
+            if (in.containsKey("amhs_recipients")) props.setRecipients(in.get("amhs_recipients"));
+            if (in.containsKey("amhs_bodypart_type")) props.setBodyPartType(in.get("amhs_bodypart_type"));
+            if (in.containsKey("amhs_originator")) props.setOriginator(in.get("amhs_originator"));
+            if (in.containsKey("amhs_subject") || in.containsKey("subject_1") || in.containsKey("subject_2") || in.containsKey("subject_3") || in.containsKey("subject_4") || in.containsKey("subject_5")) {
+                // Determine subject if specifically passed in extra fields
+                for (int i=1; i<=5; i++) {
+                    if (in.containsKey("amhs_subject_" + i)) props.setSubject(in.get("amhs_subject_" + i));
+                    else if (in.containsKey("subject_" + i) && props.getSubject() == null) props.setSubject(in.get("subject_" + i));
+                }
+                if (in.containsKey("amhs_subject")) props.setSubject(in.get("amhs_subject"));
+            }
+            if (in.containsKey("amqp_message_id")) props.setMessageId(in.get("amqp_message_id"));
+            if (in.containsKey("amhs_ipm_id")) props.setIpmId(in.get("amhs_ipm_id"));
+            if (in.containsKey("amhs_registered_identifier")) props.setRegisteredId(in.get("amhs_registered_identifier"));
+            if (in.containsKey("amhs_user_visible_string")) props.setUserVisibleStr(in.get("amhs_user_visible_string"));
+            if (in.containsKey("amhs_ats_ft")) props.setFilingTime(in.get("amhs_ats_ft"));
+            if (in.containsKey("creation_time")) {
+                try { props.setCreationTime(Long.parseLong(in.get("creation_time"))); } catch (Exception ignored) {}
+            }
+            
+            for (Map.Entry<String, String> entry : in.entrySet()) {
+                String key = entry.getKey();
+                if (key.startsWith("amhs_") || key.startsWith("amqp_")) {
+                    // Avoid overwriting standard properties we just set
+                    if (!Arrays.asList("amhs_ats_pri", "amhs_recipients", "amhs_bodypart_type", "amhs_originator", "amhs_subject", "amqp_message_id", "amhs_ipm_id", "amhs_registered_identifier", "amhs_user_visible_string", "amhs_ats_ft", "amqp_priority", "creation_time").contains(key)) {
+                        props.setExtraProp(key, entry.getValue());
+                    }
                 }
             }
         }
