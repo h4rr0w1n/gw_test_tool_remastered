@@ -314,6 +314,13 @@ public class SwimDriver {
         private String dlHistory;        // amhs_dl_history
         private String secEnvelope;      // amhs_sec_envelope (signed messages)
         private String replyTo;          // amqp reply-to
+        // Standard AMQP 1.0 Properties per EUR Doc 047
+        private Object correlationId;    // amqp correlation-id
+        private Object userId;           // amqp user-id (byte[] or String)
+        private Long expiryTime;         // amqp expiry-time (TTL in ms)
+        private String groupId;          // amqp group-id
+        private Integer groupSequence;   // amqp group-sequence
+        private String replyToGroupId;   // amqp reply-to-group-id
         // Extra arbitrary application properties (persistent, safe from toMap() discard bug)
         private Map<String, Object> extraProps;
         
@@ -411,6 +418,25 @@ public class SwimDriver {
         public String getReplyTo() { return replyTo; }
         public void setReplyTo(String replyTo) { this.replyTo = replyTo; }
         
+        // Standard AMQP 1.0 Property Getters/Setters per EUR Doc 047
+        public Object getCorrelationId() { return correlationId; }
+        public void setCorrelationId(Object correlationId) { this.correlationId = correlationId; }
+        
+        public Object getUserId() { return userId; }
+        public void setUserId(Object userId) { this.userId = userId; }
+        
+        public Long getExpiryTime() { return expiryTime; }
+        public void setExpiryTime(Long expiryTime) { this.expiryTime = expiryTime; }
+        
+        public String getGroupId() { return groupId; }
+        public void setGroupId(String groupId) { this.groupId = groupId; }
+        
+        public Integer getGroupSequence() { return groupSequence; }
+        public void setGroupSequence(Integer groupSequence) { this.groupSequence = groupSequence; }
+        
+        public String getReplyToGroupId() { return replyToGroupId; }
+        public void setReplyToGroupId(String replyToGroupId) { this.replyToGroupId = replyToGroupId; }
+        
         /**
          * Convert to Map<String, Object> for use with SwimMessagingAdapter.
          * Extra properties set via setExtraProp() are included.
@@ -435,6 +461,13 @@ public class SwimDriver {
             if (dlHistory != null) map.put("amhs_dl_history", dlHistory);
             if (secEnvelope != null) map.put("amhs_sec_envelope", secEnvelope);
             if (replyTo != null) map.put("amhs_reply_to", replyTo);
+            // Standard AMQP 1.0 Properties per EUR Doc 047
+            if (correlationId != null) map.put("amqp_correlation_id", correlationId);
+            if (userId != null) map.put("amqp_user_id", userId);
+            if (expiryTime != null) map.put("amqp_expiry_time", expiryTime);
+            if (groupId != null) map.put("amqp_group_id", groupId);
+            if (groupSequence != null) map.put("amqp_group_sequence", groupSequence);
+            if (replyToGroupId != null) map.put("amqp_reply_to_group_id", replyToGroupId);
             if (messageAnnotations != null && !messageAnnotations.isEmpty()) map.put("amqp_message_annotations", messageAnnotations);
             if (deliveryAnnotations != null && !deliveryAnnotations.isEmpty()) map.put("amqp_delivery_annotations", deliveryAnnotations);
             if (footer != null && !footer.isEmpty()) map.put("amqp_footer", footer);
@@ -463,6 +496,13 @@ public class SwimDriver {
             if (map.containsKey("amhs_dl_history")) props.setDlHistory((String) map.get("amhs_dl_history"));
             if (map.containsKey("amhs_sec_envelope")) props.setSecEnvelope((String) map.get("amhs_sec_envelope"));
             if (map.containsKey("amhs_reply_to")) props.setReplyTo((String) map.get("amhs_reply_to"));
+            // Standard AMQP 1.0 Properties per EUR Doc 047
+            if (map.containsKey("amqp_correlation_id")) props.setCorrelationId(map.get("amqp_correlation_id"));
+            if (map.containsKey("amqp_user_id")) props.setUserId(map.get("amqp_user_id"));
+            if (map.containsKey("amqp_expiry_time")) props.setExpiryTime((Long) map.get("amqp_expiry_time"));
+            if (map.containsKey("amqp_group_id")) props.setGroupId((String) map.get("amqp_group_id"));
+            if (map.containsKey("amqp_group_sequence")) props.setGroupSequence((Integer) map.get("amqp_group_sequence"));
+            if (map.containsKey("amqp_reply_to_group_id")) props.setReplyToGroupId((String) map.get("amqp_reply_to_group_id"));
             if (map.containsKey("amqp_message_annotations")) props.setMessageAnnotations((Map<String, Object>) map.get("amqp_message_annotations"));
             if (map.containsKey("amqp_delivery_annotations")) props.setDeliveryAnnotations((Map<String, Object>) map.get("amqp_delivery_annotations"));
             if (map.containsKey("amqp_footer")) props.setFooter((Map<String, Object>) map.get("amqp_footer"));
