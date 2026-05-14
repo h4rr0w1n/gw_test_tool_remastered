@@ -1048,8 +1048,6 @@ public class TestCasePanel extends JPanel {
             }
         }
         
-        String logMsg = buildVerifierStyleMessageView(msgIndex, priority, contentType, brokerProfile, recipDisplay, bodyType, extraFieldsMap, finalPayload);
-        Logger.logCase(currentCase.getTestCaseId(), "INFO", "\n" + logMsg);
         Logger.logCase(currentCase.getTestCaseId(), "INFO",
             "Destinations → Topic: " + resolvedTopic + "  |  Queue: " + resolvedQueue);
 

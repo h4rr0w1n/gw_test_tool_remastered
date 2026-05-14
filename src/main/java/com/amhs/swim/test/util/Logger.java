@@ -199,7 +199,9 @@ public class Logger {
         if (props != null) {
             props.forEach((k, v) -> {
                 if (k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_broker_") || k.startsWith("amqp_body_")) {
-                    sb.append("  ").append(k).append(": ").append(v).append("\n");
+                    String val = v == null ? "null" : String.valueOf(v);
+                    if (val.length() > 300) val = val.substring(0, 297) + "...";
+                    sb.append("  ").append(k).append(": ").append(val).append("\n");
                 }
             });
         }
@@ -219,7 +221,7 @@ public class Logger {
                 sb.append("Payload Data:\n");
                 for (int i = 0; i < 67; i++) {
                     String line = lines[i];
-                    if (line.length() > 500) line = line.substring(0, 497) + "...";
+                    if (line.length() > 300) line = line.substring(0, 297) + "...";
                     sb.append(line).append(i == 66 ? "" : "\n");
                 }
                 sb.append("\n\n... [Truncated ").append(lines.length - 67).append(" lines]\n");
@@ -228,8 +230,8 @@ public class Logger {
                 sb.append("Payload Data: ");
                 for (int i = 0; i < lines.length; i++) {
                     String line = lines[i];
-                    if (line.length() > 500) {
-                        sb.append(line.substring(0, 497)).append("... (line ").append(i+1).append(" too long)");
+                    if (line.length() > 300) {
+                        sb.append(line.substring(0, 297)).append("... (line ").append(i+1).append(" too long)");
                     } else {
                         sb.append(line);
                     }
