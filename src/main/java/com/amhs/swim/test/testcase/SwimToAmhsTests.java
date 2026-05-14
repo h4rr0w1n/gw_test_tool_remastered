@@ -326,12 +326,12 @@ public class SwimToAmhsTests {
                 new TestMessage(4,  "TEXT | empty amqp-value → REJECT",                         "",                  true,  false, "payload"),
                 new TestMessage(5,  "TEXT | empty amhs_recipients → REJECT",                    "CTSW102 Rejection", true,  false, "payload"),
                 new TestMessage(6,  "TEXT | empty content-type → REJECT (optional)",            "CTSW102 Rejection", false, true,  "payload"),
-                new TestMessage(7,  "BINARY | priority=10 (invalid) → REJECT",                  "src/main/resources/sample.pdf", true,  false, "binPayload_7", true),
-                new TestMessage(8,  "BINARY | empty message-id → REJECT (optional)",            "src/main/resources/sample.pdf", false, true,  "binPayload_8", true),
-                new TestMessage(9,  "BINARY | creation-time=0 → REJECT (optional)",             "src/main/resources/sample.pdf", false, true,  "binPayload_9", true),
+                new TestMessage(7,  "BINARY | priority=10 (invalid) → REJECT",                  "materials/sample.pdf", true,  false, "binPayload_7", true),
+                new TestMessage(8,  "BINARY | empty message-id → REJECT (optional)",            "materials/sample.pdf", false, true,  "binPayload_8", true),
+                new TestMessage(9,  "BINARY | creation-time=0 → REJECT (optional)",             "materials/sample.pdf", false, true,  "binPayload_9", true),
                 new TestMessage(10, "BINARY | empty data element → REJECT",                     "",                              true,  false, "binPayload_10", true),
-                new TestMessage(11, "BINARY | amhs_recipients >8 chars → REJECT",               "src/main/resources/sample.pdf", true,  false, "binPayload_11", true),
-                new TestMessage(12, "BINARY | empty content-type → REJECT (optional)",          "src/main/resources/sample.pdf", false, true,  "binPayload_12", true)
+                new TestMessage(11, "BINARY | amhs_recipients >8 chars → REJECT",               "materials/sample.pdf", true,  false, "binPayload_11", true),
+                new TestMessage(12, "BINARY | empty content-type → REJECT (optional)",          "materials/sample.pdf", false, true,  "binPayload_12", true)
             );
         }
 
@@ -517,9 +517,9 @@ public class SwimToAmhsTests {
         public List<TestMessage> getMessages() {
             return List.of(
                 new TestMessage(1, "amhs_service_level=basic | text/plain | amqp-value | ACCEPT",       "CTSW103 Basic",         true, false, "p1"),
-                new TestMessage(2, "amhs_service_level=basic | application/octet-stream | REJECT",       "src/main/resources/sample.pdf", true, false, "binFile_2", true),
+                new TestMessage(2, "amhs_service_level=basic | application/octet-stream | REJECT",       "materials/sample.pdf", true, false, "binFile_2", true),
                 new TestMessage(3, "amhs_service_level=extended | text/plain | amqp-value | ACCEPT",     "CTSW103 Extended",      true, false, "p3"),
-                new TestMessage(4, "amhs_service_level=content-based | binary → Extended mapping",       "src/main/resources/sample.pdf", true, false, "binFile_4", true),
+                new TestMessage(4, "amhs_service_level=content-based | binary → Extended mapping",       "materials/sample.pdf", true, false, "binFile_4", true),
                 new TestMessage(5, "amhs_service_level=content-based | text → Basic mapping",            "CTSW103 CText",         true, false, "p5"),
                 new TestMessage(6, "amhs_service_level=recipient-based | all recipients ext | → Ext",   "CTSW103 RBAllExt",      true, false, "p6"),
                 new TestMessage(7, "amhs_service_level=recipient-based | mixed recipients | → Basic",    "CTSW103 RBMixed",       true, false, "p7")
@@ -1201,8 +1201,8 @@ public class SwimToAmhsTests {
         public List<TestMessage> getMessages() {
             return List.of(
                 new TestMessage(1, "application/octet-stream | data=EMPTY | amqp-value=EMPTY → REJECT",           "N/A",   true,  false, "dummy"),
-                new TestMessage(2, "text/plain;charset=utf-8 | amqp-value=EMPTY | data=PRESENT → REJECT",         "src/main/resources/sample.pdf", true,  false, "binFile_2", true),
-                new TestMessage(3, "application/octet-stream | amqp-value=EMPTY | data=PRESENT → ACCEPT",         "src/main/resources/sample.pdf", true,  false, "binFile_3", true),
+                new TestMessage(2, "text/plain;charset=utf-8 | amqp-value=EMPTY | data=PRESENT → REJECT",         "materials/sample.pdf", true,  false, "binFile_2", true),
+                new TestMessage(3, "application/octet-stream | amqp-value=EMPTY | data=PRESENT → ACCEPT",         "materials/sample.pdf", true,  false, "binFile_3", true),
                 new TestMessage(4, "text/plain;charset=utf-8 | amqp-value=PRESENT | data=EMPTY → ACCEPT",         "text-accept", true, false, "text_4"),
                 new TestMessage(5, "(opt.) text/plain;charset=utf-16 → REJECT",                                   "utf16",  false, true,  "text_5"),
                 new TestMessage(6, "(opt.) text/plain;charset=utf-8 | amqp-value+data both present → REJECT",     "both",   false, true,  "text_6")
@@ -1320,9 +1320,9 @@ public class SwimToAmhsTests {
         public List<TestMessage> getMessages() {
             return List.of(
                 new TestMessage(1, "(a) text/amqp-value size ≤ max → ACCEPT",   "1 KB text",   true, false, "maxSizeText"),
-                new TestMessage(2, "(b) binary/data size ≤ max → ACCEPT",        "src/main/resources/small_payload.bin", true, false, "maxSizeBin", true),
+                new TestMessage(2, "(b) binary/data size ≤ max → ACCEPT",        "materials/small_payload.bin", true, false, "maxSizeBin", true),
                 new TestMessage(3, "(c) text/amqp-value size > max → REJECT",   "OVER max",    true, false, "maxSizeTextOver"),
-                new TestMessage(4, "(d) binary/data size > max → REJECT",        "src/main/resources/large_payload.bin", true, false, "maxSizeBinOver", true)
+                new TestMessage(4, "(d) binary/data size > max → REJECT",        "materials/large_payload.bin", true, false, "maxSizeBinOver", true)
             );
         }
 
@@ -1467,9 +1467,9 @@ public class SwimToAmhsTests {
         public List<TestMessage> getMessages() {
             return List.of(
                 new TestMessage(1, "(a) Load file with 512 AMHS addresses → send → ACCEPT\n    Required: exactly 512 addresses (one per line)", 
-                                "src/main/resources/address_512.txt", true, false, "addressFile_a", true),
+                                "materials/address_512.txt", true, false, "addressFile_a", true),
                 new TestMessage(2, "(b) Load file with 513 AMHS addresses → send → REJECT\n    Required: exactly 513 addresses (one per line)\n    [Sync] copies file from message 1", 
-                                "src/main/resources/address_513.txt", true, false, "addressFile_b", true)
+                                "materials/address_513.txt", true, false, "addressFile_b", true)
             );
         }
 
@@ -1856,9 +1856,9 @@ public class SwimToAmhsTests {
         public List<TestMessage> getMessages() {
             return List.of(
                 new TestMessage(1, "binary file + FTBP attributes (file_name, object_size, last_mod) | no compression",
-                    "src/main/resources/sample.pdf", true, false, "binFile", true),
+                    "materials/sample.pdf", true, false, "binFile", true),
                 new TestMessage(2, "same file + swim_compression=gzip | IUT must decompress | FTBP contains original data",
-                    "src/main/resources/sample.pdf", true, false, "binFile2", true)
+                    "materials/sample.pdf", true, false, "binFile2", true)
             );
         }
 
@@ -1873,7 +1873,7 @@ public class SwimToAmhsTests {
             String configDefault = configMgr.getPayload("CTSW116", idx);
             String[] cfgParts = (configDefault != null && configDefault.contains("|"))
                 ? configDefault.split("\\|", 2) : new String[]{configDefault, "240101120000Z"};
-            String defFilePath = cfgParts[0] != null ? cfgParts[0].trim() : "src/main/resources/sample.pdf";
+            String defFilePath = cfgParts[0] != null ? cfgParts[0].trim() : "materials/sample.pdf";
             String defLastMod  = cfgParts.length > 1 ? cfgParts[1].trim() : "240101120000Z";
 
             String fileKey = idx == 1 ? "binFile" : "binFile2";
