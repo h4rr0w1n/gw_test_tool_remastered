@@ -1039,11 +1039,17 @@ public class TestCasePanel extends JPanel {
         String recipDisplay = caseId.equals("CTSW112")
             ? "[loaded from address file]"
             : amhsRecipients;
-        String logMsg = "Prepared message " + msgIndex + " properties: amqp_priority=" + priority
-            + ", content_type=" + contentType + ", broker_profile=" + brokerProfile
-            + ", amhs_recipients=" + recipDisplay + ", body_type=" + bodyType
-            + " | PAYLOAD: " + finalPayload;
-        Logger.logCase(currentCase.getTestCaseId(), "INFO", logMsg);
+            
+        Map<String, String> extraFieldsMap = new HashMap<>();
+        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+            String val = entry.getValue().getText();
+            if (val != null && !val.isEmpty()) {
+                extraFieldsMap.put(entry.getKey(), val);
+            }
+        }
+        
+        String logMsg = buildVerifierStyleMessageView(msgIndex, priority, contentType, brokerProfile, recipDisplay, bodyType, extraFieldsMap, finalPayload);
+        Logger.logCase(currentCase.getTestCaseId(), "INFO", "\n" + logMsg);
         Logger.logCase(currentCase.getTestCaseId(), "INFO",
             "Destinations → Topic: " + resolvedTopic + "  |  Queue: " + resolvedQueue);
 
@@ -1222,29 +1228,14 @@ public class TestCasePanel extends JPanel {
         String amhsRecipients = amhsRecipientsField.getText().trim();
         String bodyType = bodyTypeField.getText().trim();
 
-        CaseConfigManager cfgMgr = CaseConfigManager.getInstance();
-        String configuredDefault = cfgMgr.getPayload(currentCase.getTestCaseId(), currentMsg.getIndex());
-        String defaultData = (configuredDefault != null && !configuredDefault.isEmpty()) ? configuredDefault : currentMsg.getDefaultData();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("=== FULL PAYLOAD VIEW ===\n\n");
-        sb.append("CASE: ").append(currentCase.getTestCaseId()).append("    MSG_INDEX: ").append(currentMsg.getIndex()).append("\n\n");
-        sb.append("AMQP PROPERTIES:\n");
-        sb.append("  AMQP PRIORITY: ").append(priority).append("\n");
-        sb.append("  CONTENT TYPE: ").append(contentType).append("\n");
-        sb.append("  AMQP BROKER PROFILE: ").append(brokerProfile).append("\n");
-        sb.append("  AMHS RECIPIENTS: ").append(amhsRecipients).append("\n");
-        sb.append("  AMQP BODY TYPE: ").append(bodyType).append("\n\n");
-
-        sb.append("DEFAULT DATA (raw):\n");
-        sb.append(defaultData == null ? "(none)" : defaultData).append("\n\n");
-
-        sb.append("--- FIELD VALUES ---\n");
+        Map<String, String> extraFieldsMap = new HashMap<>();
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
-            sb.append("  ").append(entry.getKey().toUpperCase()).append(": ").append(entry.getValue().getText()).append("\n");
+            String val = entry.getValue().getText();
+            if (val != null && !val.isEmpty()) {
+                extraFieldsMap.put(entry.getKey(), val);
+            }
         }
 
-        // Show assembled payload that will be sent
         StringBuilder payloadBuilder = new StringBuilder();
         for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
             String txt = entry.getValue().getText();
@@ -1252,15 +1243,91 @@ public class TestCasePanel extends JPanel {
             if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
             payloadBuilder.append(txt);
         }
-        sb.append("\n--- COMPOSED PAYLOAD ---\n");
-        sb.append(payloadBuilder.toString()).append("\n");
+        String finalPayload = payloadBuilder.toString();
         
-        JTextArea textArea = new JTextArea(sb.toString());
+        String logMsg = buildVerifierStyleMessageView(currentMsg.getIndex(), priority, contentType, brokerProfile, amhsRecipients, bodyType, extraFieldsMap, finalPayload);
+        
+        JTextArea textArea = new JTextArea(logMsg);
         textArea.setEditable(false);
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setPreferredSize(new Dimension(600, 400));
         
         JOptionPane.showMessageDialog(this, scrollPane, "Full Payload View", JOptionPane.INFORMATION_MESSAGE);
+    }
+    
+    private String buildVerifierStyleMessageView(int msgIndex, String priority, String contentType, String brokerProfile, String amhsRecipients, String bodyType, Map<String, String> extraFields, String payloadData) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("============================================================\n");
+        sb.append("--- Message Received ---\n");
+        sb.append("Standard Properties:\n");
+        sb.append("  id: \n");
+        sb.append("  user_id: \n");
+        sb.append("  address: \n");
+        sb.append("  subject: \n");
+        sb.append("  reply_to: \n");
+        sb.append("  correlation_id: \n");
+        sb.append("  content_type: ").append(contentType).append("\n");
+        sb.append("  content_encoding: None\n");
+        sb.append("  expiry_time: \n");
+        sb.append("  creation_time: \n");
+        sb.append("  group_id: \n");
+        sb.append("  group_sequence: \n");
+        sb.append("  reply_to_group_id: \n");
+        sb.append("  priority: ").append(priority).append("\n");
+        
+        sb.append("\nApplication Properties:\n");
+        sb.append("  amqp_broker_profile: ").append(brokerProfile).append("\n");
+        
+        if (amhsRecipients != null && !amhsRecipients.isEmpty()) {
+            if ((amhsRecipients.contains(",") || amhsRecipients.contains(" ")) && amhsRecipients.length() > 30) {
+                sb.append("  amhs_recipients:\n");
+                String[] parts = amhsRecipients.contains(",") ? amhsRecipients.split(",") : amhsRecipients.split(" ");
+                java.util.List<String> list = new java.util.ArrayList<>();
+                for (String p : parts) {
+                    if (!p.trim().isEmpty()) list.add(p.trim());
+                }
+                for (int i = 0; i < list.size(); i += 8) {
+                    sb.append(" ");
+                    for (int j = 0; j < 8 && i + j < list.size(); j++) {
+                        sb.append(" ").append(list.get(i + j));
+                    }
+                    sb.append("\n");
+                }
+            } else {
+                sb.append("  amhs_recipients: ").append(amhsRecipients).append("\n");
+            }
+        }
+        sb.append("  amqp_body_type: ").append(bodyType).append("\n");
+        for (Map.Entry<String, String> entry : extraFields.entrySet()) {
+            sb.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+        }
+        
+        sb.append("\nMessage Annotations:\n  None\n");
+        sb.append("\nDelivery Annotations:\n  None\n");
+
+        sb.append("\n--- Payload ---\n");
+        sb.append("Payload Type: <class 'str'>\n");
+        
+        int totalBytes = 0;
+        if (payloadData != null) {
+            totalBytes = payloadData.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+            String[] lines = payloadData.split("\\r?\\n");
+            if (lines.length > 67) {
+                sb.append("Payload Data:\n");
+                for (int i = 0; i < 67; i++) {
+                    sb.append(lines[i]).append(i == 66 ? "" : "\n");
+                }
+                sb.append("\n\n... [Truncated ").append(lines.length - 67).append(" lines]\n");
+                sb.append("Total payload size: ").append(totalBytes).append(" bytes\n");
+            } else {
+                sb.append("Payload Data: ").append(payloadData).append("\n");
+            }
+        } else {
+            sb.append("Payload Data: \n");
+        }
+        
+        sb.append("============================================================\n");
+        return sb.toString();
     }
 }
