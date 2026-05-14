@@ -81,10 +81,7 @@ class VerifyingConsumer(MessagingHandler):
                 else:
                     value = ""
             
-            # Format as a single-quoted string, escaping interior single quotes
-            escaped_value = str(value).replace("'", "\\'")
-            
-            print(f"'{prop}': '{escaped_value}'")
+            print(f"{prop}: {value}")
         
         # Extract and show the body payload
         print("\n--- Payload ---")

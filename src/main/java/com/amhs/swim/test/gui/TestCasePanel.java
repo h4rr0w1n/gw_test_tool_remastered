@@ -224,7 +224,8 @@ public class TestCasePanel extends JPanel {
             "text/plain; charset=\"utf-16\"",
             "application/octet-stream",
             "application/xml",
-            "application/json"
+            "application/json",
+            ""
         });
         contentTypeCombo.setEditable(true);
         configFormPanel.add(contentTypeCombo, gbc);
@@ -470,6 +471,9 @@ public class TestCasePanel extends JPanel {
         if (txt.contains("binary") || txt.contains("application/octet-stream")) {
             ctype = "application/octet-stream";
             btype = "DATA";
+        }
+        if (txt.contains("empty content-type")) {
+            ctype = "";
         }
         if (txt.contains("charset=\"utf-16\"")) ctype = "text/plain; charset=\"utf-16\"";
         String caseId = currentCase.getTestCaseId();

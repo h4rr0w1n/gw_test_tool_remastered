@@ -50,6 +50,23 @@ public class SwimToAmhsTests {
     }
 
     private void dual(Map<String, String> in, byte[] payload, SwimDriver.AMQPProperties props) throws Exception {
+        if (in != null) {
+            if (in.containsKey("content_type")) {
+                props.setContentType(in.get("content_type"));
+            }
+            if (in.containsKey("amqp_priority")) {
+                String pStr = in.get("amqp_priority");
+                if (pStr != null && !pStr.isEmpty()) {
+                    try { props.setAmqpPriority(Short.parseShort(pStr)); } catch (Exception ignored) {}
+                }
+            }
+            if (in.containsKey("body_type")) {
+                String bt = in.get("body_type");
+                if (bt != null && !bt.isEmpty()) {
+                    try { props.setBodyType(SwimDriver.AMQPProperties.BodyType.valueOf(bt)); } catch (Exception ignored) {}
+                }
+            }
+        }
         swimDriver.publishToQueue(
             in != null ? in.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE"))
                        : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE"),
