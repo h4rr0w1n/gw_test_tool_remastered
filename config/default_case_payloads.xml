@@ -126,14 +126,14 @@
   <!-- CTSW107: Subject field mapping with length enforcement -->
   <!-- Subject trimming to 128 chars per EUR Doc 047 §4.5.2.3 -->
   <case id="CTSW107">
-    <!-- Msg 1: AMQP subject > 128 chars (will be trimmed to 128) -->
+    <!-- Msg 1: AMQP subject > 128 chars, empty amhs_subject application property -->
     <msg idx="1"><![CDATA[[CTSW107-1] SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS | Msg1 Payload]]></msg>
-    <!-- Msg 2: AMQP subject (normal, < 128) -->
+    <!-- Msg 2: AMQP subject (normal), empty amhs_subject application property -->
     <msg idx="2"><![CDATA[[CTSW107-2] Normal Subject | Msg2 Payload]]></msg>
-    <!-- Msg 3: empty AMQP subject + amhs_subject app prop -->
-    <msg idx="3"><![CDATA[[CTSW107-3] AMHS App Prop Subject | Msg3 Payload]]></msg>
-    <!-- Msg 4: both AMQP subject and amhs_subject (amhs_subject wins) -->
-    <msg idx="4"><![CDATA[[CTSW107-4] AMQP Subject | AMHS App Prop Subject | Msg4 Payload]]></msg>
+    <!-- Msg 3: empty AMQP subject property, amhs_subject="Subject example" -->
+    <msg idx="3"><![CDATA[[CTSW107-3] | Subject example | Msg3 Payload]]></msg>
+    <!-- Msg 4: AMQP subject="subject from properties", amhs_subject="subject from application property field" -->
+    <msg idx="4"><![CDATA[[CTSW107-4] subject from properties | subject from application property field | Msg4 Payload]]></msg>
   </case>
 
   <!-- CTSW108: Known originator address conversion -->

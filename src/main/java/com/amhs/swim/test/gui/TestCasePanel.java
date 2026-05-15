@@ -693,21 +693,19 @@ public class TestCasePanel extends JPanel {
             }
             // ── CTSW107 ──────────────────────────────────────────────────────────
             // executeSingle reads "p"+idx as raw pipe string
-            // msg1: subject|body  msg2: subject|body  msg3: amhs_subject|body  msg4: subject|amhs_subject|body
+            // msg1: subject|body  msg2: subject|body  msg3: |amhs_subject|body  msg4: subject|amhs_subject|body
             case "CTSW107": {
                 String[] parts = raw.split("\\|", -1);
-                if (mIdx == 5) {
-                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",          parts.length > 0 ? parts[0].trim() : ""});
-                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (wins)",    parts.length > 1 ? parts[1].trim() : ""});
-                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",           parts.length > 2 ? parts[2].trim() : ""});
-                } else if (mIdx == 4) {
-                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (app prop)", parts.length > 0 ? parts[0].trim() : ""});
-                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",             parts.length > 1 ? parts[1].trim() : ""});
-                } else if (mIdx == 1) {
-                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",             parts.length > 1 ? parts[1].trim() : "Empty Subject Msg"});
+                if (mIdx == 4) {
+                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",            parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (app prop)", parts.length > 1 ? parts[1].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",            parts.length > 2 ? parts[2].trim() : "Msg4 Payload"});
+                } else if (mIdx == 3) {
+                    specs.add(new String[]{"amhs_subject_" + mIdx, "AMHS_SUBJECT (app prop)", parts.length > 1 ? parts[1].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",            parts.length > 2 ? parts[2].trim() : "Msg3 Payload"});
                 } else {
-                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",  parts.length > 0 ? parts[0].trim() : ""});
-                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",   parts.length > 1 ? parts[1].trim() : ""});
+                    specs.add(new String[]{"subject_" + mIdx,      "AMQP SUBJECT",            parts.length > 0 ? parts[0].trim() : ""});
+                    specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",            parts.length > 1 ? parts[1].trim() : ""});
                 }
                 break;
             }
