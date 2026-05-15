@@ -68,19 +68,22 @@ public class SwimToAmhsTests {
             if (in.containsKey("amhs_recipients")) props.setRecipients(in.get("amhs_recipients"));
             if (in.containsKey("amhs_bodypart_type")) props.setBodyPartType(in.get("amhs_bodypart_type"));
             if (in.containsKey("amhs_originator")) props.setOriginator(in.get("amhs_originator"));
-            if (in.containsKey("amhs_subject") || in.containsKey("subject_1") || in.containsKey("subject_2") || in.containsKey("subject_3") || in.containsKey("subject_4") || in.containsKey("subject_5")) {
+            if (in.containsKey("amhs_subject") || in.containsKey("subject_1") || in.containsKey("subject_2") || in.containsKey("subject_3") || in.containsKey("subject_4") || in.containsKey("subject_5") || in.containsKey("amqp_subject")) {
                 // Determine subject if specifically passed in extra fields
                 for (int i=1; i<=5; i++) {
                     if (in.containsKey("amhs_subject_" + i)) props.setSubject(in.get("amhs_subject_" + i));
-                    else if (in.containsKey("subject_" + i) && props.getSubject() == null) props.setSubject(in.get("subject_" + i));
+                    else if (in.containsKey("subject_" + i) && props.getSubject() == null) props.setAmqpSubject(in.get("subject_" + i));
                 }
                 if (in.containsKey("amhs_subject")) props.setSubject(in.get("amhs_subject"));
+                if (in.containsKey("amqp_subject")) props.setAmqpSubject(in.get("amqp_subject"));
             }
             if (in.containsKey("amqp_message_id")) props.setMessageId(in.get("amqp_message_id"));
             if (in.containsKey("amhs_ipm_id")) props.setIpmId(in.get("amhs_ipm_id"));
             if (in.containsKey("amhs_registered_identifier")) props.setRegisteredId(in.get("amhs_registered_identifier"));
             if (in.containsKey("amhs_user_visible_string")) props.setUserVisibleStr(in.get("amhs_user_visible_string"));
             if (in.containsKey("amhs_ats_ft")) props.setFilingTime(in.get("amhs_ats_ft"));
+            if (in.containsKey("amqp_reply_to")) props.setReplyTo(in.get("amqp_reply_to"));
+            if (in.containsKey("amhs_reply_to")) props.setReplyTo(in.get("amhs_reply_to"));
             if (in.containsKey("creation_time")) {
                 try { props.setCreationTime(Long.parseLong(in.get("creation_time"))); } catch (Exception ignored) {}
             }
@@ -445,13 +448,12 @@ public class SwimToAmhsTests {
                     break;
                 case 11: {
                     p.setContentType("application/octet-stream"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
-                    // recip_11 loaded from config (default: LONGADDRESSXXXXX per EUR Doc 047 §4.5.1.4);
-                    // editable per-session via config screen field "recip_11".
+                    // amhs_recipients loaded from config (default: LONGADDRESSXXXXX per EUR Doc 047 §4.5.1.4);
+                    // editable via the standard RECIPIENTS field or the specific field in extra fields.
                     String defaultRecip11Raw = CaseConfigManager.getInstance().getPayload("CTSW102", 11);
                     String defaultRecip11 = (defaultRecip11Raw != null && defaultRecip11Raw.contains("|"))
                         ? defaultRecip11Raw.split("\\|", 2)[1].trim() : "LONGADDRESSXXXXX";
-                    String recip11 = (inputs != null && inputs.containsKey("recip_11") && !inputs.get("recip_11").trim().isEmpty())
-                        ? inputs.get("recip_11") : defaultRecip11;
+                    String recip11 = getInput(inputs, "recip_11", defaultRecip11);
                     p.setRecipients(recip11);
                     short pri11 = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : (short) 4;
                     p.setAmqpPriority(pri11);
@@ -1019,16 +1021,16 @@ public class SwimToAmhsTests {
                 String subject       = getInput(inputs, "subject_" + idx, defSubject);
                 String amhsSubject   = getInput(inputs, "amhs_subject_" + idx, defAmhsSubj);
                 body                 = getInput(inputs, "body_" + idx, defBody);
-                p.setSubject(subject);
-                p.setExtraProp("amhs_subject", amhsSubject);
-                desc = "AMQP-subject='" + subject + "' + amhs_subject='" + amhsSubject + "' (amhs_subject WINS)";
+                p.setAmqpSubject(subject);
+                p.setSubject(amhsSubject);
+                desc = "AMQP-subject-header='" + subject + "' + amhs_subject-prop='" + amhsSubject + "' (amhs_subject WINS per §4.5.2.3)";
             } else if (idx == 4) {
                 String defAmhsSubj = cfgParts.length > 0 ? cfgParts[0].trim() : "AMHS App Prop";
                 String defBody     = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg4";
                 String amhsSubject = getInput(inputs, "amhs_subject_" + idx, defAmhsSubj);
                 body               = getInput(inputs, "body_" + idx, defBody);
-                p.setExtraProp("amhs_subject", amhsSubject);
-                desc = "amhs_subject=" + amhsSubject + " (no AMQP subject)";
+                p.setSubject(amhsSubject);
+                desc = "amhs_subject-prop=" + amhsSubject + " (no AMQP subject header)";
             } else if (idx == 1) {
                 String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "Empty Subject Msg";
                 body = getInput(inputs, "body_" + idx, defBody);
@@ -1043,8 +1045,8 @@ public class SwimToAmhsTests {
                 String defBody    = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg" + idx;
                 String subject    = getInput(inputs, "subject_" + idx, defSubject);
                 body              = getInput(inputs, "body_" + idx, defBody);
-                p.setSubject(subject);
-                desc = "AMQP-subject='" + subject + "' (len=" + subject.length() + (subject.length() > 128 ? " → trim to 128" : "") + ")";
+                p.setAmqpSubject(subject);
+                desc = "AMQP-subject-header='" + subject + "' (len=" + subject.length() + (subject.length() > 128 ? " → trim to 128" : "") + ")";
             }
 
             String queue107 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
@@ -1647,6 +1649,11 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setExtraProp("amhs_notification_request", notifReq);
+            
+            // amhs_originator — REQUIRED so AMHS knows where to send notifications (RN/NRN)
+            String defOrig = CaseConfigManager.getInstance().getConfig("CTSW113", "amhs_originator", "VVTSYMYX");
+            p.setOriginator(getInput(inputs, "amhs_originator", defOrig));
+
             String queue113 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload.getBytes(), p);
             String expected = idx == 1 ? "NRN" : "RN";
@@ -1956,13 +1963,11 @@ public class SwimToAmhsTests {
                 // including the .gz extension when GZIP compression is applied.
                 ftbpFileName = ftbpFileName + ".gz";
                 p.setExtraProp("amhs_ftbp_file_name", ftbpFileName);
-                // Per user request: use the ACTUAL compressed size for the object_size metric 
-                // to prevent brokers from dropping messages due to perceived truncation.
+                // Per user request: use the ACTUAL compressed size for the object_size metric
                 p.setExtraProp("amhs_ftbp_object_size", (long)sendPayload.length);
-                // Also provide the original uncompressed size for IUT reference.
+                // Also provide the original uncompressed size for IUT reference per §4.5.2.13.
                 p.setExtraProp("amhs_ftbp_uncompressed_size", fileSize);
                 
-                // Force BINARY body part type to ensure it's not treated as text/ia5
                 p.setBodyPartType("file-transfer-body-part");
                 desc = "FTBP + GZIP | original=" + fileSize + "B compressed=" + sendPayload.length + "B | file=" + ftbpFileName + " | last_mod=" + lastMod;
             } else {

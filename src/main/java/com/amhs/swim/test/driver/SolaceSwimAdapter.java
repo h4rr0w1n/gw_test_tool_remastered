@@ -219,13 +219,24 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
             // Must map to the native Solace ApplicationMessageId so AMQP consumers get the 'message-id' field
             msg.setApplicationMessageId(msgId);
         }
-        
+
         if (properties.containsKey("amqp_correlation_id")) {
             String cid = String.valueOf(properties.get("amqp_correlation_id"));
             msg.setCorrelationId(sanitizeForSolace(cid));
         }
         
-        if (properties.containsKey("amhs_reply_to")) {
+        if (properties.containsKey("amqp_subject")) {
+            String sub = String.valueOf(properties.get("amqp_subject"));
+            msg.setApplicationMessageType(sanitizeForSolace(sub));
+        } else if (properties.containsKey("amhs_subject")) {
+            String sub = String.valueOf(properties.get("amhs_subject"));
+            msg.setApplicationMessageType(sanitizeForSolace(sub));
+        }
+        
+        if (properties.containsKey("amqp_reply_to")) {
+            String rt = String.valueOf(properties.get("amqp_reply_to"));
+            msg.setReplyTo(JCSMPFactory.onlyInstance().createQueue(sanitizeForSolace(rt)));
+        } else if (properties.containsKey("amhs_reply_to")) {
             String rt = String.valueOf(properties.get("amhs_reply_to"));
             msg.setReplyTo(JCSMPFactory.onlyInstance().createQueue(sanitizeForSolace(rt)));
         }

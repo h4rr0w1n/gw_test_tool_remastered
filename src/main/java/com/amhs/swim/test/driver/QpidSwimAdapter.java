@@ -359,12 +359,20 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
                 message.setMessageId(properties.get("amhs_ipm_id"));
             }
         }
-        if (properties.containsKey("amhs_subject")) {
+        if (properties.containsKey("amqp_subject")) {
+            String sub = (String) properties.get("amqp_subject");
+            if (isSolaceProfile()) sub = sanitizeForSolace(sub);
+            message.setSubject(sub);
+        } else if (properties.containsKey("amhs_subject")) {
             String sub = (String) properties.get("amhs_subject");
             if (isSolaceProfile()) sub = sanitizeForSolace(sub);
             message.setSubject(sub);
         }
-        if (properties.containsKey("amhs_reply_to")) {
+        if (properties.containsKey("amqp_reply_to")) {
+            String rt = (String) properties.get("amqp_reply_to");
+            if (isSolaceProfile()) rt = sanitizeForSolace(rt);
+            message.setReplyTo(rt);
+        } else if (properties.containsKey("amhs_reply_to")) {
             String rt = (String) properties.get("amhs_reply_to");
             if (isSolaceProfile()) rt = sanitizeForSolace(rt);
             message.setReplyTo(rt);

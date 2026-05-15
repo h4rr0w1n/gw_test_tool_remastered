@@ -298,13 +298,14 @@ public class SwimDriver {
      * Có thể chuyển đổi sang Map<String, Object> để sử dụng với adapter.
      */
     public static class AMQPProperties {
+        private String amqpSubject;      // standard amqp subject header
         private String atsPri;           // amhs_ats_pri: SS/DD/FF/GG/KK
         private Short amqpPriority;      // standard amqp priority: 0-9
         private String recipients;       // amhs_recipients: list of recipients
         private String bodyPartType;     // amhs_bodypart_type: ia5-text, utf8-text, etc.
         private String contentType;      // content-type AMQP property (e.g. application/octet-stream)
         private String originator;       // amhs_originator
-        private String subject;          // subject AMQP property
+        private String subject;          // amhs_subject application property (legacy field name in tool)
         private String messageId;        // standard amqp message-id
         private String ipmId;            // amhs_ipm_id (IPM Identifier)
         private String registeredId;     // amhs_registered_identifier
@@ -336,7 +337,7 @@ public class SwimDriver {
         }
 
         public enum BodyType {
-            DATA, AMQP_VALUE, AMQP_SEQUENCE
+            DATA, AMQP_VALUE, AMQP_SEQUENCE, MULTI_SECTION_INVALID
         }
         
         public AMQPProperties() {
@@ -388,6 +389,9 @@ public class SwimDriver {
         public String getOriginator() { return originator; }
         public void setOriginator(String originator) { this.originator = originator; }
         
+        public String getAmqpSubject() { return amqpSubject; }
+        public void setAmqpSubject(String sub) { this.amqpSubject = sub; }
+
         public String getSubject() { return subject; }
         public void setSubject(String subject) { this.subject = subject; }
         
@@ -443,14 +447,18 @@ public class SwimDriver {
          */
         public Map<String, Object> toMap() {
             Map<String, Object> map = new HashMap<>();
-            // Merge extra properties first so typed setters take precedence
+            
+            // 1. Start with extra properties
             if (extraProps != null) map.putAll(extraProps);
+            
+            // 2. Add typed properties (overwrites extraProps if collision occurs, which is intended)
             if (amqpPriority != null) map.put("amqp_priority", amqpPriority);
             if (atsPri != null) map.put("amhs_ats_pri", atsPri);
             if (recipients != null) map.put("amhs_recipients", recipients);
             if (bodyPartType != null) map.put("amhs_bodypart_type", bodyPartType);
             if (contentType != null) map.put("content_type", contentType);
             if (originator != null) map.put("amhs_originator", originator);
+            if (amqpSubject != null) map.put("amqp_subject", amqpSubject);
             if (subject != null) map.put("amhs_subject", subject);
             if (messageId != null) map.put("amqp_message_id", messageId);
             if (ipmId != null) map.put("amhs_ipm_id", ipmId);
@@ -460,7 +468,8 @@ public class SwimDriver {
             if (filingTime != null) map.put("amhs_ats_ft", filingTime);
             if (dlHistory != null) map.put("amhs_dl_history", dlHistory);
             if (secEnvelope != null) map.put("amhs_sec_envelope", secEnvelope);
-            if (replyTo != null) map.put("amhs_reply_to", replyTo);
+            if (replyTo != null) map.put("amqp_reply_to", replyTo);
+            
             // Standard AMQP 1.0 Properties per EUR Doc 047
             if (correlationId != null) map.put("amqp_correlation_id", correlationId);
             if (userId != null) map.put("amqp_user_id", userId);
@@ -471,6 +480,7 @@ public class SwimDriver {
             if (messageAnnotations != null && !messageAnnotations.isEmpty()) map.put("amqp_message_annotations", messageAnnotations);
             if (deliveryAnnotations != null && !deliveryAnnotations.isEmpty()) map.put("amqp_delivery_annotations", deliveryAnnotations);
             if (footer != null && !footer.isEmpty()) map.put("amqp_footer", footer);
+            
             map.put("amqp_broker_profile", brokerProfile.name());
             map.put("amqp_body_type", bodyType.name());
             return map;
