@@ -778,6 +778,7 @@ public class TestCasePanel extends JPanel {
                 String defNotif   = parts.length > 1 ? parts[1].trim() : "rn,nrn";
                 specs.add(new String[]{"p" + mIdx, "TEXT PAYLOAD", defPayload});
                 specs.add(new String[]{"amhs_notification_request", "NOTIF REQUEST (rn,nrn per §4.4.7.3)", defNotif});
+                specs.add(new String[]{"amqp_reply_to", "REPLY-TO (AMQP address for notifications)", "TECHNICAL.RESPONSE.QUEUE"});
                 break;
             }
             // ── CTSW114 ──────────────────────────────────────────────────────────
@@ -792,6 +793,7 @@ public class TestCasePanel extends JPanel {
                 specs.add(new String[]{"p1",                            "TEXT PAYLOAD",                                      defPayload});
                 specs.add(new String[]{"amhs_originator",               "AMHS ORIGINATOR (NDR return address, EUR Doc §4.4.1.3)", defOrig});
                 specs.add(new String[]{"amhs_notification_request_114", "NOTIF REQUEST (must include 'nrn' per §4.4.7.3)",          defNotif});
+                specs.add(new String[]{"amqp_reply_to",                 "REPLY-TO (AMQP address for NDR delivery)",                "TECHNICAL.RESPONSE.QUEUE"});
                 break;
             }
             // ── CTSW115 ──────────────────────────────────────────────────────────

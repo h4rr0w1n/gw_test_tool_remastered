@@ -196,9 +196,48 @@ public class Logger {
 
         // Application Properties
         sb.append("Application Properties:\n");
+        java.util.List<String> allAppProps = java.util.Arrays.asList(
+            "amhs_originator", "amhs_recipients", "amhs_subject", "amhs_ats_pri",
+            "amhs_ipm_id", "amhs_registered_identifier", "amhs_user_visible_string",
+            "amhs_ats_ft", "amhs_ats_ohi", "amhs_bodypart_type", "amhs_content_encoding",
+            "amhs_dl_history", "amhs_sec_envelope", "amhs_reply_to", "amhs_notification_request",
+            "amhs_ftbp_file_name", "amhs_ftbp_object_size", "amhs_ftbp_uncompressed_size",
+            "amhs_ftbp_last_mod", "swim_compression", "amqp_broker_profile", "amqp_body_type"
+        );
+        java.util.Set<String> printedProps = new java.util.HashSet<>();
+
+        for (String k : allAppProps) {
+            printedProps.add(k);
+            Object v = props != null ? props.get(k) : null;
+            if (v == null) {
+                sb.append("  ").append(k).append(":\n");
+            } else if (k.equals("amhs_recipients")) {
+                String recipStr = String.valueOf(v);
+                if (recipStr.contains(",") && recipStr.length() > 30) {
+                    String[] parts = recipStr.split(",");
+                    sb.append("  amhs_recipients:\n");
+                    java.util.List<String> list = new java.util.ArrayList<>();
+                    for (String p : parts) { if (!p.trim().isEmpty()) list.add(p.trim()); }
+                    for (int i = 0; i < list.size(); i += 8) {
+                        sb.append(" ");
+                        for (int j = 0; j < 8 && i + j < list.size(); j++) {
+                            sb.append(" ").append(list.get(i + j));
+                        }
+                        sb.append("\n");
+                    }
+                } else {
+                    sb.append("  ").append(k).append(": ").append(recipStr).append("\n");
+                }
+            } else {
+                String val = String.valueOf(v);
+                if (val.length() > 300) val = val.substring(0, 297) + "...";
+                sb.append("  ").append(k).append(": ").append(val).append("\n");
+            }
+        }
+
         if (props != null) {
             props.forEach((k, v) -> {
-                if (k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_broker_") || k.startsWith("amqp_body_")) {
+                if ((k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_broker_") || k.startsWith("amqp_body_")) && !printedProps.contains(k)) {
                     String val = v == null ? "null" : String.valueOf(v);
                     if (val.length() > 300) val = val.substring(0, 297) + "...";
                     sb.append("  ").append(k).append(": ").append(val).append("\n");
@@ -304,15 +343,27 @@ public class Logger {
         String ct = props != null ? String.valueOf(props.getOrDefault("content_type", "text/plain; charset=\"utf-8\"")) : "text/plain; charset=\"utf-8\"";
         sb.append("  content_type: ").append(ct).append("\n");
 
-        if (props != null) {
-            // amqp_broker_profile
-            if (props.containsKey("amqp_broker_profile")) {
-                sb.append("  amqp_broker_profile: ").append(props.get("amqp_broker_profile")).append("\n");
-            }
-            // amhs_recipients — block-formatted (8 per row, space-separated)
-            Object recipObj = props.get("amhs_recipients");
-            if (recipObj != null) {
-                String recipStr = String.valueOf(recipObj);
+        java.util.List<String> allAppProps = java.util.Arrays.asList(
+            "amhs_originator", "amhs_recipients", "amhs_subject", "amhs_ats_pri",
+            "amhs_ipm_id", "amhs_registered_identifier", "amhs_user_visible_string",
+            "amhs_ats_ft", "amhs_ats_ohi", "amhs_bodypart_type", "amhs_content_encoding",
+            "amhs_dl_history", "amhs_sec_envelope", "amhs_reply_to", "amhs_notification_request",
+            "amhs_ftbp_file_name", "amhs_ftbp_object_size", "amhs_ftbp_uncompressed_size",
+            "amhs_ftbp_last_mod", "swim_compression", "amqp_broker_profile", "amqp_body_type"
+        );
+        java.util.Set<String> printedProps = new java.util.HashSet<>();
+        printedProps.add("creation_time");
+        printedProps.add("amqp_priority");
+        printedProps.add("content_type");
+
+        // First print predefined list
+        for (String k : allAppProps) {
+            printedProps.add(k);
+            Object v = props != null ? props.get(k) : null;
+            if (v == null) {
+                sb.append("  ").append(k).append(":\n");
+            } else if (k.equals("amhs_recipients")) {
+                String recipStr = String.valueOf(v);
                 if (recipStr.contains(",") && recipStr.length() > 30) {
                     String[] parts = recipStr.split(",");
                     sb.append("  amhs_recipients:\n");
@@ -326,14 +377,19 @@ public class Logger {
                         sb.append("\n");
                     }
                 } else {
-                    sb.append("  amhs_recipients: ").append(recipStr).append("\n");
+                    sb.append("  ").append(k).append(": ").append(recipStr).append("\n");
                 }
+            } else {
+                String val = String.valueOf(v);
+                if (val.length() > 300) val = val.substring(0, 297) + "...";
+                sb.append("  ").append(k).append(": ").append(val).append("\n");
             }
-            // Other amhs_/swim_ props (excluding those already printed)
-            java.util.Set<String> skip = new java.util.HashSet<>(java.util.Arrays.asList(
-                "amqp_broker_profile", "amhs_recipients", "content_type", "amqp_priority"));
+        }
+
+        // Then any extra
+        if (props != null) {
             props.forEach((k, v) -> {
-                if ((k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_body_")) && !skip.contains(k)) {
+                if ((k.startsWith("amhs_") || k.startsWith("swim_") || k.startsWith("amqp_body_") || k.startsWith("amqp_broker_")) && !printedProps.contains(k)) {
                     String val = v == null ? "null" : String.valueOf(v);
                     if (val.length() > 300) val = val.substring(0, 297) + "...";
                     sb.append("  ").append(k).append(": ").append(val).append("\n");

@@ -66,29 +66,53 @@ class VerifyingConsumer(MessagingHandler):
             print(f"  {prop}: {val}")
             
         print("\nApplication Properties:")
+        
+        # Predefined list of all possible application properties across all 16 cases
+        all_app_props = [
+            'amhs_originator', 'amhs_recipients', 'amhs_subject', 'amhs_ats_pri',
+            'amhs_ipm_id', 'amhs_registered_identifier', 'amhs_user_visible_string',
+            'amhs_ats_ft', 'amhs_ats_ohi', 'amhs_bodypart_type', 'amhs_content_encoding',
+            'amhs_dl_history', 'amhs_sec_envelope', 'amhs_reply_to', 'amhs_notification_request',
+            'amhs_ftbp_file_name', 'amhs_ftbp_object_size', 'amhs_ftbp_uncompressed_size',
+            'amhs_ftbp_last_mod', 'swim_compression', 'amqp_broker_profile', 'amqp_body_type'
+        ]
+        
+        printed_props = set()
+        
+        # First, print all predefined properties to ensure uniform display across all cases
+        for k in all_app_props:
+            v = msg.properties.get(k, None) if msg.properties else None
+            printed_props.add(k)
+            
+            if v is None:
+                print(f"  {k}: ")
+            elif isinstance(v, (list, tuple)) and len(v) > 0:
+                print(f"  {k}:")
+                for i in range(0, len(v), 8):
+                    chunk = v[i:i+8]
+                    line_str = " ".join(str(x) for x in chunk)
+                    print(f" {line_str}")
+            elif isinstance(v, str) and k in ('amhs_recipients', 'amhs_address') and (',' in v or ' ' in v) and len(v) > 30:
+                print(f"  {k}:")
+                v_list = [x.strip() for x in v.split(',' if ',' in v else ' ') if x.strip()]
+                for i in range(0, len(v_list), 8):
+                    chunk = v_list[i:i+8]
+                    line_str = " ".join(str(x) for x in chunk)
+                    print(f" {line_str}")
+            else:
+                val = str(v)
+                if len(val) > 300:
+                    val = val[:297] + "..."
+                print(f"  {k}: {val}")
+                
+        # Print any extra properties that weren't in the predefined list
         if msg.properties:
             for k, v in msg.properties.items():
-                if isinstance(v, (list, tuple)) and len(v) > 0:
-                    print(f"  {k}:")
-                    for i in range(0, len(v), 8):
-                        chunk = v[i:i+8]
-                        line_str = " ".join(str(x) for x in chunk)
-                        print(f" {line_str}")
-                elif isinstance(v, str) and k in ('amhs_recipients', 'amhs_address') and (',' in v or ' ' in v) and len(v) > 30:
-                    print(f"  {k}:")
-                    # Split by comma if present, else space
-                    v_list = [x.strip() for x in v.split(',' if ',' in v else ' ') if x.strip()]
-                    for i in range(0, len(v_list), 8):
-                        chunk = v_list[i:i+8]
-                        line_str = " ".join(str(x) for x in chunk)
-                        print(f" {line_str}")
-                else:
+                if k not in printed_props:
                     val = str(v)
                     if len(val) > 300:
                         val = val[:297] + "..."
                     print(f"  {k}: {val}")
-        else:
-            print("  None")
             
         print("\nMessage Annotations:")
         if msg.annotations:

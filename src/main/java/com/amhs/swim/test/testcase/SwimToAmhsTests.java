@@ -1653,6 +1653,9 @@ public class SwimToAmhsTests {
             // amhs_originator — REQUIRED so AMHS knows where to send notifications (RN/NRN)
             String defOrig = CaseConfigManager.getInstance().getConfig("CTSW113", "amhs_originator", "VVTSYMYX");
             p.setOriginator(getInput(inputs, "amhs_originator", defOrig));
+            
+            // amqp_reply_to — Optional but recommended so IUT knows where to route the technical response (RN/NRN)
+            p.setReplyTo(getInput(inputs, "amqp_reply_to", "TECHNICAL.RESPONSE.QUEUE"));
 
             String queue113 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, payload.getBytes(), p);
@@ -1757,6 +1760,9 @@ public class SwimToAmhsTests {
             p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             p.setOriginator(originator);
+            
+            // amqp_reply_to — Optional but recommended for NDR routing
+            p.setReplyTo(getInput(inputs, "amqp_reply_to", "TECHNICAL.RESPONSE.QUEUE"));
             
             // Mandatory properties per EUR Doc 047 - loaded from config
             String ipmPattern114 = configMgr.getConfig("CTSW114", "ipm_id_pattern", "IPM.CTSW114.{ts}");
