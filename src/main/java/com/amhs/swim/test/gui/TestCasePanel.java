@@ -655,7 +655,17 @@ public class TestCasePanel extends JPanel {
             // ── CTSW104 ──────────────────────────────────────────────────────────
             case "CTSW104": {
                 specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
-                specs.add(new String[]{"amhs_ats_pri", "ATS PRIORITY (SS/DD/FF/GG/KK)", (mIdx == 1 || mIdx == 2) ? "at" : "KK"});
+                String defAtsPri = "";
+                if (mIdx >= 11 && mIdx <= 15) {
+                    String[] ats = {"SS","DD","FF","GG","KK"};
+                    defAtsPri = ats[mIdx - 11];
+                } else if (mIdx >= 16 && mIdx <= 19) {
+                    String[] ats = {"SS","DD","FF","GG"};
+                    defAtsPri = ats[mIdx - 16];
+                } else if (mIdx == 20) {
+                    defAtsPri = "KK";
+                }
+                specs.add(new String[]{"amhs_ats_pri", "ATS PRIORITY (SS/DD/FF/GG/KK)", defAtsPri});
                 break;
             }
             // ── CTSW105 ──────────────────────────────────────────────────────────

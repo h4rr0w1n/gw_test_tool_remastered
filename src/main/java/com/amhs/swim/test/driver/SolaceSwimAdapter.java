@@ -257,11 +257,12 @@ public class SolaceSwimAdapter implements SwimMessagingAdapter {
         msg.setProperties(userProps);
         
         // Set Priority (0-9, or 10+ for rejection testing)
-        // Per EUR Doc 047 §4.5.2.2: amhs_ats_pri takes precedence over amqp_priority
-        if (properties.containsKey("amhs_ats_pri")) {
-            msg.setPriority(mapAmhsPriorityToInt((String) properties.get("amhs_ats_pri")));
-        } else if (properties.containsKey("amqp_priority")) {
+        // Per user request for CTSW104, the test tool MUST send the exact amqp_priority if specified,
+        // so that the Gateway (IUT) can be properly tested for its own precedence logic.
+        if (properties.containsKey("amqp_priority")) {
             msg.setPriority(((Number) properties.get("amqp_priority")).intValue());
+        } else if (properties.containsKey("amhs_ats_pri")) {
+            msg.setPriority(mapAmhsPriorityToInt((String) properties.get("amhs_ats_pri")));
         }
         
         // Send message

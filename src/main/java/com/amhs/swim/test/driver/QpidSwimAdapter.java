@@ -439,11 +439,12 @@ public class QpidSwimAdapter implements SwimMessagingAdapter {
         }
         
         // Set priority (AMQP 1.0 uses 0-9, AMHS uses SS/DD/FF/GG/KK)
-        // Per EUR Doc 047 §4.5.2.2: amhs_ats_pri takes precedence over amqp_priority
-        if (properties.containsKey("amhs_ats_pri")) {
-            message.setPriority(mapAmhsPriorityToAmqp((String) properties.get("amhs_ats_pri")));
-        } else if (properties.containsKey("amqp_priority")) {
+        // Per user request for CTSW104, the test tool MUST send the exact amqp_priority if specified,
+        // so that the Gateway (IUT) can be properly tested for its own precedence logic.
+        if (properties.containsKey("amqp_priority")) {
             message.setPriority(((Number) properties.get("amqp_priority")).shortValue());
+        } else if (properties.containsKey("amhs_ats_pri")) {
+            message.setPriority(mapAmhsPriorityToAmqp((String) properties.get("amhs_ats_pri")));
         } else {
             message.setPriority((short) 4); // Default AMQP 1.0 priority per EUR Doc 047 §4.4.3.2.2
         }
