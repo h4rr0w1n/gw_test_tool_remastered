@@ -2,7 +2,7 @@
 # Multi-stage build for optimized image size
 
 # Stage 1: Build stage
-FROM maven:3.8-openjdk-11 AS builder
+FROM maven:3.8-eclipse-temurin-11 AS builder
 
 WORKDIR /build
 
@@ -22,7 +22,7 @@ COPY cases.json .
 RUN mvn clean package -DskipTests -B
 
 # Stage 2: Runtime stage
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:11-jre
 
 # Install any runtime dependencies if needed (e.g., for native libraries)
 # RUN apt-get update && apt-get install -y <packages> && rm -rf /var/lib/apt/lists/*
