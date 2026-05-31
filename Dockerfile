@@ -17,6 +17,12 @@ COPY src ./src
 COPY lib ./lib
 COPY config ./config
 COPY cases.json .
+COPY scripts ./scripts
+COPY materials ./materials
+COPY verifier ./verifier
+COPY check_tables.py .
+COPY update_cases.py .
+COPY update_payloads.py .
 
 # Build the application
 RUN mvn clean package -DskipTests -B
@@ -37,8 +43,6 @@ COPY --from=builder /build/target/*.jar app.jar
 COPY --from=builder /build/lib ./lib
 COPY --from=builder /build/config ./config
 COPY --from=builder /build/cases.json .
-
-# Copy additional scripts and materials
 COPY --from=builder /build/scripts ./scripts
 COPY --from=builder /build/materials ./materials
 COPY --from=builder /build/verifier ./verifier
