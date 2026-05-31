@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  amhs-test-tool:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: amhs-swim-test-tool:latest
+    container_name: amhs-swim-test-tool
+    volumes:
+      # Mount config directory for easy configuration updates
+      - ./config:/app/config:ro
+      # Mount materials directory for test payloads
+      - ./materials:/app/materials:ro
+      # Mount output directory for reports and logs
+      - ./output:/app/output
+    environment:
+      # Set Java options
+      - JAVA_OPTS=-Xmx512m
+      # Example: Configure test properties via environment variables
+      # - AMHS_HOST=your-amhs-host
+      # - AMQP_HOST=your-amqp-host
+    network_mode: "host"  # Use host networking for direct access to test systems
+    # Uncomment below if you need specific port mappings instead of host network
+    # ports:
+    #   - "8080:8080"
+    stdin_open: true  # Keep STDIN open for interactive mode
+    tty: true         # Allocate a pseudo-TTY
+
+  # Alternative service configuration for headless/automated testing
+  amhs-test-tool-headless:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: amhs-swim-test-tool:latest
+    container_name: amhs-swim-test-tool-headless
+    volumes:
+      - ./config:/app/config:ro
+      - ./materials:/app/materials:ro
+      - ./output:/app/output
+    environment:
+      - JAVA_OPTS=-Xmx512m -Djava.awt.headless=true
+    network_mode: "host"
+    # Remove stdin_open and tty for headless mode
