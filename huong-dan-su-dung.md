@@ -47,6 +47,27 @@ Hoặc chạy trực tiếp:
 java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
 ```
 
+### 2.4 Chạy bằng Docker (Khuyến nghị)
+Bạn có thể dùng Docker để chạy công cụ mà không cần cài đặt Java hay Maven.
+1. **Dùng Docker Compose:**
+   ```bash
+   docker-compose up --build
+   ```
+2. **Dùng Docker trực tiếp:**
+   Xây dựng image:
+   ```bash
+   docker build -t amhs-swim-test-tool:latest .
+   ```
+   Chạy container (sử dụng network host để kết nối trực tiếp đến broker):
+   ```bash
+   docker run -it --rm \
+     -v $(pwd)/config:/app/config:ro \
+     -v $(pwd)/materials:/app/materials:ro \
+     -v $(pwd)/output:/app/output \
+     --network host \
+     amhs-swim-test-tool:latest
+   ```
+
 ## 3. Cấu hình (Settings và file)
 Công cụ tải cấu hình theo cơ chế:
 1. Mặc định: file cấu hình “embedded” trong jar: [src/main/resources/config/test.properties](file:///workspace/src/main/resources/config/test.properties)

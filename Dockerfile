@@ -25,7 +25,9 @@ COPY update_cases.py .
 COPY update_payloads.py .
 
 # Build the application
-RUN mvn clean package -DskipTests -B
+# We need to install the local Solace JARs to local maven repo before building
+RUN mvn install:install-file -Dfile=lib/sol-jcsmp-10.20.0.jar -DgroupId=com.solacesystems -DartifactId=sol-jcsmp -Dversion=10.20.0 -Dpackaging=jar && \
+    mvn clean package -DskipTests -B
 
 # Stage 2: Runtime stage
 FROM eclipse-temurin:11-jre
@@ -39,7 +41,7 @@ WORKDIR /app
 RUN groupadd -r amhs && useradd -r -g amhs amhs
 
 # Copy built artifacts from builder stage
-COPY --from=builder /build/target/*.jar app.jar
+COPY --from=builder /build/target/*jar-with-dependencies.jar app.jar
 COPY --from=builder /build/lib ./lib
 COPY --from=builder /build/config ./config
 COPY --from=builder /build/cases.json .

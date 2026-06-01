@@ -88,42 +88,32 @@ docker run -it --rm \
   amhs-swim-test-tool:latest
 ```
 
-## Usage Examples
+### Running the GUI with Docker (X11 Forwarding)
 
-### Run All Test Cases
+Because this tool is a **graphical application (Java Swing)**, running it inside Docker requires an X-Server on your host machine to display the UI.
+
+**For Windows Users:**
+1. Download and install [VcXsrv (XLaunch)](https://sourceforge.net/projects/vcxsrv/).
+2. Start **XLaunch** from your Start menu.
+3. Accept the defaults until the **"Extra Settings"** page.
+4. **IMPORTANT:** Check the box that says **"Disable access control"**.
+5. Finish the setup. You should see an X icon in your system tray.
+6. Run `docker-compose up` or use the `docker run` command (which now uses `-e DISPLAY=host.docker.internal:0.0` automatically via Compose).
+
+**For Linux Users:**
+1. Run `xhost +local:docker` in your terminal to allow Docker containers to access your display.
+2. Run the tool via `docker-compose up` or passing your native `$DISPLAY`.
+
+### Run All Test Cases (Manual CLI)
 
 ```bash
 docker run -it --rm \
   -v $(pwd)/config:/app/config:ro \
   -v $(pwd)/materials:/app/materials:ro \
   -v $(pwd)/output:/app/output \
+  -e DISPLAY=host.docker.internal:0.0 \
   --network host \
   amhs-swim-test-tool:latest
-```
-
-### Run Specific Test Case
-
-```bash
-docker run -it --rm \
-  -v $(pwd)/config:/app/config:ro \
-  -v $(pwd)/materials:/app/materials:ro \
-  -v $(pwd)/output:/app/output \
-  --network host \
-  amhs-swim-test-tool:latest --case CTSW001
-```
-
-### Headless/Automated Testing
-
-For CI/CD pipelines or automated testing:
-
-```bash
-docker run --rm \
-  -v $(pwd)/config:/app/config:ro \
-  -v $(pwd)/materials:/app/materials:ro \
-  -v $(pwd)/output:/app/output \
-  --network host \
-  -e JAVA_OPTS="-Xmx512m -Djava.awt.headless=true" \
-  amhs-swim-test-tool:latest --case CTSW001 --batch
 ```
 
 ### Access Container Shell

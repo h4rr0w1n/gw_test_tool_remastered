@@ -18,12 +18,19 @@ Công cụ sử dụng kiến trúc hướng đối tượng với các module c
 - Thư viện JNI cho Isode API (X400, DSAPI, ATNDS) phải được biên dịch và đưa vào `lib/`.
 - Thư viện Solace JCSMP cho kết nối AMQP.
 
-## 4. Hướng dẫn sử dụng
+## 4. Hướng dẫn sử dụng / Usage Guide
+For English Docker instructions, please refer to [DOCKER_README.md](../DOCKER_README.md).
+Chi tiết về sử dụng Docker bằng tiếng Việt, xem phần bên dưới.
+
+### 4.1. Chạy trên máy chủ cục bộ (Local)
 1. Cấu hình file `config/test.properties` với thông tin kết nối.
 2. Chạy `mvn clean package`.
-3. Thực thi `java -jar target/amhs-swim-test-tool.jar`.
+3. Thực thi `java -jar target/test-tool-1.0.0-jar-with-dependencies.jar`.
 4. Chọn test case từ danh sách và nhấn "Execute".
 5. Xem kết quả trong khung Log.
+
+### 4.2. Chạy bằng Docker (Recommended)
+Xem chi tiết cách chạy bằng Docker trong tài liệu Tiếng Anh [DOCKER_README.md](../DOCKER_README.md) và Tiếng Việt tại [huong-dan-su-dung.md](huong-dan-su-dung.md) (Phần 2.4).
 
 ## 5. Ánh xạ API
 Xem chi tiết trong file `API_MAPPING.md`.
