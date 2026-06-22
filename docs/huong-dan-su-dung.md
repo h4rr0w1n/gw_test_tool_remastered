@@ -28,17 +28,19 @@ Sau khi build thành công, file jar nên dùng là:
 Tham chiếu cấu hình build: [pom.xml](file:///workspace/pom.xml).
 
 ### 2.3 Chạy công cụ
+Sử dụng script duy nhất `run.bat`:
+
 Linux/macOS:
 
 ```bash
-chmod +x run_tool.sh
-./run_tool.sh
+chmod +x run.bat
+./run.bat
 ```
 
 Windows:
 
 ```bat
-run_tool.bat
+run.bat
 ```
 
 Hoặc chạy trực tiếp:
@@ -135,18 +137,37 @@ Gợi ý vận hành:
 - Đặt tên file báo cáo theo chuẩn nội bộ (ví dụ: `AMHS_SWIM_Test_Report_YYYYMMDD.xlsx`).
 
 ## 7) CTSW116 — xác minh payload theo kịch bản riêng
-Repo có công cụ hỗ trợ verify CTSW116 qua Python consumer:
-- Script chạy: [verify_payload.sh](file:///workspace/verify_payload.sh)
-- Consumer: [verify_ctsw116_consumer.py](file:///workspace/verify_ctsw116_consumer.py)
+Repo có công cụ hỗ trợ verify CTSW116 qua Python consumer, được tích hợp vào script duy nhất `run.bat`.
 
-Cách chạy (Linux/macOS):
+### Cách chạy Verifier:
 
+#### Sử dụng run.bat (Khuyến nghị):
 ```bash
-chmod +x verify_payload.sh
-./verify_payload.sh
+:: Windows - Chạy verifier với địa chỉ queue/topic
+run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+
+:: Ví dụ:
+run.bat --verifier TEST.QUEUE
+run.bat --verifier "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
 ```
 
-Script sẽ đọc tham số kết nối từ `config/test.properties` và kiểm tra dependency `python-proton`.
+#### Chạy trực tiếp bằng Python:
+```bash
+:: Windows
+python verifier\verifying_consumer.py [queue-address] [amqp-url] [vpn-name]
+
+:: Linux/macOS
+python3 verifier/verifying_consumer.py [queue-address] [amqp-url] [vpn-name]
+```
+
+Script sẽ tự động:
+- Kiểm tra và cài đặt thư viện `python-qpid-proton` nếu thiếu (khi dùng run.bat)
+- Đọc tham số kết nối từ `config/test.properties` nếu không được cung cấp qua command line
+
+Nếu chạy trực tiếp bằng Python và chưa cài đặt thư viện proton:
+```bash
+pip install python-qpid-proton
+```
 
 ## 8) Khắc phục sự cố thường gặp
 - Không kết nối được broker:
