@@ -56,6 +56,46 @@ This document explains how to build and run the AMHS/SWIM Gateway Test Tool as a
      amhs-swim-test-tool:latest --case CTSW001
    ```
 
+## Running Without Docker (Native)
+
+### Windows
+
+Simply run the single unified script:
+```bat
+:: Run the main test tool
+run.bat
+
+:: Run the verifier for CTSW116 validation
+run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+
+:: Examples:
+run.bat --verifier TEST.QUEUE
+run.bat --verifier "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
+```
+
+The script will automatically:
+- Check for Java, Maven, and Python (for verifier mode)
+- Download required dependencies (Solace JCSMP) if missing
+- Install python-qpid-proton if missing (for verifier mode)
+- Compile the project if needed
+- Run the tool with proper classpath
+
+### Linux/macOS
+
+```bash
+chmod +x run.bat
+./run.bat
+
+:: Run verifier
+./run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+```
+
+Or run directly with Java after building:
+```bash
+mvn clean package
+java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
+```
+
 ## Configuration
 
 ### Volume Mounts
@@ -226,5 +266,4 @@ The multi-stage build produces an optimized image (~200MB). To further reduce si
 
 For additional support and documentation, refer to:
 - `docs/README.md` - Main documentation
-- `docs/huong-dan-su-dung.md` - Vietnamese usage guide
-- `verifier_usage_guide.txt` - Verifier component guide
+- `huong-dan-su-dung.md` - Vietnamese usage guide (includes verifier instructions)

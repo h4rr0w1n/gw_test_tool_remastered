@@ -19,18 +19,49 @@ Công cụ sử dụng kiến trúc hướng đối tượng với các module c
 - Thư viện Solace JCSMP cho kết nối AMQP.
 
 ## 4. Hướng dẫn sử dụng / Usage Guide
-For English Docker instructions, please refer to [DOCKER_README.md](../DOCKER_README.md).
-Chi tiết về sử dụng Docker bằng tiếng Việt, xem phần bên dưới.
 
-### 4.1. Chạy trên máy chủ cục bộ (Local)
-1. Cấu hình file `config/test.properties` với thông tin kết nối.
-2. Chạy `mvn clean package`.
-3. Thực thi `java -jar target/test-tool-1.0.0-jar-with-dependencies.jar`.
-4. Chọn test case từ danh sách và nhấn "Execute".
-5. Xem kết quả trong khung Log.
+### 4.1. Chạy bằng Single Run Script (Khuyến nghị)
+Công cụ đã được đơn giản hóa với **một script duy nhất** (`run.bat`) có thể chạy trên cả Windows và Linux, bao gồm cả chức năng verifier.
 
-### 4.2. Chạy bằng Docker (Recommended)
-Xem chi tiết cách chạy bằng Docker trong tài liệu Tiếng Anh [DOCKER_README.md](../DOCKER_README.md) và Tiếng Việt tại [huong-dan-su-dung.md](huong-dan-su-dung.md) (Phần 2.4).
+#### Windows:
+```bat
+:: Run the main test tool
+run.bat
+
+:: Run the verifier for CTSW116 validation
+run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+
+:: Examples:
+run.bat --verifier TEST.QUEUE
+run.bat --verifier "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
+```
+
+Script sẽ tự động:
+1. Kiểm tra Java, Maven và Python (cho verifier mode)
+2. Tải xuống dependencies (Solace JCSMP) nếu thiếu
+3. Cài đặt python-qpid-proton nếu thiếu (cho verifier mode)
+4. Biên dịch project nếu cần
+5. Chạy công cụ với classpath chính xác
+
+#### Linux/macOS:
+```bash
+chmod +x run.bat
+./run.bat
+
+# Run verifier
+./run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+```
+
+### 4.2. Chạy trực tiếp bằng Java
+```bash
+mvn clean package
+java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
+```
+
+### 4.3. Chạy bằng Docker
+Xem chi tiết cách chạy bằng Docker trong tài liệu:
+- English: [DOCKER_README.md](../DOCKER_README.md)
+- Tiếng Việt: [huong-dan-su-dung.md](huong-dan-su-dung.md)
 
 ## 5. Ánh xạ API
 Xem chi tiết trong file `API_MAPPING.md`.

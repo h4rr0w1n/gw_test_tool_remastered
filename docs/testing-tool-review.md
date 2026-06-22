@@ -31,9 +31,7 @@ Primary references:
 
 ### Build and runtime packaging
 - Maven assembly produces a runnable jar-with-dependencies with `Main-Class` set to `com.amhs.swim.test.Main` in [pom.xml](file:///workspace/pom.xml#L72-L95).
-- Convenience runners:
-  - Linux/macOS: [run_tool.sh](file:///workspace/run_tool.sh)
-  - Windows: [run_tool.bat](file:///workspace/run_tool.bat)
+- Unified runner (Windows and Linux): [run.bat](file:///workspace/run.bat)
 
 ## Data Flow (Operational Behavior)
 ### Typical test session
@@ -43,10 +41,19 @@ Primary references:
    - Prefer Solace if present and reachable, else fall back to Qpid AMQP 1.0.
 4. Results are accumulated for the session and can be exported to Excel (Settings → “Export Report (.xlsx)” in [TestFrame](file:///workspace/src/main/java/com/amhs/swim/test/gui/TestFrame.java#L488-L505)).
 
-### Standalone verifier (CTSW116)
-The repo includes a separate verification path intended for CTSW116:
-- Script: [verify_payload.sh](file:///workspace/verify_payload.sh)
-- Python consumer: [verify_ctsw116_consumer.py](file:///workspace/verify_ctsw116_consumer.py)
+### Verifier (CTSW116)
+The repo includes a Python-based verifier for CTSW116, integrated into the unified run script:
+- Unified script: [run.bat](file:///workspace/run.bat) (use `--verifier` flag)
+- Python consumer: [verifier/verifying_consumer.py](file:///workspace/verifier/verifying_consumer.py)
+
+Usage:
+```bash
+# Run main test tool
+run.bat
+
+# Run verifier for CTSW116
+run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+```
 
 ## Configuration Review
 ### Config layering

@@ -15,39 +15,33 @@ AMHS/SWIM Gateway Test Tool là công cụ kiểm thử theo “ICAO EUR Doc 047
 - Kết nối mạng tới SWIM Broker (Solace hoặc AMQP 1.0 broker tương thích)
 - Nếu sử dụng phần “verify CTSW116” bằng Python: Python 3 và thư viện `python3-qpid-proton` (script sẽ kiểm tra và cài đặt nếu thiếu)
 
-### 2.2 Biên dịch
-Trong thư mục gốc dự án:
+### 2.2 Chạy công cụ (Single Run Script)
+Công cụ đã được đơn giản hóa với **một script duy nhất** để chạy trên cả Windows và Linux.
 
+#### Windows:
+```bat
+run.bat
+```
+
+Script sẽ tự động:
+1. Kiểm tra Java và Maven
+2. Tải xuống dependencies (Solace JCSMP) nếu thiếu
+3. Biên dịch project nếu cần
+4. Chạy công cụ với classpath chính xác
+
+#### Linux/macOS:
+```bash
+chmod +x run.bat
+./run.bat
+```
+
+Hoặc chạy trực tiếp bằng Java sau khi build:
 ```bash
 mvn clean package
-```
-
-Sau khi build thành công, file jar nên dùng là:
-- `target/test-tool-1.0.0-jar-with-dependencies.jar` (khuyến nghị)
-
-Tham chiếu cấu hình build: [pom.xml](file:///workspace/pom.xml).
-
-### 2.3 Chạy công cụ
-Linux/macOS:
-
-```bash
-chmod +x run_tool.sh
-./run_tool.sh
-```
-
-Windows:
-
-```bat
-run_tool.bat
-```
-
-Hoặc chạy trực tiếp:
-
-```bash
 java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
 ```
 
-### 2.4 Chạy bằng Docker (Khuyến nghị)
+### 2.3 Chạy bằng Docker (Khuyến nghị)
 Bạn có thể dùng Docker để chạy công cụ mà không cần cài đặt Java hay Maven.
 1. **Dùng Docker Compose:**
    ```bash
@@ -143,18 +137,37 @@ Gợi ý vận hành:
 - Có thể dùng chức năng "Clear Results" trong Settings nếu muốn xóa kết quả phiên hiện tại để test lại từ đầu.
 
 ## 8. CTSW116 — xác minh payload theo kịch bản riêng
-Repo có công cụ hỗ trợ verify CTSW116 qua Python consumer:
-- Script chạy: [verify_payload.sh](file:///workspace/verify_payload.sh)
-- Consumer: [verify_ctsw116_consumer.py](file:///workspace/verify_ctsw116_consumer.py)
+Repo có công cụ hỗ trợ verify CTSW116 qua Python consumer, được tích hợp vào script duy nhất `run.bat`.
 
-Cách chạy (Linux/macOS):
+### Cách chạy Verifier:
 
+#### Sử dụng run.bat (Khuyến nghị):
 ```bash
-chmod +x verify_payload.sh
-./verify_payload.sh
+:: Windows - Chạy verifier với địa chỉ queue/topic
+run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+
+:: Ví dụ:
+run.bat --verifier TEST.QUEUE
+run.bat --verifier "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
 ```
 
-Script sẽ đọc tham số kết nối từ `config/test.properties` và kiểm tra dependency `python-proton`.
+#### Chạy trực tiếp bằng Python:
+```bash
+:: Windows
+python verifier\verifying_consumer.py [queue-address] [amqp-url] [vpn-name]
+
+:: Linux/macOS
+python3 verifier/verifying_consumer.py [queue-address] [amqp-url] [vpn-name]
+```
+
+Script sẽ tự động:
+- Kiểm tra và cài đặt thư viện `python-qpid-proton` nếu thiếu (khi dùng run.bat)
+- Đọc tham số kết nối từ `config/test.properties` nếu không được cung cấp qua command line
+
+Nếu chạy trực tiếp bằng Python và chưa cài đặt thư viện proton:
+```bash
+pip install python-qpid-proton
+```
 
 ## 9. Khắc phục sự cố thường gặp
 - Không kết nối được broker:
