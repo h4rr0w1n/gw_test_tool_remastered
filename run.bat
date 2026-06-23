@@ -74,7 +74,6 @@ if not exist "target\dependency" (
         pause
         exit /b 1
     )
-    echo [OK] Dependencies copied!
 )
 
 :: ----------------------------------------------------------------------------
@@ -101,7 +100,7 @@ echo ===========================================================================
 echo Application exited with code: %EXIT_CODE%
 echo ============================================================================
 
-:: Keep window open *always*
+:: Keep window open always
 pause
 exit /b %EXIT_CODE%
 
@@ -116,46 +115,48 @@ echo AMHS/SWIM Verifier
 echo ============================================================================
 echo.
 
-:: Check for Python
-where python >nul 2>nul
+:: Check for Java
+where java >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
-    echo [ERROR] Python is not installed or not in PATH.
-    echo Please install Python 3.x and add it to your PATH.
-    echo Download from: https://www.python.org/downloads/
+    echo [ERROR] Java is not installed or not in PATH.
+    echo Please install Java JDK 8+ and add it to your PATH.
+    echo Download from: https://adoptium.net/ or https://www.oracle.com/java/technologies/downloads/
     pause
     exit /b 1
 )
 
-for /f "tokens=2" %%p in ('python --version 2^>^&1') do (
-    set "PYTHON_VERSION=%%p"
+for /f "tokens=3" %%g in ('java -version 2^>^&1 ^| findstr /i "version"') do (
+    set "JAVA_VERSION=%%g"
 )
-echo [OK] Python found: %PYTHON_VERSION%
+echo [OK] Java found: %JAVA_VERSION%
 
-:: Check for qpid-proton library
-echo [*] Checking for python-qpid-proton library...
-python -c "import proton" >nul 2>nul
-if %ERRORLEVEL% NEQ 0 (
-    echo [*] python-qpid-proton not found; installing...
-    pip install python-qpid-proton
+:: Check if classes and dependencies exist
+if not exist "target\classes\com\amhs\swim\test\verifier\Verifier.class" (
+    echo [*] Compiling project...
+    call mvn clean compile dependency:copy-dependencies -DoutputDirectory=target/dependency
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERROR] Failed to install python-qpid-proton.
-        echo Please install manually: pip install python-qpid-proton
+        echo [ERROR] Compilation failed!
         pause
         exit /b 1
     )
-    echo [OK] python-qpid-proton installed successfully!
-) else (
-    echo [OK] python-qpid-proton library found!
 )
 
-echo.
+if not exist "target\dependency" (
+    echo [*] Copying dependencies...
+    call mvn dependency:copy-dependencies -DoutputDirectory=target/dependency
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERROR] Failed to copy dependencies!
+        pause
+        exit /b 1
+    )
+)
+
 echo ============================================================================
 echo Starting Verifier...
 echo ============================================================================
 echo.
 
-:: Pass remaining arguments to verifier script
-python verifier\verifying_consumer.py %*
+java -cp "target\classes;lib\*;target\dependency\*" com.amhs.swim.test.verifier.Verifier %*
 
 set "VERIFIER_EXIT_CODE=%ERRORLEVEL%"
 
@@ -164,6 +165,6 @@ echo ===========================================================================
 echo Verifier exited with code: %VERIFIER_EXIT_CODE%
 echo ============================================================================
 
-:: Keep window open *always*
+:: Keep window open always
 pause
 exit /b %VERIFIER_EXIT_CODE%
