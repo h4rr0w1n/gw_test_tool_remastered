@@ -28,12 +28,15 @@ Công cụ đã được đơn giản hóa với **một script duy nhất** (`r
 :: Run the main test tool
 run.bat
 
-:: Run the verifier for CTSW116 validation
+:: Run the verifier for CTSW116 validation (direct script)
+verifier.bat [queue-or-topic-address] [amqp-url] [vpn-name]
+
+:: Or via run.bat
 run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
 
 :: Examples:
-run.bat --verifier TEST.QUEUE
-run.bat --verifier "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
+verifier.bat TEST.QUEUE
+verifier.bat "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
 ```
 
 Script sẽ tự động:

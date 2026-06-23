@@ -4,6 +4,7 @@ import com.amhs.swim.test.driver.SwimDriver;
 import com.amhs.swim.test.util.Logger;
 import com.amhs.swim.test.config.TestConfig;
 import com.amhs.swim.test.config.CaseConfigManager;
+import com.amhs.swim.test.util.Utils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +15,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.GZIPOutputStream;
+
+import static com.amhs.swim.test.util.Utils.*;
 
 /**
  * All 16 SWIM→AMHS test cases (CTSW101–CTSW116).
@@ -113,7 +116,7 @@ public class SwimToAmhsTests {
      * @return Array of address lines, or empty if file not found
      */
     private String[] loadAddressFile(String path, String caseId, int required) {
-        if (path == null || path.isBlank()) {
+        if (path == null || isBlank(path)) {
             Logger.logCase(caseId, "ERROR", "No address file specified.");
             return new String[0];
         }
@@ -190,7 +193,7 @@ public class SwimToAmhsTests {
             
             // Load payloads from default config (config/default_case_payloads.xml)
             // ICAO EUR Doc 047 Appendix A compliant defaults
-            return List.of(
+            return listOf(
                 new TestMessage(1,
                     "Text message | priority=4 | content-type: text/plain;charset=utf-8 | body: amqp-value",
                     configMgr.getPayload("CTSW101", 1), true, false, "p1"),
@@ -326,7 +329,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1,  "TEXT | priority=10 (invalid) → REJECT",                   "CTSW102 Rejection", true,  false, "payload"),
                 new TestMessage(2,  "TEXT | empty message-id → REJECT (optional)",              "CTSW102 Rejection", false, true,  "payload"),
                 new TestMessage(3,  "TEXT | creation-time=0 → REJECT (optional)",               "CTSW102 Rejection", false, true,  "payload"),
@@ -523,7 +526,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "amhs_service_level=basic | text/plain | amqp-value | ACCEPT",       "CTSW103 Basic",         true, false, "p1"),
                 new TestMessage(2, "amhs_service_level=basic | application/octet-stream | REJECT",       "materials/sample.pdf", true, false, "binFile_2", true),
                 new TestMessage(3, "amhs_service_level=extended | text/plain | amqp-value | ACCEPT",     "CTSW103 Extended",      true, false, "p3"),
@@ -803,7 +806,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "amhs_ats_ft=empty → use creation-time → DDhhmm format", "CTSW105 Default FT",   true, false, "p1"),
                 new TestMessage(2, "amhs_ats_ft='250102' → explicit ATS-Filing-Time=250102",  "CTSW105 Explicit FT",  true, false, "p2")
             );
@@ -892,13 +895,13 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "priority=4 | amhs_ats_ohi < 53 chars",           "OHI-SHORT | OHI Content",   true, false, "p1"),
-                new TestMessage(2, "priority=4 | amhs_ats_ohi = 53 chars exactly",   "A".repeat(53) + " | OHI Content", true, false, "p2"),
-                new TestMessage(3, "priority=4 | amhs_ats_ohi > 53 chars → trim 53", "A".repeat(60) + " | OHI Content", true, false, "p3"),
+                new TestMessage(2, "priority=4 | amhs_ats_ohi = 53 chars exactly",   repeat("A", 53) + " | OHI Content", true, false, "p2"),
+                new TestMessage(3, "priority=4 | amhs_ats_ohi > 53 chars → trim 53", repeat("A", 60) + " | OHI Content", true, false, "p3"),
                 new TestMessage(4, "priority=6 | amhs_ats_ohi < 48 chars",           "OHI-HI-SHORT | OHI Content", true, false, "p4"),
-                new TestMessage(5, "priority=6 | amhs_ats_ohi = 48 chars exactly",   "B".repeat(48) + " | OHI Content", true, false, "p5"),
-                new TestMessage(6, "priority=6 | amhs_ats_ohi > 48 chars → trim 48", "B".repeat(60) + " | OHI Content", true, false, "p6")
+                new TestMessage(5, "priority=6 | amhs_ats_ohi = 48 chars exactly",   repeat("B", 48) + " | OHI Content", true, false, "p5"),
+                new TestMessage(6, "priority=6 | amhs_ats_ohi > 48 chars → trim 48", repeat("B", 60) + " | OHI Content", true, false, "p6")
             );
         }
 
@@ -910,7 +913,7 @@ public class SwimToAmhsTests {
             short defaultPriority = (idx <= 3) ? (short) 4 : (short) 6;
             short priority = (priorityStr != null && !priorityStr.isEmpty()) ? Short.parseShort(priorityStr) : defaultPriority;
 
-            String[] ohiDefaults = {"OHI-SHORT", "A".repeat(53), "A".repeat(60), "OHI-HI-SHORT", "B".repeat(48), "B".repeat(60)};
+            String[] ohiDefaults = {"OHI-SHORT", repeat("A", 53), repeat("A", 60), "OHI-HI-SHORT", repeat("B", 48), repeat("B", 60)};
             if (idx < 1 || idx > 6) return false;
             int i = idx - 1;
 
@@ -989,8 +992,8 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
-                new TestMessage(1, "AMQP subject > 128 chars → trim to 128 → IPM subject", "S".repeat(150) + " | Msg1 Payload", true, false, "p1"),
+            return listOf(
+                new TestMessage(1, "AMQP subject > 128 chars → trim to 128 → IPM subject", repeat("S", 150) + " | Msg1 Payload", true, false, "p1"),
                 new TestMessage(2, "AMQP subject (normal) → IPM subject", "Normal Subject | Msg2 Payload", true, false, "p2"),
                 new TestMessage(3, "empty AMQP subject + amhs_subject app prop → IPM subject", "| Subject example | Msg3 Payload", true, false, "p3"),
                 new TestMessage(4, "AMQP subject + amhs_subject both present → amhs_subject wins", "subject from properties | subject from application property field | Msg4 Payload", true, false, "p4")
@@ -1032,7 +1035,7 @@ public class SwimToAmhsTests {
             } else {
                 String defSubject = cfgParts.length > 0 ? cfgParts[0].trim() : "";
                 if (defSubject.isEmpty()) {
-                    defSubject = (idx == 1 ? "S".repeat(150) : "Normal Subject");
+                    defSubject = (idx == 1 ? repeat("S", 150) : "Normal Subject");
                 }
                 String defBody    = cfgParts.length > 1 ? cfgParts[1].trim() : "Msg" + idx;
                 String subject    = getInput(inputs, "subject_" + idx, defSubject);
@@ -1081,7 +1084,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "amhs_originator=VVTSYMYX (known 8-char) → converted to AMHS MF-address | ACCEPT", "VVTSYMYX | Known Orig Body", true, false, "p1")
             );
         }
@@ -1145,7 +1148,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "amhs_originator=UNKNOWN1 (unknown in IUT) → default originator used | logged+reported", "UNKNOWN1 | Unknown Orig Body", true, false, "p1")
             );
         }
@@ -1213,7 +1216,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "application/octet-stream | data=EMPTY | amqp-value=EMPTY → REJECT",           "N/A",   true,  false, "dummy"),
                 new TestMessage(2, "text/plain;charset=utf-8 | amqp-value=EMPTY | data=PRESENT → REJECT",         "materials/sample.pdf", true,  false, "binFile_2", true),
                 new TestMessage(3, "application/octet-stream | amqp-value=EMPTY | data=PRESENT → ACCEPT",         "materials/sample.pdf", true,  false, "binFile_3", true),
@@ -1334,7 +1337,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "(a) text/amqp-value size ≤ max → ACCEPT",   "1 KB text",   true, false, "maxSizeText"),
                 new TestMessage(2, "(b) binary/data size ≤ max → ACCEPT",        "materials/small_payload.bin", true, false, "maxSizeBin", true),
                 new TestMessage(3, "(c) text/amqp-value size > max → REJECT",   "OVER max",    true, false, "maxSizeTextOver"),
@@ -1483,7 +1486,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "(a) Load file with 512 AMHS addresses → send → ACCEPT\n    Required: exactly 512 addresses (one per line)", 
                                 "materials/address_512.txt", true, false, "addressFile_a", true),
                 new TestMessage(2, "(b) Load file with 513 AMHS addresses → send → REJECT\n    Required: exactly 513 addresses (one per line)\n    [Sync] copies file from message 1", 
@@ -1498,9 +1501,9 @@ public class SwimToAmhsTests {
             String path = inputs != null ? inputs.getOrDefault(fileKey, "") : "";
 
             // For sync: if msg 2 file is same as msg 1 / empty, check for synced key
-            if (idx == 2 && (path == null || path.isBlank())) {
+            if (idx == 2 && (path == null || isBlank(path))) {
                 path = inputs != null ? inputs.getOrDefault("addressFile_a", "") : "";
-                if (!path.isBlank()) {
+                if (!isBlank(path)) {
                     Logger.logCase(testCaseId, "INFO", "[MSG-2] Synced address file from Message 1: " + path);
                 }
             }
@@ -1515,7 +1518,7 @@ public class SwimToAmhsTests {
             }
 
             // Fallback to loading from file if the standard textbox wasn't used or doesn't have enough addresses
-            if (addresses.length == 0 && !path.isBlank()) {
+            if (addresses.length == 0 && !isBlank(path)) {
                 addresses = loadAddressFile(path, testCaseId, required);
             }
 
@@ -1606,7 +1609,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "priority=6 | amhs_notification_request=rn,nrn | → NRN expected from AMHS Tool (delete message)", "NotifRequest NRN", true, false, "p1"),
                 new TestMessage(2, "priority=6 | amhs_notification_request=rn,nrn | → RN expected from AMHS Tool (accept message)",  "NotifRequest RN", true, false, "p2")
             );
@@ -1713,7 +1716,7 @@ public class SwimToAmhsTests {
         public List<TestMessage> getMessages() {
             CaseConfigManager configMgr = CaseConfigManager.getInstance();
             String def = configMgr.getPayload("CTSW114", 1);
-            return List.of(
+            return listOf(
                 new TestMessage(1,
                     "Send message to AMHS Tool with amhs_notification_request=nrn + amhs_originator set.\n" +
                     "After receipt: DELETE it in AMHS Tool → triggers NDR with 'unable-to-transfer'",
@@ -1812,7 +1815,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "amhs_bodypart_type=ia5-text | encoding=IA5 | amqp-value='Lorem ipsum'",                "Lorem ipsum",      true, false, "p1"),
                 new TestMessage(2, "amhs_bodypart_type=ia5_text_body_part | encoding=IA5 | amqp-value='Lorem ipsum i5bpt'","Lorem ipsum i5bpt", true, false, "p2"),
                 new TestMessage(3, "amhs_bodypart_type=general-text-body-part | encoding=ISO-646 | value='Lorem ipsum 646'","Lorem ipsum 646",  true, false, "p3"),
@@ -1895,7 +1898,7 @@ public class SwimToAmhsTests {
 
         @Override
         public List<TestMessage> getMessages() {
-            return List.of(
+            return listOf(
                 new TestMessage(1, "binary file + FTBP attributes (file_name, object_size, last_mod) | no compression",
                     "materials/sample.pdf", true, false, "binFile", true),
                 new TestMessage(2, "same file + swim_compression=gzip | IUT must decompress | FTBP contains original data",

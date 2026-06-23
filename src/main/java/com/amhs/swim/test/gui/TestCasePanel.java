@@ -4,6 +4,7 @@ import com.amhs.swim.test.testcase.BaseTestCase;
 import com.amhs.swim.test.testcase.BaseTestCase.TestMessage;
 import com.amhs.swim.test.util.*;
 import com.amhs.swim.test.config.CaseConfigManager;
+import static com.amhs.swim.test.util.Utils.repeat;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -14,9 +15,11 @@ import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -862,7 +865,7 @@ public class TestCasePanel extends JPanel {
 
                 if (lookup.startsWith("AMHS RECIPIENTS")) {
                     // Parse addresses from file content into the standard recipients field
-                    String content = Files.readString(selectedFile.toPath());
+                    String content = readFileAsString(selectedFile);
                     String addresses = parseAddressesList(content);
                     amhsRecipientsField.setText(addresses);
                     Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI",
@@ -883,7 +886,7 @@ public class TestCasePanel extends JPanel {
                 }
 
                 // Default: read text content into the field
-                String content = Files.readString(selectedFile.toPath());
+                String content = readFileAsString(selectedFile);
                 JTextField tf = null;
                 if (lookup.startsWith("AMQP PRIORITY")) {
                     tf = priorityField;
@@ -948,6 +951,17 @@ public class TestCasePanel extends JPanel {
         
         // Return as comma-separated list
         return String.join(", ", addresses);
+    }
+
+    private String readFileAsString(File file) throws IOException {
+        StringBuilder content = new StringBuilder();
+        try (BufferedReader reader = Files.newBufferedReader(file.toPath(), StandardCharsets.UTF_8)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                content.append(line).append(System.lineSeparator());
+            }
+        }
+        return content.toString();
     }
 
     private void saveCaseState() {
@@ -1185,9 +1199,9 @@ public class TestCasePanel extends JPanel {
     }
 
     private void appendLogBanner(BaseTestCase tc) {
-        logArea.append("═".repeat(60) + "\n");
+        logArea.append(repeat("═", 60) + "\n");
         logArea.append("CASE " + tc.getTestCaseId() + "\n");
-        logArea.append("═".repeat(60) + "\n");
+        logArea.append(repeat("═", 60) + "\n");
     }
 
     private void setupTheme() {

@@ -9,6 +9,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -16,6 +19,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Manages per-case payload configurations.
@@ -56,8 +60,14 @@ public class CaseConfigManager {
         Path path = Paths.get(CONFIG_FILE);
         if (Files.exists(path)) {
             try {
-                String content = Files.readString(path);
-                caseConfigs = new JSONObject(content);
+                StringBuilder content = new StringBuilder();
+                try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        content.append(line).append(System.lineSeparator());
+                    }
+                }
+                caseConfigs = new JSONObject(content.toString());
                 Logger.logCase("CONFIG", "INFO", "Loaded case payload config from: " + CONFIG_FILE);
             } catch (IOException e) {
                 Logger.logCase("CONFIG", "WARN", "Failed to read case payload config, using defaults: " + e.getMessage());
@@ -167,7 +177,9 @@ public class CaseConfigManager {
         try {
             Path path = Paths.get(CONFIG_FILE);
             Files.createDirectories(path.getParent());
-            Files.writeString(path, caseConfigs.toString(4));
+            try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+                writer.write(caseConfigs.toString(4));
+            }
             Logger.logCase("CONFIG", "INFO", "Saved case payload config to: " + CONFIG_FILE);
         } catch (IOException e) {
             Logger.logCase("CONFIG", "ERROR", "Failed to save case payload config: " + e.getMessage());

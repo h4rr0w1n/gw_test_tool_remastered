@@ -2,6 +2,7 @@ package com.amhs.swim.test.driver;
 
 import com.amhs.swim.test.config.TestConfig;
 import com.amhs.swim.test.util.Logger;
+import com.amhs.swim.test.util.Utils;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -165,7 +166,7 @@ public class SwimDriver {
         if (payload != null && payload.length > 2 && payload[0] == (byte)0x1f && payload[1] == (byte)0x8b) {
             try (java.util.zip.GZIPInputStream gis = new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(payload))) {
                 Logger.log("INFO", "Detected GZIP payload, automatically decompressing for display...");
-                byte[] decompressed = gis.readAllBytes();
+                byte[] decompressed = Utils.readAllBytes(gis);
                 Logger.log("SUCCESS", "GZIP payload successfully decompressed (Original size: " + payload.length + " bytes, Decompressed size: " + decompressed.length + " bytes).");
                 return decompressed;
             } catch (Exception e) {

@@ -2,10 +2,12 @@ package com.amhs.swim.test.util;
 
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Utility to load the original ICAO Testbook descriptions from cases.json.
@@ -19,8 +21,14 @@ public class TestbookLoader {
         try {
             Path path = Paths.get(CASES_FILE_PATH);
             if (Files.exists(path)) {
-                String content = Files.readString(path);
-                casesData = new JSONObject(content);
+                StringBuilder content = new StringBuilder();
+                try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        content.append(line).append(System.lineSeparator());
+                    }
+                }
+                casesData = new JSONObject(content.toString());
             } else {
                 casesData = new JSONObject();
                 Logger.logCase("MAIN", "WARN", "cases.json not found at " + path.toAbsolutePath());

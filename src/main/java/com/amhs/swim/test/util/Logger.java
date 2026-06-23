@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.amhs.swim.test.util.Utils.repeat;
+
 /**
  * Specialized logging utility for the AMHS/SWIM Gateway Test Tool.
  * 
@@ -95,10 +97,10 @@ public class Logger {
 
     public static void logVerification(String caseId, String details) {
         logCase(caseId, "SUCCESS",
-            "\n" + "-".repeat(60) + "\n" +
+            "\n" + repeat("-", 60) + "\n" +
             " [" + caseId + "] VERIFICATION SUMMARY\n" +
             "  " + details.replace("\n", "\n  ") + "\n" +
-            "-".repeat(60) + "\n");
+            repeat("-", 60) + "\n");
     }
 
     /**
