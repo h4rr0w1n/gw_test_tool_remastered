@@ -41,26 +41,30 @@ public class SwimDriver {
         
         // Try Solace first (legacy/proprietary)
         SolaceSwimAdapter solaceAdapter = new SolaceSwimAdapter();
-        if (solaceAdapter.isAvailable() && solaceAdapter.canConnect()) {
-            this.activeAdapter = solaceAdapter;
-            Logger.log("SUCCESS", "Selected Solace JCSMP adapter (proprietary API detected & reachable).");
-            return;
+        if (solaceAdapter.isAvailable()) {
+            if (solaceAdapter.canConnect()) {
+                this.activeAdapter = solaceAdapter;
+                Logger.log("SUCCESS", "Selected Solace JCSMP adapter (proprietary API detected & reachable).");
+                return;
+            } else {
+                Logger.log("INFO", "Solace JCSMP API available but broker not reachable yet. Will still use Solace adapter (you can connect later).");
+                this.activeAdapter = solaceAdapter;
+                return;
+            }
         }
         
         // Fallback to Qpid (standard AMQP 1.0)
         QpidSwimAdapter qpidAdapter = new QpidSwimAdapter();
-        if (qpidAdapter.isAvailable() && qpidAdapter.canConnect()) {
-            this.activeAdapter = qpidAdapter;
-            Logger.log("SUCCESS", "Selected Qpid AMQP 1.0 adapter (standard AMQP 1.0 & reachable).");
-            return;
-        }
-
-        // If we reach here, either the libraries are missing OR the brokers are offline
-        if (solaceAdapter.isAvailable() || qpidAdapter.isAvailable()) {
-            throw new IllegalStateException(
-                "AMQP software/driver is missing: Connection refused to configured broker hosts. " +
-                "Please ensure your AMQP broker (Solace, Qpid, etc.) is running."
-            );
+        if (qpidAdapter.isAvailable()) {
+            if (qpidAdapter.canConnect()) {
+                this.activeAdapter = qpidAdapter;
+                Logger.log("SUCCESS", "Selected Qpid AMQP 1.0 adapter (standard AMQP 1.0 & reachable).");
+                return;
+            } else {
+                Logger.log("INFO", "Qpid AMQP 1.0 API available but broker not reachable yet. Will still use Qpid adapter (you can connect later).");
+                this.activeAdapter = qpidAdapter;
+                return;
+            }
         }
         
         // No adapter available in classpath
