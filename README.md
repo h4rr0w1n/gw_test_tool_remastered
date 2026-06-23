@@ -11,60 +11,57 @@ Công cụ sử dụng kiến trúc hướng đối tượng với các module c
 - **Config**: Quản lý cấu hình kết nối.
 - **Util**: Tiện ích logging và validation.
 
-## 3. Yêu cầu hệ thống
-- Java JDK 11 trở lên.
-- Maven 3.6+.
-- Truy cập mạng tới AMHS MTA, SWIM Broker (Solace), và Directory Server.
-- Thư viện JNI cho Isode API (X400, DSAPI, ATNDS) phải được biên dịch và đưa vào `lib/`.
-- Thư viện Solace JCSMP cho kết nối AMQP.
+## 3. Yêu cầu hệ thống (End User)
+- **Java JRE/JDK 8 trở lên** — tải tại https://adoptium.net/ (miễn phí, khuyến nghị)
+- **Không cần Maven, Python, hay cấu hình PATH** — chỉ cần Java là chạy được.
 
-## 4. Hướng dẫn sử dụng / Usage Guide
+## 4. Hướng dẫn sử dụng
 
-### 4.1. Chạy bằng Single Run Script (Khuyến nghị)
-Công cụ đã được đơn giản hóa với **một script duy nhất** (`run.bat`) có thể chạy trên cả Windows và Linux, bao gồm cả chức năng verifier.
-
-#### Windows:
+### 4.1. Chạy Main Tool
+Double-click (hoặc chạy trong terminal):
 ```bat
-:: Run the main test tool
-run.bat
+run-tool.bat
+```
+Script sẽ tự động tìm Java trên máy (kể cả khi Java không có trong PATH) và khởi chạy công cụ từ file JAR đã được build sẵn.
 
-:: Run the verifier for CTSW116 validation (direct script)
-verifier.bat [queue-or-topic-address] [amqp-url] [vpn-name]
-
-:: Or via run.bat
-run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
-
-:: Examples:
-verifier.bat TEST.QUEUE
-verifier.bat "my/test/topic" "amqp://user:pass@host:5672" "MY_VPN"
+### 4.2. Chạy Verifier (nhận và kiểm tra message từ broker)
+Double-click (hoặc chạy trong terminal):
+```bat
+run-verifier.bat [queue-address] [amqp-url] [vpn-name]
 ```
 
-Script sẽ tự động:
-1. Kiểm tra Java, Maven và Python (cho verifier mode)
-2. Tải xuống dependencies (Solace JCSMP) nếu thiếu
-3. Cài đặt python-qpid-proton nếu thiếu (cho verifier mode)
-4. Biên dịch project nếu cần
-5. Chạy công cụ với classpath chính xác
+Nếu không truyền tham số, script sẽ dùng giá trị mặc định từ `config\test.properties`.
 
-#### Linux/macOS:
-```bash
-chmod +x run.bat
-./run.bat
+**Ví dụ:**
+```bat
+:: Dùng cấu hình mặc định
+run-verifier.bat
 
-# Run verifier
-./run.bat --verifier [queue-or-topic-address] [amqp-url] [vpn-name]
+:: Chỉ định queue và kết nối
+run-verifier.bat TEST.QUEUE amqp://user:pass@192.168.1.10:5672 MY_VPN
 ```
 
-### 4.2. Chạy trực tiếp bằng Java
-```bash
+---
+
+## 5. Dành cho Developer
+
+### 5.1. Build JAR từ source (cần Maven + JDK)
+```bat
+build.bat
+```
+Output: `amhs-swim-tool.jar` (fat JAR, tất cả dependencies được bundle).
+
+### 5.2. Tạo release package
+```bat
+package-release.bat
+```
+Output: `amhs-swim-gateway-test-tool.zip` (chứa JAR + 2 scripts + config).
+
+### 5.3. Build thủ công
+```bat
 mvn clean package
 java -jar target/test-tool-1.0.0-jar-with-dependencies.jar
 ```
 
-### 4.3. Chạy bằng Docker
-Xem chi tiết cách chạy bằng Docker trong tài liệu:
-- English: [DOCKER_README.md](../DOCKER_README.md)
-- Tiếng Việt: [huong-dan-su-dung.md](huong-dan-su-dung.md)
-
-## 5. Ánh xạ API
+## 6. Ánh xạ API
 Xem chi tiết trong file `API_MAPPING.md`.
