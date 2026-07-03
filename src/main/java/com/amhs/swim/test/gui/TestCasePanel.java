@@ -47,12 +47,14 @@ public class TestCasePanel extends JPanel {
     
     // Config Panel (Left)
     private JPanel configFormPanel;
-    private Map<String, JTextField> configFields = new java.util.LinkedHashMap<>();
+    private Map<String, javax.swing.text.JTextComponent> configFields = new java.util.LinkedHashMap<>();
     private JTextField priorityField;
     private JComboBox<String> contentTypeCombo;
     private JComboBox<String> brokerProfileField;
     private JTextField amhsRecipientsField;
     private JTextField bodyTypeField;
+    private JTextField topicField;
+    private JTextField queueField;
     private JTextArea descriptionArea;
     private JButton btnSend;
     private JButton btnRunCase;
@@ -289,6 +291,31 @@ public class TestCasePanel extends JPanel {
         configFormPanel.add(btnUploadBodyType, gbc);
         row++;
         
+        // TOPIC Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("TOPIC:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        topicField = new JTextField(10);
+        try {
+            topicField.setText(com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_topic", "TEST.TOPIC"));
+        } catch (Exception ex) {
+            topicField.setText("TEST.TOPIC");
+        }
+        configFormPanel.add(topicField, gbc);
+        row++;
+        
+        // QUEUE Row
+        gbc.gridx = 0; gbc.gridy = row; gbc.weightx = 0;
+        configFormPanel.add(new JLabel("QUEUE:"), gbc);
+        gbc.gridx = 1; gbc.weightx = 1.0;
+        queueField = new JTextField(10);
+        try {
+            queueField.setText(com.amhs.swim.test.config.TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE"));
+        } catch (Exception ex) {
+            queueField.setText("TEST.QUEUE");
+        }
+        configFormPanel.add(queueField, gbc);
+        row++;
         
         JScrollPane configScroll = new JScrollPane(configFormPanel);
         configScroll.setBorder(new MatteBorder(1, 1, 1, 1, clrSeparator));
@@ -447,8 +474,10 @@ public class TestCasePanel extends JPanel {
         // row2 broker:       JLabel + JComboBox  (no Upload!)   = 2  ← only 2!
         // row3 recipients:   JLabel + JTextField + JButton      = 3
         // row4 body-type:    JLabel + JTextField + JButton      = 3
-        //                                              TOTAL   = 14
-        final int BASELINE = 14;
+        // row5 topic:        JLabel + JTextField                = 2
+        // row6 queue:        JLabel + JTextField                = 2
+        //                                              TOTAL   = 18
+        final int BASELINE = 18;
         while (configFormPanel.getComponentCount() > BASELINE) {
             configFormPanel.remove(configFormPanel.getComponentCount() - 1);
         }
@@ -513,7 +542,7 @@ public class TestCasePanel extends JPanel {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.anchor = GridBagConstraints.WEST;
-        int row = 5; // rows 0-4 are the 5 standard fields
+        int row = 7; // rows 0-6 are the 7 standard fields
 
         for (String[] spec : fieldSpecs) {
             String key   = spec[0];
@@ -541,18 +570,27 @@ public class TestCasePanel extends JPanel {
                 displayVal = defVal.substring(lastSep + 1);
             }
 
-            JTextField tf = new JTextField(displayVal);
-            tf.setEditable(true);
-            // Store the FULL path as the tooltip so doSendSingle can read it back
-            // via configFields.get(key).getText() — when user uploads a new file,
-            // doUploadField will set the full path as the field text.
-            if (isFilePath && !defVal.equals(displayVal)) {
-                tf.setToolTipText("Full path: " + defVal);
-                // Tag the field so doSendSingle uses the full path, not the truncated basename.
-                // We keep defVal as the real value via a client property.
-                tf.putClientProperty("fullPath", defVal);
+            javax.swing.text.JTextComponent tf;
+            if (key.toLowerCase().contains("payload")) {
+                JTextArea ta = new JTextArea(displayVal, 10, 40);
+                ta.setLineWrap(true);
+                ta.setWrapStyleWord(true);
+                tf = ta;
+                if (isFilePath && !defVal.equals(displayVal)) {
+                    tf.setToolTipText("Full path: " + defVal);
+                    tf.putClientProperty("fullPath", defVal);
+                }
+                configFormPanel.add(new JScrollPane(ta), gbc);
+            } else {
+                JTextField jtf = new JTextField(displayVal);
+                tf = jtf;
+                if (isFilePath && !defVal.equals(displayVal)) {
+                    tf.setToolTipText("Full path: " + defVal);
+                    tf.putClientProperty("fullPath", defVal);
+                }
+                configFormPanel.add(tf, gbc);
             }
-            configFormPanel.add(tf, gbc);
+            tf.setEditable(true);
             configFields.put(key, tf);
 
             gbc.gridx = 2; gbc.weightx = 0;
@@ -876,7 +914,7 @@ public class TestCasePanel extends JPanel {
 
                 if (isPathField) {
                     // Store the absolute path — executeSingle reads and resolves the file itself
-                    JTextField tf = configFields.get(fieldName);
+                    javax.swing.text.JTextComponent tf = configFields.get(fieldName);
                     if (tf != null) {
                         tf.setText(selectedFile.getAbsolutePath());
                         Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "UI",
@@ -887,7 +925,7 @@ public class TestCasePanel extends JPanel {
 
                 // Default: read text content into the field
                 String content = readFileAsString(selectedFile);
-                JTextField tf = null;
+                javax.swing.text.JTextComponent tf = null;
                 if (lookup.startsWith("AMQP PRIORITY")) {
                     tf = priorityField;
                 } else if (lookup.startsWith("CONTENT TYPE")) {
@@ -1028,36 +1066,45 @@ public class TestCasePanel extends JPanel {
         inputs.put("broker_profile", brokerProfile);
         inputs.put("recipient",      amhsRecipients);  // key read by recip() helper
         inputs.put("body_type",      bodyType);
+        inputs.put("topic",          topicField.getText().trim());
+        inputs.put("queue",          queueField.getText().trim());
         
         // Put each extra config field value under its own key — this is the critical fix.
         // Previously all fields were concatenated into one pipe-string; that broke per-field
         // key lookups (e.g. originator_108, amhs_ats_ohi_1, subject_1, addressFile_a, etc.).
-        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
             String val = entry.getValue().getText();
             if (val != null && !val.isEmpty()) {
                 inputs.put(entry.getKey(), val);
             }
         }
 
-        // Also build a human-readable payload summary for the primary custom key and log
-        StringBuilder payloadBuilder = new StringBuilder();
-        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+        // Build a human-readable summary (key=value) for logging/display only.
+        // The actual value sent as message body is stored per-key above (line 1075-1080).
+        // IMPORTANT: do NOT prepend "key=" here — executeSingle reads the customKey value
+        // as raw bytes and would otherwise send "payload={...}" instead of "{...}".
+        StringBuilder summarySb = new StringBuilder();
+        String primaryPayload = "";
+        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
             String val = entry.getValue().getText();
             if (val == null || val.isEmpty()) continue;
-            if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
-            payloadBuilder.append(entry.getKey()).append("=").append(val);
+            if (summarySb.length() > 0) summarySb.append(" | ");
+            summarySb.append(entry.getKey()).append("=").append(val);
+            // Track the value of the first "payload"-like field as the primary body
+            if (primaryPayload.isEmpty() && entry.getKey().toLowerCase().contains("payload")) {
+                primaryPayload = val;
+            }
         }
-        String finalPayload = payloadBuilder.toString();
-        // Also expose under the message's primary customKey for backward compatibility
+        String finalPayload = primaryPayload.isEmpty() ? summarySb.toString() : primaryPayload;
+        // Expose under the message's primary customKey for backward compatibility.
+        // Store the raw value only (no key= prefix) so executeSingle gets clean body bytes.
         if (!inputs.containsKey(currentMsg.getCustomKey()) || inputs.get(currentMsg.getCustomKey()).isEmpty()) {
             inputs.put(currentMsg.getCustomKey(), finalPayload);
         }
 
-        // Resolve final topic/queue from TestConfig (these are always the live values,
-        // regardless of whether they are TEST.TOPIC/TEST.QUEUE or anything else configured)
-        com.amhs.swim.test.config.TestConfig liveConfig = com.amhs.swim.test.config.TestConfig.getInstance();
-        String resolvedTopic = liveConfig.getProperty("gateway.default_topic", "TEST.TOPIC");
-        String resolvedQueue = liveConfig.getProperty("gateway.default_queue", "TEST.QUEUE");
+
+        String resolvedTopic = topicField.getText().trim();
+        String resolvedQueue = queueField.getText().trim();
 
         // Log the prepared message and properties
         String recipDisplay = caseId.equals("CTSW112")
@@ -1065,7 +1112,7 @@ public class TestCasePanel extends JPanel {
             : amhsRecipients;
             
         Map<String, String> extraFieldsMap = new HashMap<>();
-        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
             String val = entry.getValue().getText();
             if (val != null && !val.isEmpty()) {
                 extraFieldsMap.put(entry.getKey(), val);
@@ -1251,7 +1298,7 @@ public class TestCasePanel extends JPanel {
         String bodyType = bodyTypeField.getText().trim();
 
         Map<String, String> extraFieldsMap = new HashMap<>();
-        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
             String val = entry.getValue().getText();
             if (val != null && !val.isEmpty()) {
                 extraFieldsMap.put(entry.getKey(), val);
@@ -1259,7 +1306,7 @@ public class TestCasePanel extends JPanel {
         }
 
         StringBuilder payloadBuilder = new StringBuilder();
-        for (Map.Entry<String, JTextField> entry : configFields.entrySet()) {
+        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
             String txt = entry.getValue().getText();
             if (txt == null || txt.isEmpty()) continue;
             if (payloadBuilder.length() > 0) payloadBuilder.append(" | ");
