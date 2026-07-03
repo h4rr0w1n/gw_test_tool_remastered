@@ -27,6 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.BadLocationException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.Random;
 
 /**
  * Dynamic execution environment for individual AMHS/SWIM test cases.
@@ -59,6 +64,9 @@ public class TestCasePanel extends JPanel {
     private JButton btnSend;
     private JButton btnRunCase;
     private JButton btnViewFull;
+    private JToggleButton btnAutoSend;
+    private JSpinner spinnerAutoInterval;
+    private JCheckBox chkAutoRandomize;
     
     // Log Panel (Right)
     private JTextArea logArea;
@@ -87,7 +95,14 @@ public class TestCasePanel extends JPanel {
 
         initComponents();
         showPlaceholder();
+        // Apply settings on startup
+        applySettings();
     }
+
+    // Scheduler for automatic sending
+    private ScheduledExecutorService scheduler = null;
+    private ScheduledFuture<?> autoSendFuture = null;
+    private final Random rng = new Random();
 
     private void initComponents() {
         // --- TOP BAR ---
@@ -326,12 +341,34 @@ public class TestCasePanel extends JPanel {
         btnSend = new JButton("Send");
         JButton btnRevertDefault = new JButton("Revert To Default");
         
+        btnAutoSend = new JToggleButton("Start Auto Send");
+        int savedInterval = 10;
+        boolean savedRand = false;
+        try {
+            savedInterval = Integer.parseInt(com.amhs.swim.test.config.TestConfig.getInstance().getProperty("auto_send.interval_seconds","10"));
+            savedRand = Boolean.parseBoolean(com.amhs.swim.test.config.TestConfig.getInstance().getProperty("auto_send.randomize","false"));
+        } catch (Exception ex) {}
+        
+        spinnerAutoInterval = new JSpinner(new SpinnerNumberModel(savedInterval, 1, 3600, 1));
+        chkAutoRandomize = new JCheckBox("Rand");
+        chkAutoRandomize.setSelected(savedRand);
+        chkAutoRandomize.setBackground(bgPanel);
+        
+        btnAutoSend.addActionListener(e -> toggleAutoSend());
+        spinnerAutoInterval.addChangeListener(e -> com.amhs.swim.test.config.TestConfig.getInstance().setProperty("auto_send.interval_seconds", spinnerAutoInterval.getValue().toString()));
+        chkAutoRandomize.addActionListener(e -> com.amhs.swim.test.config.TestConfig.getInstance().setProperty("auto_send.randomize", Boolean.toString(chkAutoRandomize.isSelected())));
+        
         btnRevertDefault.addActionListener(e -> doRevertToDefault());
         btnSend.addActionListener(e -> doSendSingle());
         btnViewFull.addActionListener(e -> doViewFullPayload());
         actionPanel.add(btnViewFull);
         actionPanel.add(btnRevertDefault);
         actionPanel.add(btnSend);
+        actionPanel.add(new JSeparator(SwingConstants.VERTICAL));
+        actionPanel.add(new JLabel("Interval(s):"));
+        actionPanel.add(spinnerAutoInterval);
+        actionPanel.add(chkAutoRandomize);
+        actionPanel.add(btnAutoSend);
 
         configPanel.add(lblConfig, BorderLayout.NORTH);
         configPanel.add(configScroll, BorderLayout.CENTER);
@@ -1041,84 +1078,12 @@ public class TestCasePanel extends JPanel {
         
         int msgIndex = currentMsg.getIndex();
         int attempt = ResultManager.getInstance().getNextAttempt(currentCase.getTestCaseId(), msgIndex);
-        
-        Map<String, String> inputs = new HashMap<>();
-        
-        String priority      = priorityField.getText().trim();
-        String contentType   = (String) contentTypeCombo.getSelectedItem();
-        String brokerProfile = (String) brokerProfileField.getSelectedItem();
-        String bodyType      = bodyTypeField.getText();
 
-        // For CTSW112 the address file field drives recipients, NOT the standard field.
-        // For all other cases: AMHS RECIPIENTS standard field drives recip().
-        String caseId = currentCase.getTestCaseId();
-        String amhsRecipients;
-        if (caseId.equals("CTSW112")) {
-            // Leave empty — executeSingle loads addresses from the addressFile_a/b extra field
-            amhsRecipients = "";
-        } else {
-            amhsRecipients = parseAddressesList(amhsRecipientsField.getText());
-        }
-        
-        // Add standard AMQP properties to inputs
-        inputs.put("amqp_priority",  priority);
-        inputs.put("content_type",   contentType);
-        inputs.put("broker_profile", brokerProfile);
-        inputs.put("recipient",      amhsRecipients);  // key read by recip() helper
-        inputs.put("body_type",      bodyType);
-        inputs.put("topic",          topicField.getText().trim());
-        inputs.put("queue",          queueField.getText().trim());
-        
-        // Put each extra config field value under its own key — this is the critical fix.
-        // Previously all fields were concatenated into one pipe-string; that broke per-field
-        // key lookups (e.g. originator_108, amhs_ats_ohi_1, subject_1, addressFile_a, etc.).
-        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
-            String val = entry.getValue().getText();
-            if (val != null && !val.isEmpty()) {
-                inputs.put(entry.getKey(), val);
-            }
-        }
-
-        // Build a human-readable summary (key=value) for logging/display only.
-        // The actual value sent as message body is stored per-key above (line 1075-1080).
-        // IMPORTANT: do NOT prepend "key=" here — executeSingle reads the customKey value
-        // as raw bytes and would otherwise send "payload={...}" instead of "{...}".
-        StringBuilder summarySb = new StringBuilder();
-        String primaryPayload = "";
-        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
-            String val = entry.getValue().getText();
-            if (val == null || val.isEmpty()) continue;
-            if (summarySb.length() > 0) summarySb.append(" | ");
-            summarySb.append(entry.getKey()).append("=").append(val);
-            // Track the value of the first "payload"-like field as the primary body
-            if (primaryPayload.isEmpty() && entry.getKey().toLowerCase().contains("payload")) {
-                primaryPayload = val;
-            }
-        }
-        String finalPayload = primaryPayload.isEmpty() ? summarySb.toString() : primaryPayload;
-        // Expose under the message's primary customKey for backward compatibility.
-        // Store the raw value only (no key= prefix) so executeSingle gets clean body bytes.
-        if (!inputs.containsKey(currentMsg.getCustomKey()) || inputs.get(currentMsg.getCustomKey()).isEmpty()) {
-            inputs.put(currentMsg.getCustomKey(), finalPayload);
-        }
-
+        Map<String, String> inputs = prepareInputsForSend(false, false);
 
         String resolvedTopic = topicField.getText().trim();
         String resolvedQueue = queueField.getText().trim();
 
-        // Log the prepared message and properties
-        String recipDisplay = caseId.equals("CTSW112")
-            ? "[loaded from address file]"
-            : amhsRecipients;
-            
-        Map<String, String> extraFieldsMap = new HashMap<>();
-        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
-            String val = entry.getValue().getText();
-            if (val != null && !val.isEmpty()) {
-                extraFieldsMap.put(entry.getKey(), val);
-            }
-        }
-        
         Logger.logCase(currentCase.getTestCaseId(), "INFO",
             "Destinations → Topic: " + resolvedTopic + "  |  Queue: " + resolvedQueue);
 
@@ -1132,7 +1097,7 @@ public class TestCasePanel extends JPanel {
                     inputs.getOrDefault(currentMsg.getCustomKey(), ""),
                     sent ? "SUCCESS" : "ERROR"
                 ));
-                
+
                 SwingUtilities.invokeLater(() -> {
                     if (currentMsg != null && currentMsg.getIndex() == msgIndex) {
                         chkMsgPass.setSelected(false);
@@ -1141,11 +1106,190 @@ public class TestCasePanel extends JPanel {
                     }
                     updateUIFlags();
                 });
-                
+
             } catch (Exception ex) {
                 Logger.logCase(currentCase.getTestCaseId(), "ERROR", "Exception: " + ex.getMessage());
             }
         }).start();
+    }
+
+    /**
+     * Prepares the inputs map for sending. If `randomize` is true, small changes
+     * will be applied to payload-like fields (non-file fields) to introduce variation.
+     */
+    private Map<String, String> prepareInputsForSend(boolean randomize, boolean isAutoSend) {
+        Map<String, String> inputs = new HashMap<>();
+
+        String priority      = priorityField.getText().trim();
+        String contentType   = (String) contentTypeCombo.getSelectedItem();
+        String brokerProfile = (String) brokerProfileField.getSelectedItem();
+        String bodyType      = bodyTypeField.getText();
+
+        String caseId = currentCase.getTestCaseId();
+        String amhsRecipients;
+        if (caseId.equals("CTSW112")) {
+            amhsRecipients = "";
+        } else {
+            amhsRecipients = parseAddressesList(amhsRecipientsField.getText());
+        }
+
+        inputs.put("amqp_priority",  priority);
+        inputs.put("content_type",   contentType);
+        inputs.put("broker_profile", brokerProfile);
+        inputs.put("recipient",      amhsRecipients);
+        inputs.put("body_type",      bodyType);
+        inputs.put("topic",          topicField.getText().trim());
+        inputs.put("queue",          queueField.getText().trim());
+
+        StringBuilder summarySb = new StringBuilder();
+        String primaryPayload = "";
+
+        for (Map.Entry<String, javax.swing.text.JTextComponent> entry : configFields.entrySet()) {
+            String key = entry.getKey();
+            String val = entry.getValue().getText();
+            if (val == null) val = "";
+
+            boolean isPathField = key.toUpperCase().contains("BIN")
+                              || key.toUpperCase().contains("FILE")
+                              || key.toUpperCase().contains("PATH")
+                              || key.toUpperCase().contains("ADDRESS");
+
+            String outVal = val;
+            if (randomize && !isPathField && !outVal.isEmpty() && (key.toLowerCase().contains("payload") || key.toLowerCase().contains("body") || key.toLowerCase().startsWith("p"))) {
+                // Find flight-number-like patterns (2-3 uppercase letters followed by 2-4 digits)
+                java.util.regex.Matcher m = java.util.regex.Pattern.compile("([A-Z]{2,3})(\\d{2,4})\\b").matcher(outVal);
+                StringBuffer sb = new StringBuffer();
+                boolean changed = false;
+                while (m.find()) {
+                    changed = true;
+                    int len = m.group(2).length();
+                    int randNum;
+                    if (len == 2) randNum = rng.nextInt(90) + 10;
+                    else if (len == 3) randNum = rng.nextInt(900) + 100;
+                    else randNum = rng.nextInt(9000) + 1000;
+                    m.appendReplacement(sb, m.group(1) + randNum);
+                }
+                m.appendTail(sb);
+                
+                // If no flight numbers found, try replacing any 4-digit number
+                if (!changed) {
+                    java.util.regex.Matcher m2 = java.util.regex.Pattern.compile("\\b(\\d{4})\\b").matcher(outVal);
+                    StringBuffer sb2 = new StringBuffer();
+                    while (m2.find()) {
+                        m2.appendReplacement(sb2, String.valueOf(rng.nextInt(9000) + 1000));
+                    }
+                    m2.appendTail(sb2);
+                    outVal = sb2.toString();
+                } else {
+                    outVal = sb.toString();
+                }
+            }
+            
+            // Fix gateway duplicate rejection for auto sends
+            if (isAutoSend && !outVal.isEmpty()) {
+                if (key.equalsIgnoreCase("amhs_ipm_id")) {
+                    outVal = "IPM-AUTO-" + System.currentTimeMillis() + "-" + rng.nextInt(10000);
+                } else if (key.equalsIgnoreCase("amqp_message_id")) {
+                    outVal = "MSG-AUTO-" + System.currentTimeMillis() + "-" + rng.nextInt(10000);
+                }
+            }
+
+            if (!outVal.isEmpty()) {
+                inputs.put(key, outVal);
+                if (summarySb.length() > 0) summarySb.append(" | ");
+                summarySb.append(key).append("=").append(outVal);
+                if (primaryPayload.isEmpty() && key.toLowerCase().contains("payload")) {
+                    primaryPayload = outVal;
+                }
+            }
+        }
+
+        String finalPayload = primaryPayload.isEmpty() ? summarySb.toString() : primaryPayload;
+        if (!inputs.containsKey(currentMsg.getCustomKey()) || inputs.get(currentMsg.getCustomKey()).isEmpty()) {
+            inputs.put(currentMsg.getCustomKey(), finalPayload);
+        }
+
+        return inputs;
+    }
+
+    /**
+     * Apply runtime settings. Called on startup and after settings save.
+     */
+    public void applySettings() {
+        // Auto-send is now managed entirely by the toggle button on the UI.
+    }
+
+    private void toggleAutoSend() {
+        if (btnAutoSend.isSelected()) {
+            btnAutoSend.setText("Stop Auto Send");
+            btnAutoSend.setForeground(Color.RED);
+            startAutoSend();
+        } else {
+            btnAutoSend.setText("Start Auto Send");
+            btnAutoSend.setForeground(clrFg);
+            stopAutoSend();
+        }
+    }
+
+    private void startAutoSend() {
+        int interval = (Integer) spinnerAutoInterval.getValue();
+        boolean randomize = chkAutoRandomize.isSelected();
+        
+        if (scheduler == null || scheduler.isShutdown()) {
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> new Thread(r, "AutoSendThread"));
+        }
+        final boolean rnd = randomize;
+        autoSendFuture = scheduler.scheduleAtFixedRate(() -> {
+            try {
+                if (currentCase == null) return;
+                
+                final Map<String, String>[] inputsRef = new Map[1];
+                final int[] msgIndexRef = new int[1];
+                final String[] topicRef = new String[1];
+                final String[] queueRef = new String[1];
+                final String[] customKeyRef = new String[1];
+                
+                SwingUtilities.invokeAndWait(() -> {
+                    if (currentMsg == null) {
+                        java.util.List<BaseTestCase.TestMessage> msgs = currentCase.getMessages();
+                        if (msgs != null && !msgs.isEmpty()) {
+                            onMessageSelected(msgs.get(0));
+                        }
+                    }
+                    if (currentMsg != null) {
+                        inputsRef[0] = prepareInputsForSend(rnd, true);
+                        msgIndexRef[0] = currentMsg.getIndex();
+                        topicRef[0] = topicField.getText().trim();
+                        queueRef[0] = queueField.getText().trim();
+                        customKeyRef[0] = currentMsg.getCustomKey();
+                    }
+                });
+                
+                if (inputsRef[0] == null) return;
+                
+                int msgIndex = msgIndexRef[0];
+                int attempt = ResultManager.getInstance().getNextAttempt(currentCase.getTestCaseId(), msgIndex);
+                
+                Logger.logCase(currentCase.getTestCaseId(), "INFO",
+                    "Destinations → Topic: " + topicRef[0] + "  |  Queue: " + queueRef[0]);
+                    
+                boolean sent = currentCase.executeSingle(msgIndex, attempt, inputsRef[0]);
+                ResultManager.getInstance().addResult(new TestResult(
+                    currentCase.getTestCaseId(), attempt, msgIndex,
+                    inputsRef[0].getOrDefault(customKeyRef[0], ""), sent ? "SUCCESS" : "ERROR"
+                ));
+                SwingUtilities.invokeLater(() -> updateUIFlags());
+            } catch (Exception ex) {
+                Logger.logCase(currentCase != null ? currentCase.getTestCaseId() : "AUTO", "ERROR", "Auto-send exception: " + ex.getMessage());
+            }
+        }, 0, interval, TimeUnit.SECONDS);
+    }
+
+    private void stopAutoSend() {
+        if (autoSendFuture != null) {
+            autoSendFuture.cancel(false);
+            autoSendFuture = null;
+        }
     }
     
     private void doExport() {

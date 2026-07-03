@@ -449,6 +449,8 @@ public class TestFrame extends JFrame {
         JTextField originatorField = styledField(TestConfig.getInstance().getProperty("gateway.default_originator","LFRCZZZZ"), 14);
         configPanel.add(originatorField, gc);
 
+        // Advance to the next row before rendering the buttons.
+        row++;
 
         // ── Buttons ──
         gc.gridy = row++; gc.gridx = 0; gc.gridwidth = 2; gc.weightx = 0.5;
@@ -475,6 +477,8 @@ public class TestFrame extends JFrame {
             swimToAmhsTests = new SwimToAmhsTests();
             if (casePanel != null) {
                 casePanel.updateBrokerProfile((String) profileCombo.getSelectedItem());
+                // Apply any new settings that affect runtime (auto-send etc.)
+                casePanel.applySettings();
             }
         });
         configPanel.add(saveBtn, gc);
