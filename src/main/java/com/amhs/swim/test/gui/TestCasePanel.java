@@ -681,12 +681,14 @@ public class TestCasePanel extends JPanel {
         if (raw == null) raw = "";
 
         switch (caseId) {
-            // ── CTSW101 ──────────────────────────────────────────────────────────
             case "CTSW101": {
-                specs.add(new String[]{"payload", "TEXT PAYLOAD", raw});
-                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
-                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
-                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", mIdx == 1 ? "Standard Text Message" : "Standard Binary Message"});
+                if (mIdx == 2) {
+                    specs.add(new String[]{"binFile", "BINARY FILE (msg " + mIdx + ")", raw});
+                } else {
+                    specs.add(new String[]{"payload", "TEXT PAYLOAD", raw.isEmpty() ? "THIS IS A TEST MESSAGE FROM SWIM" : raw});
+                }
+                specs.add(new String[]{"amqp_message_id", "ID", "ID-" + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_recipients", "AMHS RECIPIENTS", "LONGADDRESSXXXXX"});
                 break;
             }
             // ── CTSW102 ──────────────────────────────────────────────────────────
@@ -725,9 +727,13 @@ public class TestCasePanel extends JPanel {
                 else if (mIdx == 5 || mIdx == 6) sl = "content-based";
                 else if (mIdx == 7 || mIdx == 8) sl = "recipient-based";
                 specs.add(new String[]{"amhs_service_level", "AMHS SERVICE LEVEL", sl});
-                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
-                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
-                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "Service Level Test"});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "ID.CTSW103." + System.currentTimeMillis()});
+                specs.add(new String[]{"amhs_ats_pri", "ATS PRIORITY (SS/DD/FF/GG/KK)", "FF"});
+                specs.add(new String[]{"amhs_ats_ft", "ATS FILING TIME (DDhhmm, blank=auto)", ""});
+                specs.add(new String[]{"amhs_ats_ohi", "ATS OHI (optional heading info)", ""});
+                if (mIdx == 3 || mIdx == 4 || mIdx == 5 || mIdx == 6 || mIdx == 7 || mIdx == 8) {
+                    specs.add(new String[]{"amhs_subject", "AMHS SUBJECT (Extended only)", ""});
+                }
                 break;
             }
             // ── CTSW104 ──────────────────────────────────────────────────────────
@@ -750,10 +756,8 @@ public class TestCasePanel extends JPanel {
             // msg 2 has a filing time (always 250102); rest is payload
             case "CTSW105": {
                 specs.add(new String[]{"p" + mIdx, "TEXT PAYLOAD", raw});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "ID.CTSW105." + System.currentTimeMillis()});
                 specs.add(new String[]{"amhs_ats_ft", "AMHS ATS FILING TIME (DDhhmm)", mIdx == 2 ? "250102" : ""});
-                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
-                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
-                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "Filing Time Test"});
                 break;
             }
             // ── CTSW106 ──────────────────────────────────────────────────────────
@@ -764,9 +768,7 @@ public class TestCasePanel extends JPanel {
                 String defBody = parts.length > 1 ? parts[1].trim() : "OHI Content";
                 specs.add(new String[]{"amhs_ats_ohi_" + mIdx, "OHI (amhs_ats_ohi, msg " + mIdx + ")", defOhi});
                 specs.add(new String[]{"body_" + mIdx,         "BODY PAYLOAD",                         defBody});
-                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
-                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
-                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "OHI Data Test"});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "ID.CTSW106." + System.currentTimeMillis()});
                 break;
             }
             // ── CTSW107 ──────────────────────────────────────────────────────────
@@ -788,20 +790,20 @@ public class TestCasePanel extends JPanel {
                 break;
             }
             // ── CTSW108 ──────────────────────────────────────────────────────────
-            // executeSingle reads "p1" as "originator|body"
+            // executeSingle reads "amhs_originator", "body_108"
             case "CTSW108": {
                 String[] parts = raw.split("\\|", 2);
-                specs.add(new String[]{"amhs_originator", "AMHS ORIGINATOR (known 8-char)", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
-                specs.add(new String[]{"originator_108", "amhs_originator compatibility", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
-                specs.add(new String[]{"body_108",        "BODY PAYLOAD",                  parts.length > 1 ? parts[1].trim() : "Known Orig Body"});
+                specs.add(new String[]{"amhs_originator", "AMHS ORIGINATOR (known 8-char, e.g. VVTSYMYX)", parts.length > 0 ? parts[0].trim() : "VVTSYMYX"});
+                specs.add(new String[]{"body_108",        "BODY PAYLOAD",                  parts.length > 1 ? parts[1].trim() : "This is CTSW108 test."});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "CTSW108.001"});
                 break;
             }
             // ── CTSW109 ──────────────────────────────────────────────────────────
             case "CTSW109": {
                 String[] parts = raw.split("\\|", 2);
-                specs.add(new String[]{"amhs_originator", "AMHS ORIGINATOR (unknown → fallback)", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
-                specs.add(new String[]{"originator_109", "amhs_originator compatibility", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
+                specs.add(new String[]{"amhs_originator", "AMHS ORIGINATOR (unknown → fallback to default)", parts.length > 0 ? parts[0].trim() : "UNKNOWN1"});
                 specs.add(new String[]{"body_109",        "BODY PAYLOAD",                         parts.length > 1 ? parts[1].trim() : "Unknown Orig Body"});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "ID.CTSW109." + System.currentTimeMillis()});
                 break;
             }
             // ── CTSW110 ──────────────────────────────────────────────────────────
@@ -840,9 +842,7 @@ public class TestCasePanel extends JPanel {
                 String expectedCount = (mIdx == 1) ? "512" : "513";
                 specs.add(new String[]{fileKey, "ADDRESS FILE (" + expectedCount + " lines, one address per line)", raw});
                 specs.add(new String[]{bodyKey, "MESSAGE BODY", "Msg " + (mIdx == 1 ? "512" : "513")});
-                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
-                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
-                specs.add(new String[]{"amhs_user_visible_string", "USER VISIBLE STRING", "Multiple Recipients Test"});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "ID.CTSW112." + System.currentTimeMillis()});
                 break;
             }
             // ── CTSW113 ──────────────────────────────────────────────────────────
@@ -892,6 +892,8 @@ public class TestCasePanel extends JPanel {
             // ── CTSW116 ──────────────────────────────────────────────────────────
             // executeSingle reads binFile/binFile2, amhs_ftbp_last_mod
             // EUR Doc 047 §4.5.2.6-4.5.2.8
+            // Case 1: NO compression (swim_compression absent)
+            // Case 2: swim_compression=gzip (IUT must decompress before creating FTBP)
             case "CTSW116": {
                 String[] parts = raw.split("\\|", 2);
                 String defPath    = parts.length > 0 ? parts[0].trim() : "src/main/resources/sample.pdf";
@@ -899,11 +901,11 @@ public class TestCasePanel extends JPanel {
                 String fileKey = (mIdx == 1) ? "binFile" : "binFile2";
                 specs.add(new String[]{fileKey,              "BINARY FILE",                              defPath});
                 specs.add(new String[]{"amhs_ftbp_last_mod", "FTBP LAST MOD (DDMMYYhhmmssZ per §4.5.2.7)", defLastMod});
-                specs.add(new String[]{"swim_compression", "SWIM COMPRESSION (e.g. gzip)", mIdx == 1 ? "gzip" : ""});
+                // Case 1 = no compression; Case 2 = gzip compression
+                specs.add(new String[]{"swim_compression", "SWIM COMPRESSION (gzip or empty)", mIdx == 2 ? "gzip" : ""});
                 specs.add(new String[]{"amhs_ftbp_file_name", "FTBP FILE NAME", "sample.pdf"});
                 specs.add(new String[]{"amhs_bodypart_type", "BODY PART TYPE", "file-transfer-body-part"});
-                specs.add(new String[]{"amhs_ipm_id", "IPM ID", "IPM-" + System.currentTimeMillis()});
-                specs.add(new String[]{"amhs_registered_identifier", "REG. ID", "REG-1"});
+                specs.add(new String[]{"amqp_message_id", "MESSAGE-ID", "ID.CTSW116." + System.currentTimeMillis()});
                 break;
             }
             default:

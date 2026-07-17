@@ -219,19 +219,15 @@ public class SwimToAmhsTests {
                     p.setContentType("text/plain; charset=utf-8");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
                     
-                    // Mandatory properties per EUR Doc 047 Appendix A
-                    // Load IPM-ID pattern from config, replace {ts} with timestamp
-                    String ipmPattern = configMgr.getConfig("CTSW101", "ipm_id_pattern", "IPM.CTSW101.{ts}");
-                    p.setIpmId(ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())));
-                    // Load Registered-ID pattern, replace {idx} with message index
-                    String regPattern = configMgr.getConfig("CTSW101", "reg_id_pattern", "REG.CTSW101.{idx}");
-                    p.setRegisteredId(regPattern.replace("{idx}", "1"));
-                    p.setUserVisibleStr("Standard Text Message");
+                    p.setMessageId("ID-" + System.currentTimeMillis());
                     
                     // Get payload from config or input
                     String payloadText = configMgr.getPayload("CTSW101", 1);
-                    if (inputs != null && inputs.containsKey("p1")) {
-                        payloadText = inputs.get("p1");
+                    if (inputs != null && inputs.containsKey("payload")) {
+                        payloadText = inputs.get("payload");
+                    }
+                    if (payloadText == null || payloadText.isEmpty()) {
+                        payloadText = "THIS IS A TEST MESSAGE FROM SWIM";
                     }
                     byte[] payload = payloadText.getBytes();
                     
@@ -240,7 +236,7 @@ public class SwimToAmhsTests {
                     Logger.logTransmission(testCaseId, 1, attempt, topic(inputs),
                         "SENT", "text/plain | priority=" + priority + " | len=" + payload.length);
                     Logger.logPayloadDetail(testCaseId, 1, p.toMap(), new String(payload));
-                    Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue101_1, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+                    Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue101_1, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
                     return true;
                 }
                 case 2: {
@@ -253,20 +249,12 @@ public class SwimToAmhsTests {
                     p.setContentType("application/octet-stream");
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
                     
-                    // Mandatory properties per EUR Doc 047 Appendix A
-                    String ipmPattern = configMgr.getConfig("CTSW101", "ipm_id_pattern", "IPM.CTSW101.{ts}");
-                    p.setIpmId(ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())));
-                    String regPattern = configMgr.getConfig("CTSW101", "reg_id_pattern", "REG.CTSW101.{idx}");
-                    p.setRegisteredId(regPattern.replace("{idx}", "2"));
-                    p.setUserVisibleStr("Standard Binary Message");
+                    p.setMessageId(inputs != null && inputs.containsKey("amqp_message_id") ? inputs.get("amqp_message_id") : "ID-" + System.currentTimeMillis());
                     
                     // Get file path from config or input
                     String path = configMgr.getPayload("CTSW101", 2);
                     if (inputs != null && inputs.containsKey("binFile")) {
                         path = inputs.get("binFile");
-                    }
-                    if (inputs != null && inputs.containsKey("file_path")) {
-                        path = inputs.get("file_path");
                     }
                     
                     byte[] payload;
@@ -274,16 +262,17 @@ public class SwimToAmhsTests {
                         payload = Files.readAllBytes(Paths.get(path));
                         Logger.logCase(testCaseId, "INFO", "Loaded binary file: " + path + " (" + payload.length + " bytes)");
                     } else {
-                        payload = "CTSW101 Binary Dummy Payload".getBytes();
-                        Logger.logCase(testCaseId, "WARN", "Binary file not found, using dummy string payload.");
+                        // Default fallback payload per reviewer spreadsheet 
+                        payload = new byte[] {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, (byte)0x88, (byte)0x99, (byte)0xAA, (byte)0xBB, (byte)0xCC, (byte)0xDD, (byte)0xEE, (byte)0xFF};
+                        Logger.logCase(testCaseId, "WARN", "Binary file not found, using default 16-byte payload.");
                     }
                     
                     dual(inputs, payload, p);
                     String queue101_2 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
                     Logger.logTransmission(testCaseId, 2, attempt, topic(inputs),
                         "SENT", "application/octet-stream | priority=" + priority + " | len=" + payload.length);
-                    Logger.logPayloadDetail(testCaseId, 2, p.toMap(), "[binary] " + payload.length + " bytes from " + path);
-                    Logger.logPayloadDetailReceived(testCaseId, 2, p.toMap(), queue101_2, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+                    Logger.logPayloadDetail(testCaseId, 2, p.toMap(), "BINARY_DATA_OMITTED");
+                    Logger.logPayloadDetailReceived(testCaseId, 2, p.toMap(), queue101_2, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
                     return true;
                 }
             }
@@ -480,7 +469,7 @@ public class SwimToAmhsTests {
                     ? "[binary] " + payload.length + " bytes" 
                     : new String(payload);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue102, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue102, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
             return true;
         }
 
@@ -555,19 +544,9 @@ public class SwimToAmhsTests {
                 case 1: {
                     p.setContentType("text/plain; charset=utf-8"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    p.setExtraProp("amhs_service_level","basic"); 
-                    p.setAmqpPriority(priority); 
-                    
-                    // Mandatory properties per EUR Doc 047 - loaded from config
-                    String ipmPattern = configMgr.getConfig("CTSW103", "ipm_id_pattern", "IPM.CTSW103.{ts}");
-                    String ipmId = ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "1");
-                    p.setIpmId(ipmId);
-                    
-                    String regPattern = configMgr.getConfig("CTSW103", "reg_id_pattern", "REG.CTSW103.{idx}");
-                    String regId = regPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "1");
-                    p.setRegisteredId(regId);
-                    
-                    p.setUserVisibleStr("Basic Mode Text Test");
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "basic")); 
+                    p.setAmqpPriority(priority);
+                    p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW103." + System.currentTimeMillis()));
 
                     desc="Basic/Text"; 
                     String payloadText = configMgr.getPayload("CTSW103", 1);
@@ -578,7 +557,7 @@ public class SwimToAmhsTests {
                 case 2: {
                     p.setContentType("application/octet-stream"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); 
-                    p.setExtraProp("amhs_service_level","basic"); 
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "basic")); 
                     p.setAmqpPriority(priority); 
                     desc="Basic/Binary→REJECT"; 
                     String path = (inputs != null ? inputs.getOrDefault("binFile_2", configMgr.getPayload("CTSW103", 2)) : configMgr.getPayload("CTSW103", 2));
@@ -588,19 +567,9 @@ public class SwimToAmhsTests {
                 case 3: {
                     p.setContentType("text/plain; charset=utf-8"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    p.setExtraProp("amhs_service_level","extended"); 
-                    p.setAmqpPriority(priority); 
-
-                    // Mandatory properties per EUR Doc 047 - loaded from config
-                    String ipmPattern = configMgr.getConfig("CTSW103", "ipm_id_pattern", "IPM.CTSW103.{ts}");
-                    String ipmId = ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "3");
-                    p.setIpmId(ipmId);
-                    
-                    String regPattern = configMgr.getConfig("CTSW103", "reg_id_pattern", "REG.CTSW103.{idx}");
-                    String regId = regPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "3");
-                    p.setRegisteredId(regId);
-                    
-                    p.setUserVisibleStr("Extended Mode Text Test");
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "extended")); 
+                    p.setAmqpPriority(priority);
+                    p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW103." + System.currentTimeMillis()));
 
                     desc="Extended/Text"; 
                     String payloadText = configMgr.getPayload("CTSW103", 3);
@@ -611,7 +580,7 @@ public class SwimToAmhsTests {
                 case 4: {
                     p.setContentType("application/octet-stream"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA); 
-                    p.setExtraProp("amhs_service_level","content-based"); 
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "content-based")); 
                     p.setAmqpPriority(priority); 
                     desc="ContentBased/Binary→Ext"; 
                     String path = (inputs != null ? inputs.getOrDefault("binFile_4", configMgr.getPayload("CTSW103", 4)) : configMgr.getPayload("CTSW103", 4));
@@ -621,7 +590,7 @@ public class SwimToAmhsTests {
                 case 5: {
                     p.setContentType("text/plain; charset=utf-8"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    p.setExtraProp("amhs_service_level","content-based"); 
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "content-based")); 
                     p.setAmqpPriority(priority); 
                     desc="ContentBased/Text→Basic"; 
                     String payloadText = configMgr.getPayload("CTSW103", 5);
@@ -632,7 +601,7 @@ public class SwimToAmhsTests {
                 case 6: {
                     p.setContentType("text/plain; charset=utf-8"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    p.setExtraProp("amhs_service_level","recipient-based"); 
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "recipient-based")); 
                     p.setAmqpPriority(priority); 
                     desc="RecipBased/AllExt"; 
                     String payloadText = configMgr.getPayload("CTSW103", 6);
@@ -644,19 +613,9 @@ public class SwimToAmhsTests {
                     p.setRecipients(r + ",VVTSNONEXT"); 
                     p.setContentType("text/plain; charset=utf-8"); 
                     p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE); 
-                    p.setExtraProp("amhs_service_level","recipient-based"); 
-                    p.setAmqpPriority(priority); 
-
-                    // Mandatory properties per EUR Doc 047 - loaded from config
-                    String ipmPattern = configMgr.getConfig("CTSW103", "ipm_id_pattern", "IPM.CTSW103.{ts}");
-                    String ipmId = ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "7");
-                    p.setIpmId(ipmId);
-                    
-                    String regPattern = configMgr.getConfig("CTSW103", "reg_id_pattern", "REG.CTSW103.{idx}");
-                    String regId = regPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())).replace("{idx}", "7");
-                    p.setRegisteredId(regId);
-                    
-                    p.setUserVisibleStr("Mixed Recipients Test");
+                    p.setExtraProp("amhs_service_level", getInput(inputs, "amhs_service_level", "recipient-based")); 
+                    p.setAmqpPriority(priority);
+                    p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW103." + System.currentTimeMillis()));
 
                     desc="RecipBased/Mixed→Basic"; 
                     String payloadText = configMgr.getPayload("CTSW103", 7);
@@ -676,7 +635,7 @@ public class SwimToAmhsTests {
                 loggedPayload = new String(payload);
             }
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue103, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue103, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
             return true;
         }
 
@@ -774,7 +733,9 @@ public class SwimToAmhsTests {
             dual(inputs, payload.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), payload);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue104, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
+            // Set a standard message-id for all CTSW104 messages
+            if (!p.toMap().containsKey("amqp_message_id")) p.setMessageId("ID.CTSW104." + System.currentTimeMillis());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue104, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -825,17 +786,8 @@ public class SwimToAmhsTests {
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
             p.setRecipients(r); p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
             
-            // Mandatory properties per EUR Doc 047 - loaded from config
-            CaseConfigManager configMgrCTSW105 = CaseConfigManager.getInstance();
-            String ipmPattern105 = configMgrCTSW105.getConfig("CTSW105", "ipm_id_pattern", "IPM.CTSW105.{ts}");
-            String ipmId105 = ipmPattern105.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setIpmId(ipmId105);
-            
-            String regPattern105 = configMgrCTSW105.getConfig("CTSW105", "reg_id_pattern", "REG.CTSW105");
-            String regId105 = regPattern105.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setRegisteredId(regId105);
-            
-            p.setUserVisibleStr("Filing Time Test");
+            // Set standard AMQP message-id per spec
+            p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW105." + System.currentTimeMillis()));
 
             byte[] payload; String desc;
             if (idx == 1) {
@@ -855,7 +807,7 @@ public class SwimToAmhsTests {
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), new String(payload));
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue105, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue105, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
             return true;
         }
 
@@ -935,24 +887,15 @@ public class SwimToAmhsTests {
             p.setAmqpPriority(priority);
             p.setContentType("text/plain; charset=utf-8"); p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
 
-            // Mandatory properties per EUR Doc 047 - loaded from config
-            CaseConfigManager configMgrCTSW106 = CaseConfigManager.getInstance();
-            String ipmPattern106 = configMgrCTSW106.getConfig("CTSW106", "ipm_id_pattern", "IPM.CTSW106.{ts}");
-            String ipmId106 = ipmPattern106.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setIpmId(ipmId106);
-            
-            String regPattern106 = configMgrCTSW106.getConfig("CTSW106", "reg_id_pattern", "REG.CTSW106");
-            String regId106 = regPattern106.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setRegisteredId(regId106);
-            
-            p.setUserVisibleStr("OHI Data Test");
+            // Set standard AMQP message-id per spec
+            p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW106." + System.currentTimeMillis()));
             p.setExtraProp("amhs_ats_ohi", ohi);
             String queue106 = inputs != null ? inputs.getOrDefault("queue", TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE")) : TestConfig.getInstance().getProperty("gateway.default_queue", "TEST.QUEUE");
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
                 "priority=" + priority + " | amhs_ats_ohi len=" + ohi.length() + " (" + ohi.substring(0, Math.min(20, ohi.length())) + (ohi.length() > 20 ? "..." : "") + ")");
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), body);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue106, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue106, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1048,7 +991,8 @@ public class SwimToAmhsTests {
             dual(inputs, body.getBytes(), p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), body);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue107, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
+            if (!p.toMap().containsKey("amqp_message_id")) p.setMessageId("ID.CTSW107." + System.currentTimeMillis());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue107, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1104,7 +1048,7 @@ public class SwimToAmhsTests {
             String defOrig = cfgParts[0] != null ? cfgParts[0].trim() : "VVTSYMYX";
             String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "Known Orig Body";
 
-            String orig = getInput(inputs, "originator_108", defOrig);
+            String orig = getInput(inputs, "amhs_originator", defOrig);
             String body = getInput(inputs, "body_108", defBody);
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
@@ -1116,7 +1060,8 @@ public class SwimToAmhsTests {
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
                 "amhs_originator=" + orig + " (known → expanded to MF-address)");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
-            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue108, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
+            p.setMessageId(getInput(inputs, "amqp_message_id", "CTSW108.001"));
+            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue108, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1168,7 +1113,7 @@ public class SwimToAmhsTests {
             String defOrig = cfgParts[0] != null ? cfgParts[0].trim() : "UNKNOWN1";
             String defBody = cfgParts.length > 1 ? cfgParts[1].trim() : "Unknown Orig Body";
 
-            String orig = getInput(inputs, "originator_109", defOrig);
+            String orig = getInput(inputs, "amhs_originator", defOrig);
             String body = getInput(inputs, "body_109", defBody);
 
             SwimDriver.AMQPProperties p = new SwimDriver.AMQPProperties();
@@ -1180,7 +1125,8 @@ public class SwimToAmhsTests {
             Logger.logTransmission(testCaseId, 1, attempt, topic(inputs), "SENT",
                 "amhs_originator=" + orig + " (UNKNOWN → IUT must use default originator per §4.5.2.12)");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), body);
-            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue109, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
+            p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW109." + System.currentTimeMillis()));
+            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue109, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1301,7 +1247,8 @@ public class SwimToAmhsTests {
                 }
             }
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), loggedPayload);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue110, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+            if (!p.toMap().containsKey("amqp_message_id")) p.setMessageId("ID.CTSW110." + System.currentTimeMillis());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue110, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
             return true;
         }
 
@@ -1445,7 +1392,8 @@ public class SwimToAmhsTests {
             dual(inputs, payload, p);
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT", desc);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "Payload size: " + payload.length + " bytes");
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue111, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload);
+            if (!p.toMap().containsKey("amqp_message_id")) p.setMessageId("ID.CTSW111." + System.currentTimeMillis());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue111, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload);
             return true;
         }
 
@@ -1540,17 +1488,8 @@ public class SwimToAmhsTests {
             p.setContentType("text/plain; charset=utf-8");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.AMQP_VALUE);
 
-            // Mandatory properties per EUR Doc 047 - loaded from config
-            CaseConfigManager configMgrCTSW112 = CaseConfigManager.getInstance();
-            String ipmPattern112 = configMgrCTSW112.getConfig("CTSW112", "ipm_id_pattern", "IPM.CTSW112.{ts}");
-            String ipmId112 = ipmPattern112.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setIpmId(ipmId112);
-            
-            String regPattern112 = configMgrCTSW112.getConfig("CTSW112", "reg_id_pattern", "REG.CTSW112");
-            String regId112 = regPattern112.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setRegisteredId(regId112);
-            
-            p.setUserVisibleStr("Multiple Recipients Test");
+            // Standard AMQP message-id per spec
+            p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW112." + System.currentTimeMillis()));
 
             String dft = "Msg " + (idx == 1 ? "512" : "513");
             String body = inputs != null ? inputs.getOrDefault("p" + idx + "_body", dft) : dft;
@@ -1567,7 +1506,7 @@ public class SwimToAmhsTests {
                     Arrays.copyOfRange(addresses, 0, Math.min(3, addresses.length))) +
                 (addresses.length > 3 ? " ... [+" + (addresses.length-3) + " more]" : ""));
             // Block 2: RECEIVED / Queue perspective — broker-enriched, block-formatted recipients, bytes body
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", body.getBytes());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", body.getBytes());
             return true;
         }
 
@@ -1658,7 +1597,8 @@ public class SwimToAmhsTests {
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
                 "priority=" + priority + " (→SS) | notification_request=" + notifReq + " | expect " + expected + " from AMHS Tool");
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), payload);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue113, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
+            if (!p.toMap().containsKey("amqp_message_id")) p.setMessageId("ID.CTSW113." + System.currentTimeMillis());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue113, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -1759,16 +1699,8 @@ public class SwimToAmhsTests {
             // amqp_reply_to — Optional but recommended for NDR routing
             p.setReplyTo(getInput(inputs, "amqp_reply_to", "TECHNICAL.RESPONSE.QUEUE"));
             
-            // Mandatory properties per EUR Doc 047 - loaded from config
-            String ipmPattern114 = configMgr.getConfig("CTSW114", "ipm_id_pattern", "IPM.CTSW114.{ts}");
-            String ipmId114 = ipmPattern114.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setIpmId(ipmId114);
-            
-            String regPattern114 = configMgr.getConfig("CTSW114", "reg_id_pattern", "REG.CTSW114");
-            String regId114 = regPattern114.replace("{ts}", String.valueOf(System.currentTimeMillis()));
-            p.setRegisteredId(regId114);
-            
-            p.setUserVisibleStr("NDR Trigger Message");
+            // Standard AMQP message-id per spec
+            p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW114." + System.currentTimeMillis()));
 
             p.setExtraProp("amhs_notification_request", notifReq);
 
@@ -1779,7 +1711,7 @@ public class SwimToAmhsTests {
                 + " | originator=" + originator
                 + " | Next step: DELETE message in AMHS Tool → NDR: unable-to-transfer");
             Logger.logPayloadDetail(testCaseId, 1, p.toMap(), payload);
-            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue114, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
+            Logger.logPayloadDetailReceived(testCaseId, 1, p.toMap(), queue114, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -1859,7 +1791,8 @@ public class SwimToAmhsTests {
             Logger.logTransmission(testCaseId, idx, attempt, topic(inputs), "SENT",
                 bodyPart + " | encoding=" + encoding);
             Logger.logPayloadDetail(testCaseId, idx, p.toMap(), "amqp-value: '" + payload + "'");
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue115, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", payload.getBytes());
+            if (!p.toMap().containsKey("amqp_message_id")) p.setMessageId("ID.CTSW115." + System.currentTimeMillis());
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue115, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", payload.getBytes());
             return true;
         }
 
@@ -1941,14 +1874,8 @@ public class SwimToAmhsTests {
             p.setRecipients(r); p.setContentType("application/octet-stream");
             p.setBodyType(SwimDriver.AMQPProperties.BodyType.DATA);
             
-            // Mandatory properties per EUR Doc 047 Appendix A
-            // Load IPM-ID pattern from config, replace {ts} with timestamp
-            String ipmPattern = configMgr.getConfig("CTSW116", "ipm_id_pattern", "IPM.CTSW116.{ts}");
-            p.setIpmId(ipmPattern.replace("{ts}", String.valueOf(System.currentTimeMillis())));
-            // Load Registered-ID pattern, replace {idx} with message index
-            String regPattern = configMgr.getConfig("CTSW116", "reg_id_pattern", "REG.CTSW116.{idx}");
-            p.setRegisteredId(regPattern.replace("{idx}", String.valueOf(idx)));
-            
+            // Standard AMQP message-id per spec
+            p.setMessageId(getInput(inputs, "amqp_message_id", "ID.CTSW116." + System.currentTimeMillis()));
             p.setExtraProp("amhs_ftbp_last_mod", lastMod);
 
             byte[] sendPayload = binPayload;
@@ -1985,7 +1912,7 @@ public class SwimToAmhsTests {
                 "file=" + filePath + " | size=" + fileSize +
                 (idx==2 ? " | compressed=" + sendPayload.length + "B (gzip) | filename=" + ftbpFileName : "") +
                 " | ftbp_last_mod=" + lastMod);
-            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue116, p.toMap().containsKey("amhs_ipm_id") ? String.valueOf(p.toMap().get("amhs_ipm_id")) : "", sendPayload);
+            Logger.logPayloadDetailReceived(testCaseId, idx, p.toMap(), queue116, p.toMap().containsKey("amqp_message_id") ? String.valueOf(p.toMap().get("amqp_message_id")) : "", sendPayload);
             return true;
         }
 

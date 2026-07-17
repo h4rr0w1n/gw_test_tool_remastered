@@ -1,0 +1,548 @@
+--- SHEET: CTSW101 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10
+,2026-06-26 00:00:00,,,,,Đúng yêu cầu,,,,
+,,,,,"message-id
+Trong tool là: ID",Đúng 1 phần,,,,
+,CTSW101 – Convert an AMHS UNAWARE AMQP Message to AMHS,,,,,Sai hoặc không có,,,,
+,send text,,,,,,,,,
+,Thành phần AMQP,Thuộc tính,Bắt buộc,Ghi chú,,,,,,
+,Header,priority,✔,CTSW101 yêu cầu dùng default value = 4. Gateway sẽ ánh xạ sang ATS-message-priority/IPM precedence.,amqp_priority: 4,priority: 4,,,ok,
+,Properties,message-id,✔,Bắt buộc theo CTSW102. Thường do thư viện AMQP sinh tự động.,amhs_ipm_id: IPM.CTSW101.1783497373616,,,,ok,
+,Properties,creation-time,✔,Gateway dùng để sinh Filing Time (DDhhmm).,creation_time: 1783498022494,,,,ok,
+,Properties,content-type,✔,text/plain; charset=utf-8.,"content_type: text/plain; charset=""utf-8""",,,,,
+,Application Properties,amhs_recipients,✔,Địa chỉ AMHS đích (AFTN 8 ký tự hoặc địa chỉ Gateway cấu hình hỗ trợ).,amhs_originator:,  amhs_recipients: ,,,Chưa có giá trị,
+,Application Data,amqp-value,✔,Chuỗi văn bản (UTF-8). Không dùng data đối với CTSW101.,"amqp-value = ""THIS IS A TEST MESSAGE FROM SWIM""",,,,Chưa có,
+,,,,,,,,,,
+,Send binary,,,,,,,,,
+,Phần của AMQP,Thuộc tính,Bắt buộc,Giá trị yêu cầu,Giá tri thực tế,,,Pass/fail,Đề xuất sửa dổi,
+,Header,priority,✔,4 (default),amqp_priority: 4,,,,,
+,Properties,message-id,✔,bất kỳ,amhs_ipm_id: IPM.CTSW101.1783498987504,,,"message-id
+Trong tool là: ID",Properties,ID của chính AMQP Message do ứng dụng hoặc broker tạo. Đây là trường chuẩn của AMQP 1.0.
+,,,,,,,,amhs_ipm_id,Application Properties,ID của điện văn AMHS (IPM Identifier). Chỉ dùng khi Gateway làm việc ở chế độ AMHS-aware hoặc khi ánh xạ từ AMHS sang AMQP.
+,Properties,creation-time,✔,UTC,,,,creation_time: 1783499525472,,
+,Properties,content-type,✔,application/octet-stream,,,,content_type: application/octet-stream,,
+,Application Properties,amhs_recipients,✔,Địa chỉ AMHS nhận,,,, amhs_originator:,  amhs_recipients:,Body ---- Data { 00 11 22 33 44 55 66 77 88 99 AA BB CC DD EE FF }
+,Body,Binary Data,✔,Dữ liệu nhị phân,Body (Data Section),Binary payload,,không có data,,
+,,,,,,,,,,
+,"Sau khi đưa amqp vào gw, đầu ra amhs phải tự tạo:",,,,,,,,,
+,,"Điều này có nghĩa là sau khi Gateway đã tạo điện văn AMHS, người kiểm thử sẽ kiểm tra điện văn AMHS đầu ra (MTE), không phải điện văn AMQP đầu vào.",,,,,,,,
+,,,,,,,,,,
+,,Nói cách khác:,,,,,,,,
+,,,,,,,,,,
+,,AMQP,,,,,,,,
+,,   │,,,,,,,,
+,,   ▼,,,,,,,,
+,,Gateway,,,,,,,,
+,,   │,,,,,,,,
+,,   ▼,,,,,,,,
+,,AMHS Message,,,,,,,,
+,,        │,,,,,,,,
+,,        ├── PerMessageIndicators,,"alternateRecipientAllowed = true; 
+disclosureOfOtherRecipients = false; 
+implicitConversionProhibited = false; 
+contentReturnRequested = false;",,,,,,
+,,        │      alternate-recipient-allowed,,,,,,,,
+,,        │      disclosure-of-other-recipients-prohibited,,,,,,,,
+,,        │      implicit-conversion-allowed,,,,,,,,
+,,        │      content-return-not-requested,,,,,,,,
+,,,,,,,,,,
+,,Đây là các giá trị mà Gateway phải tự thiết lập.,,,,,,,,
+
+
+--- SHEET: CTSW102 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10,Unnamed: 11,Unnamed: 12,Unnamed: 13,Unnamed: 14,Unnamed: 15,Unnamed: 16
+CTSW102 – Reject an AMQP Message if it does not contain the Minimum Information Necessary to Transfer to AMHS (AMHS UNAWARE),,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,STT,Thành phần AMQP,Vị trí,Bắt buộc,Case 1,,Case 2,,Case 3,,Case 4,,Case 5,,Case 6,
+,,,,,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test
+,1,priority,Header,✔,,10,,,,,,,,,,
+,2,message-id,Properties,✔,ID,,,,,,,,,,,
+,3,creation-time,Properties,✔,,,,,,,,,,,,
+,4,content-type,Properties,✔,,,,,,,,,,,,
+,5,amhs_recipients,Application Properties,✔,Ko có,,,,,,,,,,,
+,6,data hoặc amqp-value,Body: Text,✔,,,Text ,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,"Reject, log, ra CP",,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,STT,Thành phần AMQP,Vị trí,Bắt buộc,Case 1,,Case 2,,Case 3,,Case 4,,Case 5,,Case 6,
+,,,,,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test,Bắt buộc,Bài test
+,1,priority,Header,✔,,10,,,,,,,,,,
+,2,message-id,Properties,✔,không có,,,,,,,,,,,
+,3,creation-time,Properties,✔,,,,,,,,,,,,
+,4,content-type,Properties,✔,,,,,,,,,,,,
+,5,amhs_recipients,Application Properties,✔,Ko có,,,,,,,,,,,
+,6,data hoặc amqp-value,Body: Bin,✔,,,,,,,,,,,,
+
+
+--- SHEET: CTSW103 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8
+,CTSW103 – Conversion to IPM According to ATSMHS Service Level Parameter,,,,,,,
+,,,,,,,,
+,Sub case 1 – ATSMHS Service Level = Basic (Text message),,,,,,,
+,Điện văn AMQP cần có,,,,,,,
+,,,,,,,,
+,Properties,,,Application Properties,,,,
+,Thuộc tính,Bắt buộc,,Thuộc tính,Bắt buộc,Ghi chú,,
+,message-id,✔,ID,amhs_recipients,✔,Người nhận: o có,,Gateway sinh điện văn
+,creation-time,✔,Khong có,amhs_ats_pri,✔,ATS Priority: o có,,
+,content-type = text/plain,✔,,amhs_ats_ft,✔,Filing Time: o có,,
+,,,,amhs_ats_ohi,✔,Optional Heading Information: o có,,
+,,,,,,,,
+,Sub case 2 – ATSMHS Service Level = Basic (Binary message),,,,,,,
+,,,,,,,,
+,Properties,,,Application Properties,,,,
+,Thuộc tính,Bắt buộc,,Thuộc tính,Bắt buộc,Ghi chú,,Gateway
+,message-id,✔,ID,amhs_recipients,✔,Người nhận: o có,,Reject message
+,creation-time,✔,Khong có,amhs_ats_pri,✔,ATS Priority: o có,,Ghi log
+,content-type = application/octet-stream,✔,,amhs_ats_ft,✔,Filing Time: o có,,Báo Control Position
+,,,,amhs_ats_ohi,✔,Optional Heading Information: o có,,Không sinh điện văn AMHS
+,,,,,,,,
+,Sub case 3 – ATSMHS Service Level = Extended (Text message),,,,,,,
+,,,,,,,,
+,Header,,,,,,,
+,priority,,,,,,,
+,Properties,,,,,,,
+,message-id,,,,,,,
+,creation-time,,,,,,,
+,content-type=text/plain,,,,,,,
+,Application Properties,,,,,,,
+,Thuộc tính,Bắt buộc,,Gateway phải chuyển các trường sang Extended IPM theo quy tắc của Extended Service Level.,,,,
+,amhs_recipients,✔,,,,,,
+,amhs_ats_pri,✔,,,,,,
+,amhs_ats_ft,✔,,,,,,
+,amhs_ats_ohi,✔,,,,,,
+,amhs_subject,✔,,,,,,
+,Body,,,,,,,
+,AmqpValue(String),,,,,,,
+,,,,,,,,
+,Sub case 4 – Extended (Binary message),,,,,,,
+,,,,,,,,
+,Header,,,,,,,
+,priority,,,,,,,
+,Properties,,,,,,,
+,message-id,,,,,,,
+,creation-time,,,,,,,
+,content-type=application/octet-stream,,,,,,,
+,Application Properties,,,,,,,
+,Thuộc tính,Bắt buộc,,Gateway phải chuyển các trường sang Extended IPM theo quy tắc của Extended Service Level.,,,,
+,amhs_recipients,✔,,Chấp nhận binary body,,,,
+,amhs_ats_pri,✔,,Chuyển thành IPM phù hợp với Extended Service Level (không phải FTBP; FTBP được kiểm tra riêng ở CTSW116),,,,
+,amhs_ats_ft,✔,,,,,,
+,amhs_ats_ohi,✔,,,,,,
+,amhs_subject,✔,,,,,,
+,Data(Binary),,,,,,,
+,,,,,,,,
+,Sub case 5 – Extended sử dụng Subject,,,,,,,
+,,,,,,,,
+,Header,,,,,,,
+,priority,,,,Gateway phải sinh,,,
+,Properties,,,,IPM.subject = TEST SUBJECT,,,
+,message-id,,,,,,,
+,creation-time,,,,,,,
+,content-type = text/plain,,,,,,,
+,amhs_subject = TEST SUBJECT,,o có,,,,,
+,,,,,,,,
+,Sub case 6 – Extended sử dụng Originator (nếu Gateway hỗ trợ),,,,,,,
+,Header,,,,Gateway phải tạo,,,
+,priority,,,,IPM.originator = VVNBYFYX,,,
+,Properties,,,,Nếu Gateway không hỗ trợ cấu hình này thì bài kiểm thử tương ứng sẽ không áp dụng.,,,
+,message-id,,,,,,,
+,creation-time,,,,,,,
+,content-type=text/plain,,,,,,,
+,amhs_originator = VVNBYFYX,,o có,,,,,
+,,,,,,,,
+,Sub case 7 – Extended với đầy đủ các trường ATS,,,Gateway phải tạo IPM Extended đầy đủ theo đúng cấu hình Service Level,,,,
+,,,,,,,,
+,Header,Giá trị,,,,Thuộc tính AMQP,Basic,Extended
+,priority,✔,,,,Header.priority,✔,✔
+,Properties,,,,,Properties.message-id,✔,✔
+,message-id,✔,,,,Properties.creation-time,✔,✔
+,creation-time,✔,o có,,,Properties.content-type,✔,✔
+,content-type,text/plain,,,,Application.amhs_recipients,✔,✔
+,,,,,,Application.amhs_ats_pri,✔,✔
+,Application Properties,,,,,Application.amhs_ats_ft,✔,✔
+,amhs_recipients,✔,"bỏ dấu , ở đầu",,,Application.amhs_ats_ohi,✔,✔
+,amhs_ats_pri,✔,,,,Application.amhs_subject,✘,✔
+,amhs_ats_ft,✔,o có,,,Application.amhs_originator,✘,Tùy cấu hình Gateway
+,amhs_ats_ohi,✔,o có,,,Body (AmqpValue),✔,✔
+,amhs_subject,✔,o có,,,Body (Data/Binary),Bị từ chối,Được xử lý theo Extended (không phải FTBP)
+,amhs_originator,✔ (nếu hỗ trợ),o có,,,,,
+,Body,,,,,,,
+,AmqpValue(String),,,,,,,
+
+
+--- SHEET: CTSW104 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10,Unnamed: 11,Unnamed: 12,Unnamed: 13,Unnamed: 14,Unnamed: 15,Unnamed: 16
+,CTSW104 – Conversion to IPM According to ATS-message-priority,,,,,,,,,,,,,,,
+,Sub Case 1,,,,,,,,,,,,,,,
+,,,,Sub Case 1.1,,Sub Case 1.2,,Sub Case 1.3,,Sub Case 1.4,,….,Sub Case 1.9,,,
+,,,,Madate,Test,Madate,Test,Madate,Test,Madate,Test,….,Madate,Test,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,,,,,,….,,,,
+,Header,priority,✔,,0,,1,,2,,3,….,,3,,Không có
+,Properties,message-id,✔,,,,,,,,,….,,,,amhs_ats_pri
+,Properties,creation-time,✔,Sai,,Sai,,Sai,,Sai,,….,Sai,,,Gateway phải map sang ATS Priority đúng theo Table 9 Doc047
+,Properties,content-type=text/plain,✔,,,,,,,,,….,,,,
+,Application Properties,amhs_recipients,✔,o có,,o có,,o có,,o có,,….,o có,,,
+,Body,amqp-value (Text),✔,Text,,Text,,Text,,Text,,….,Text,,,
+,Không có,,,,,,,,,,,….,,,,
+,amhs_ats_pri,,,có,,có,,có,,có,,….,có,,,
+,,,,,,,,,,,,,,,,
+,Sub Case 2,,,,,,,,,,,,,,,
+,,,,amhs_ats_pri = SS,,amhs_ats_pri = DD,,amhs_ats_pri = FF,,amhs_ats_pri = GG,,amhs_ats_pri = KK,,,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,,,,,,,,,Gateway phải bỏ qua Header Priority và dùng,
+,Header,priority =4,✔,,,,,,,,,,,,amhs_ats_pri,
+,Properties,message-id,✔,ID,,ID,,ID,,ID,,ID,,,để sinh ATS-message-priority,
+,Properties,creation-time,✔,Sai,,Sai,,Sai,,Sai,,Sai,,,,
+,Properties,content-type=text/plain,✔,,,,,,,,,,,,,
+,Application Properties,amhs_recipients,✔,o có,,o có,,o có,,o có,,o có,,,,
+,Body,amqp-value (Text),✔,,,,,,,,,,,,,
+,amhs_ats_pri,,,,SS,,DD,,FF,,GG,,KK,,,
+,,,,,,,,,,,,,,,,
+,Sub Case 3,,,,,,,,,,,,,,,
+,,,,amhs_ats_pri = SS,,amhs_ats_pri = DD,,amhs_ats_pri = FF,,amhs_ats_pri = GG,,amhs_ats_pri = KK,,,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,,,,,,,,,Kiểm tra khi,
+,Header,priority =1,✔,,,,,,,,,,,,Header Priority,
+,Properties,message-id,✔,ID,,ID,,ID,,ID,,ID,,,và,
+,Properties,creation-time,✔,Sai,,Sai,,Sai,,Sai,,Sai,,,amhs_ats_pri,
+,Properties,content-type=text/plain,✔,,,,,,,,,,,,khác nhau thì Gateway ưu tiên,
+,Application Properties,amhs_recipients,✔,o có,,o có,,o có,,o có,,o có,,,amhs_ats_pri,
+,Body,amqp-value (Text),✔,,,,,,,,,,,,,
+,amhs_ats_pri,,,,SS,,DD,,FF,,GG,,KK,,,
+,,,,,,,,,,,,,,,,
+,Sub Case 4,Chưa có case này,,,,,,,,,,,,,,
+,,,,amhs_ats_pri = SS,,,,,,,,,,,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,,,,,,,,,,
+,Header,priority =9,✔,o có,,,Đây là trường hợp cực đoan.,,,,,,,,,
+,Properties,message-id,✔,o có,,,Gateway vẫn phải sinh,,,,,,,,,
+,Properties,creation-time,✔,o có,,,ATS Priority = KK,,,,,,,,,
+,Properties,content-type=text/plain,✔,o có,,,không được dùng Priority=9,,,,,,,,,
+,Application Properties,amhs_recipients,✔,o có,,,,,,,,,,,,
+,Body,amqp-value (Text),✔,o có,,,,,,,,,,,,
+,amhs_ats_pri,,,,KK,,,,,,,,,,,
+
+
+--- SHEET: CTSW105 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7
+,CTSW105 – Conversion to IPM According to ATS-message-filing-time,,,,,,
+,,,,,,,
+,,,,Sub-case 1,,Sub-case 2,
+,,,,creation-time = 2026-07-25T01:02:35Z,,"amhs_ats_ft = ""250102""",
+,,,,"nhưng amhs_ats_ft = """"",,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,
+,Header,priority,✔,,,,
+,Properties,message-id,✔,ID,,ID,
+,Properties,creation-time,✔,Sai,,Sai,
+,Properties,content-type,✔,,,,
+,Application Properties,amhs_originator,✔,o có,,o có,
+,Application Properties,amhs_recipients,✔,o có,,o có,``
+,Application Properties,amhs_ats_ft,phụ thuộc sub-case,,o có,,
+,Body,Text (AmqpValue),✔,,,,
+,,,,,,,
+,,,,Gateway phải lấy,,Gateway:,
+,,,,creation-time,,không được tính lại từ creation-time.,
+,,,,chuyển thành,,Phải sử dụng đúng,
+,,,,DDhhmm,,250102,
+,,,,,,đưa vào điện văn AMHS.,
+
+
+--- SHEET: CTSW106 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10,Unnamed: 11,Unnamed: 12,Unnamed: 13,Unnamed: 14
+,CTSW106 – Conversion to IPM According to ATS-message-originator,,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,Sub-case 1,,Sub-case 2,,Sub-case 3,,Sub-case 4,,Sub-case 5,,Sub-case 6,
+,,,"Priority=4, OHI<53 ký tự",,"Priority=4, OHI=53 ký tự",,"Priority=4, OHI>53 ký tự",,"Priority=6, OHI<48",,"Priority=6, OHI=48",,"Priority=6, OHI>48 ký tự",
+,Thành phần,Thuộc tính,,,,,,,,,,,,
+,Header,priority,,,,,,,,,,,,
+,Properties,message-id,ID,,ID,,ID,,ID,,ID,,ID,
+,Properties,creation-time,Sai,,Sai,,Sai,,Sai,,Sai,,Sai,
+,Properties,content-type,,,,,,,,,,,,
+,Application Properties,amhs_recipients,o có,,o có,,o có,,o có,,o có,,o có,
+,Application Properties,amhs_ats_ohi,,,,52 ký tự,,60.0,,60.0,,46 ký tự,,55.0
+,Body,Text hoặc Binary,,,,,,,,,,,,
+,,,,,,,,,,,,,,
+,,,Gateway phải giữ nguyên OHI,,Gateway phải giữ nguyên OHI,,cắt chỉ còn 53 ký tự ,,Gateway phải giữ nguyên OHI,,Gateway phải giữ nguyên OHI,,cắt chỉ còn 48 ký tự ,
+
+
+--- SHEET: CTSW107 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10
+,CTSW107 – Conversion to IPM According to ATS-message-addressees,,,,,,,,,
+,,,,,,,,,,
+,,,Sub-case 1,,Sub-case 2,,Sub-case 3,,Sub-case 4,
+,,,"subject = ""This is a subject having more than 128 characters ",,"subject = ""Subject example"" ",,"subject = "" ",,"subject = "" ",
+,,,"amhs_subject = """"",,"amhs_subject = """"",,"amhs_subject =""Subject example""",,"amhs_subject =""""",
+,,,,,,,,,,
+,Thuộc tính,Bắt buộc,,,,,,,,
+,message-id,✔,ID,,ID,,ID,,ID,
+,creation-time,✔,Sai,,Sai,,Sai,,Sai,
+,content-type,✔,,,,,,,,
+,priority,✔,,,,,,,,
+,amhs_recipients,✔,o có,,o có,,o có,,o có,
+,Body,✔,,,,,,,,
+,Properties.subject,✔,,o có,,o có,,Subject example,,subject from application property field
+,Application Property amhs_subject,✔,,,,,,,,subject from application property field
+,,,,,,,,,,
+,,,Không dùng amhs_subject.,,Map trực tiếp,,Không dùng Properties.subject.,,Gateway phải ưu tiên,
+,,,Lấy Properties.subject,,Properties.subject,,Phải lấy,,amhs_subject,
+,,,,,        ↓,,amhs_subject,,Kết quả:,
+,,,,,IPM.Subject,,để tạo,,IPM.Subject,
+,,,,,Không sửa nội dung.,,IPM.Subject,,,
+,,,,,,,,,=,
+,,,,,,,,,subject from application property field,
+,,,,,,,,,Không được lấy,
+,,,,,,,,,subject from properties,
+
+
+--- SHEET: CTSW108 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8
+,CTSW108 – Incoming AMQP message with known originator indicator,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,,
+,Header,priority,✔,,Gateway phải chuyển đổi đúng một AMQP message có chứa known originator indicator thành điện văn AMHS (IPM). ,,,
+,Properties,message-id,✔,ID,,,,
+,Properties,creation-time,✔,Sai,,,,
+,Properties,content-type,✔,,,,,
+,Application Properties,amhs_originator,✔,Sai,[CTSW108-1] VVTSYMYX,,,Địa chỉ 8 chữ hoặc CAAS
+,Application Properties,amhs_recipients,✔,o có,,,,
+,Body,AmqpValue hoặc Data,✔,,,,,
+,,,,,,,,
+,message-id = CTSW108.001,,,,,,,
+,creation-time = 2026-07-10T08:30:00Z,,,,Gateway được coi là đạt khi:,,,
+,content-type = text/plain,,,,1.    amhs_originator là địa chỉ 8 ký tự đã được Gateway cấu hình và có thể chuyển đổi.,,,
+,,,,,2.    Gateway chuyển đổi địa chỉ đó thành đúng MF-address theo quy tắc chuyển đổi địa chỉ AFTN/AMHS.,,,
+,Application Properties,,,,3.    Cùng một MF-address xuất hiện ở cả:,,,
+,----------------------,,,,o   Originator trong IPM Heading.,,,
+,amhs_originator = VVTSYMYX,,,,o   Originator-name trong P1 Envelope của điện văn AMHS.,,,
+,amhs_recipients = VVNBYFYX,,,,Đây là ba tiêu chí cốt lõi mà AMHS Test Tool sẽ kiểm tra trong CTSW108,,,
+,,,,,,,,
+,Body,,,,,,,
+,----,,,,,,,
+,"""This is CTSW108 test.""",,,,,,,
+
+
+--- SHEET: CTSW109 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8
+,CTSW109 – Incoming AMQP message with unknown originator indicator,,,,,,,
+,,,,,,,,
+,Phần AMQP,Thuộc tính,Bắt buộc,Ghi chú,,,,(1) Originator trong AMHS
+,Header,priority,Có,thường dùng default = 4,,,,Không được là
+,Properties,message-id,Có,ID của AMQP,o có,,,UNKNOWN_ACC
+,Properties,creation-time,Có,để Gateway sinh Filing Time,Sai,,,mà phải là
+,Properties,content-type,Có,text/plain hoặc application/octet-stream,,,,<Default Originator>
+,Application Properties,amhs_recipients,Có,người nhận AMHS,o có,,,được cấu hình trong Gateway.
+,Application Properties,amhs_originator,Có,chính là trường được kiểm thử,,[CTSW109-1] UNKNOWN1,,Ví dụ
+,Body,Text hoặc Binary,Có,nội dung điện văn,,,,VVNBYFYX
+,,,,,,,,
+,amhs_originator = UNKNOWN_CENTER,,,,,,,(2) Recipient
+,hoặc,,,,,,,Phải giữ nguyên.
+,amhs_originator = XXXXXXXX,,,,,,,VVTSYFYX
+,,,,,,,,
+,,,,,,,,(3) Nội dung
+,,,,,,,,Body phải giữ nguyên.
+,,,,,,,,Không được sửa.
+,,,,,,,,
+,,,,,,,,(4) Log
+,,,,,,,,Gateway phải ghi log.
+,,,,,,,,Ví dụ
+,,,,,,,,Unknown originator indicator
+,,,,,,,,UNKNOWN_ACC
+,,,,,,,,
+,,,,,,,,Default originator applied
+,,,,,,,,VVNBYFYX
+,,,,,,,,
+,,,,,,,,(5) Control Position
+,,,,,,,,Gateway phải phát cảnh báo tới Control Position.
+,,,,,,,,Appendix A ghi rõ:
+,,,,,,,,Check that this situation has been logged and reported to the Control Position
+
+
+--- SHEET: CTSW110 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10,Unnamed: 11,Unnamed: 12,Unnamed: 13,Unnamed: 14,Unnamed: 15,Unnamed: 16
+,CTSW110 – Reject an AMQP message with unsupported content-type,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,
+,,,,,Sub-case 1,,Sub-case 2,,Sub-case 3,,Sub-case 4,,Sub-case 5,,Sub-case 6,
+,,,,,"content-type = """"
+Body
+amqp-value : không có",,"content-type = """"
+",,"content-type =""application/octet-stream""
+Body
+amqp-value : không có",,"content-type =""text/plain""
+",,"content-type ""image/jpeg""
+hoặc
+application/pdf ...
+",,"content-type ""text/plain""
+",
+,,,,,Body amqp-value : không có,,"amqp-value : không có
+data : có Binary Data",,"Body
+amqp-value : không có
+data : có Binary Data
+",,"Body
+amqp-value : có String
+data : không có
+",,Body có thể có hoặc không,,"Body
+amqp-value : có
+
+data : cũng có Binary Data
+Có đồng thời
+•	Data Section 
+•	AmqpValue Section ",
+,Thành phần,Thuộc tính,Bắt buộc,Ghi chú,,,,,,,,,,,,
+,Properties,message-id,✔,ID của AMQP message,ID,,ID,,ID,,ID,,ID,,ID,
+,Properties,creation-time,✔,Thời điểm tạo,Sai,,Sai,,Sai,,Sai,,Sai,,Sai,
+,Properties,content-type,✔,Giá trị thay đổi theo từng sub-case,,application/octet-stream,,application/octet-stream,,application/octet-stream,,,,Sai,,Sai
+,Application Properties,amhs_recipients,✔,Để Gateway biết người nhận AMHS,,o có,,o có,,o có,,o có,,o có,,o có
+,Body,amqp-value hoặc data,tùy sub-case,Là nội dung cần kiểm thử,,o có,,Bin hay Text ?,,Bin hay Text ?,,,,,,Sai
+,,,,,,,,,,,,,,,,
+,,,,,Reject,,Reject,,Accept,,Accept,,Reject,,Reject,
+,,,,,,,,,Gateway phải chuyển thành AMHS Binary Body Part,,Gateway chuyển thành AMHS IA5/Text Body Part,,,,Theo Doc 047 chỉ được phép một trong hai loại body cho từng content-type,
+
+
+--- SHEET: CTSW111 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10,Unnamed: 11,Unnamed: 12
+,CTSW111 – CHECK  if the size in bytes of the payload OF AN AMQP MESSAGE exceeds the maximum configured,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,Sub case 1,,Sub case 2,,Sub case 3,,Sub case 3,
+,,,,,Text <= Maximum message data size,,Bin <= Maximum message data size,,Text >= Maximum message data size,,Bin <= Maximum message data size,
+,Thành phần,Thuộc tính,Bắt buộc,Ghi chú,,,,,,,,
+,Properties,message-id,✔,ID của AMQP message,ID,,ID,,ID,,ID,
+,Properties,creation-time,✔,Thời điểm tạo,Sai,,Sai,,Sai,,Sai,
+,Properties,content-type,✔,Giá trị thay đổi theo từng sub-case,Text,,Bin,,Text,,Text,
+,Application Properties,amhs_recipients,✔,Để Gateway biết người nhận AMHS,o có,,o có,,o có,,o có,
+,Body,amqp-value hoặc data,tùy sub-case,Là nội dung cần kiểm thử,, 1024 bytes,, 1024 bytes,,1049600.0,,1049600.0
+,,,,,Gateway chuyển sang AMHS,,Gateway chuyển sang AMHS,,"Gateway reject.
+Không tạo AMHS",,"Gateway reject.
+Không tạo AMHS",
+,Sub case 1,,,,,,,,,,,
+,AmqpValue(String),,,,1. Reject message,,,,,,,
+,Điều kiện,,,,Không chỉ bỏ qua.,,,,,,,
+,size(amqp-value),,,,Phải coi là lỗi.,,,,,,,
+,<= Maximum message data size,,,,2. Ghi log,,,,,,,
+,Ví dụ,,,,Ví dụ,,,,,,,
+,Nếu Gateway cấu hình,,,,Payload size exceeds Maximum message data size.,,,,,,,
+,Maximum message data size = 4096 bytes,,,,3. Report Control Position,,,,,,,
+,,,,,"Gateway phải phát sinh alarm/event tới Control Position (màn hình giám sát hoặc hệ thống quản lý), đúng như yêu cầu của bài test.",,,,,,,
+
+
+--- SHEET: CTSW112 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8
+,CTSW112  –  CHECK IF  an AMQP message addressES more AMHS users than the maximum configured,,,,,,,
+,,,,,,,,
+,,,Sub case 1,,Sub case 2,,,
+,,Set max recep =512,Rec = 512,,Rec = 513,,,
+,Thành phần,Thuộc tính,,,,,,
+,Header,priority,o có,,o có,,,2 case không load được danh sách địa chỉ
+,Properties,message-id,o có,,o có,,,
+,Properties,creation-time,o có,,o có,,,
+,Properties,content-type,o có,,o có,,,
+,Application Properties,amhs_recipients,o có,,o có,,,Gateway reject
+,Body,Text hoặc Binary,o có,,o có,,,      │
+,,,,,,,,      ├── Log
+,,,Gateway Accept,,Gateway Reject,,,      ├── Báo Control Position
+,amhs_recipients =,,,,,,,      └── Lưu message để xử lý
+,VVTSYFYX;,,,,,,,
+,VVNBYFYX;,,,,,,,
+,VVCRYFYX;,,,,,,,
+,...,,,,,,,
+,(tổng cộng 513 địa chỉ),,,,,,,
+
+
+--- SHEET: CTSW113 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9
+,CTSW113 – Incoming receipt and non-receipt notifications (RN and NRN,,,,,,,,
+,,,,,,,,,
+,,,,Sub case 1,,Sub case 1,,,
+,,,,Sinh NRN,,Sinh RN,,,
+,Thành phần,Thuộc tính,Bắt buộc,,,,,,B. Sau khi nhận RN hoặc NRN
+,Header,priority = 6,✔,,,,,,Gateway phải
+,Properties,message-id,✔,ID,,ID,,,✔ ghi log
+,Properties,creation-time,✔,Sai,,Sai,,,✔ báo Control Position
+,Properties,content-type,✔,,,,,,✔ lưu message
+,Application Properties,amhs_recipients,✔,o có,,o có,,,Không yêu cầu
+,Body,Text message,✔,,,,,,gửi RN về AMQP
+,,,,,,,,,gửi NRN về AMQP
+,,,,,,,,,publish event lên queue
+
+
+--- SHEET: CTSW114 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9
+,CTSW114 – Incoming non-delivery reports (NDR),,,,,,,,
+,,,,,,,,,
+,,,,,,,,,
+,,,,,,,,Yêu cầu,
+,Phần AMQP,Thuộc tính,Bắt buộc,,,,,Nội dung,Yêu cầu
+,Header,priority,✔,,,,,Điện văn AMQP đầu vào,"Giống CTSW101, không cần thuộc tính NDR đặc biệt"
+,Properties,message-id,✔,ID,,,,Sub-case,Chỉ có 01 scenario
+,Properties,creation-time,✔,Sai,,,,NDR được tạo bởi,"AMHS Test Tool, không phải AMQP"
+,Properties,content-type,✔,,,,,NDR Reason,unable-to-transfer
+,Application Properties,amhs_recipients,✔,o có,,,,NDR Diagnostic,Rỗng (empty)
+,Body,Text hoặc Binary,✔,,,,,Gateway phải làm,"Nhận NDR, ghi log và báo tới Control Position"
+,,,,,,,,Gateway không phải làm,"Không chuyển NDR thành AMQP, không tự động gửi lại message"
+
+
+--- SHEET: CTSW115 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5,Unnamed: 6,Unnamed: 7,Unnamed: 8,Unnamed: 9,Unnamed: 10
+,CTSW115  –  Incoming AMQP messages with amqp-value and different amhs_bodypart_type  and amhs_content_encoding values,,,,,,,,,
+,,,,,,,,,,
+,,,,,,,,,,
+,,,,Sub case 1,,Sub case 2,,Sub case 3,,Sub case 4
+,Thành phần AMQP,Thuộc tính,Giá trị,,,,,,,
+,Header,priority,mặc định hoặc theo test,,,,,,,
+,Properties,message-id,bắt buộc,ID,,ID,,ID,,ID
+,Properties,creation-time,bắt buộc,Sai,,Sai,,Sai,,Sai
+,Properties,content-type,text/plain; charset=utf-8,,,,,,,
+,Application Properties,amhs_recipients,địa chỉ AMHS,o có,,o có,,o có,,o có
+,Application Properties,amhs_bodypart_type,theo từng sub case,,,,,,,
+,Application Properties,amhs_content_encoding,theo từng sub case,,,,,,,
+,Body,amqp-value,chuỗi text,,,,,,,
+,,,,,,,,,,
+,,,,Input,,Input,,Input,,Input
+,,,,content-type,,amhs_bodypart_type = ia5-text-body-part,,amhs_bodypart_type = general-text-body-part,,amhs_bodypart_type = general-text-body-part
+,,,,--------------,,,,,,
+,,,,text/plain; charset=utf-8,,amhs_content_encoding = IA5,,amhs_content_encoding = ISO-646,,amhs_content_encoding = ISO-8859-1
+,,,,Application Properties,,Body,,Body,,Body
+,,,,amhs_bodypart_type = ia5-text,,Lorem ipsum i5bpt,,Lorem ipsum 646,,Lorem ipsum 8859
+,,,,,,,,,,
+,,,,amhs_content_encoding = IA5,,,,,,
+,,,,Body,,Gateway phải sinh,,Gateway sinh,,Gateway sinh
+,,,,amqp-value,,IA5 Text Body Part,,General Text Body Part,,General Text Body Part
+,,,,,,(loại ia5-text-body-part),,Character Set,,Character Set
+,,,,Lorem ipsum,,Character Set,,Basic (ISO-646),,Basic-1 (ISO-8859-1)
+,,,,,,IA5,,Text,,Text
+,,,,Gateway phải sinh,,Text,,Lorem ipsum 646,,Lorem ipsum 8859
+,,,,AMHS,,Lorem ipsum i5bpt,,,,
+,,,,IA5 Text Body Part,,,,,,
+,,,,Character Set,,,,,,
+,,,,IA5,,,,,,
+,,,,ATS-message-text,,,,,,
+,,,,Lorem ipsum,,,,,,
+
+
+--- SHEET: CTSW116 ---
+Unnamed: 0,Unnamed: 1,Unnamed: 2,Unnamed: 3,Unnamed: 4,Unnamed: 5
+,CTSW116 – Incoming AMQP binary message with ftbp attributes,,,,
+,,,,,
+,,,,,
+,,,,,
+,Thành phần,Case 1,,Case 2,
+,Header.priority,✔,,✔,
+,Properties.message-id,✔,ID,✔,ID
+,Properties.creation-time,✔,Sai,✔,Sai
+,Properties.content-type=application/octet-stream,✔,,✔,
+,Application Property amhs_recipients,✔,o có,✔,o có
+,Application Property amhs_ftbp_file_name,✔,,✔,
+,Application Property amhs_ftbp_object_size,✔,,✔,
+,Application Property amhs_ftbp_last_mod,✔,,✔,
+,Application Property swim_compression=gzip,✘,,✔,
+,Body = Data(Binary),Binary gốc,o có,Binary đã nén gzip,
+,amqp-value,Rỗng (empty),o có,Rỗng (empty),
+,,,,,
+,,Accept,,Accept,
+,,,,Case 2,
+,,,,Gateway phải,
+,,,,gunzip(payload),
+,,,,rồi mới tạo FTBP.,
+,,,,"Đầu ra phải chứa nội dung file gốc đã giải nén, không phải dữ liệu gzip.",
+
+
